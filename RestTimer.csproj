@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>RestTimer.ico</ApplicationIcon>
+    <Product>RestTimer</Product>
+    <Description>A Windows break timer with a synchronized overlay on every display.</Description>
+  </PropertyGroup>
+</Project>
