@@ -44,7 +44,7 @@ Name: "{group}\RestTimer"; Filename: "{app}\RestTimer.exe"
 Name: "{autodesktop}\RestTimer"; Filename: "{app}\RestTimer.exe"; Tasks: desktopicon
 
 [Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "RestTimer"; ValueData: """{app}\RestTimer.exe"""; Tasks: autostart; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "RestTimer"; ValueData: """{app}\RestTimer.exe"""; Tasks: autostart
 
 [Run]
 Filename: "{app}\RestTimer.exe"; Description: "Run RestTimer"; Flags: nowait postinstall skipifsilent
@@ -69,4 +69,14 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if (CurStep = ssPostInstall) and not WizardIsTaskSelected('autostart') then
     RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'RestTimer');
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Command: String;
+begin
+  if CurUninstallStep = usUninstall then
+    if RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'RestTimer', Command) then
+      if CompareText(Command, '"' + ExpandConstant('{app}\RestTimer.exe') + '"') = 0 then
+        RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'RestTimer');
 end;
