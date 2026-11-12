@@ -25,6 +25,7 @@ namespace RestTimer
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private bool working;
         private bool installing;
+        private ReleaseInfo displayedRelease;
         private readonly bool checkOnShow;
 
         public UpdateDialog(Icon icon, UpdateService service = null, bool history = false, bool checkOnShow = true)
@@ -89,6 +90,7 @@ namespace RestTimer
         private void ShowLatest()
         {
             var release = service.State.Latest;
+            displayedRelease = release;
             bool newer = UpdateClient.IsStable(release) && release.Version > UpdateClient.CurrentVersion;
             description.Text = "نسخهٔ نصب‌شده  \u200e" + UpdateClient.CurrentVersion.ToString(3)
                 + (newer ? "    ·    نسخهٔ جدید  \u200e" + release.Version.ToString(3) : "");
@@ -131,11 +133,12 @@ namespace RestTimer
             if (working || installing || !install.Enabled) return;
             working = true;
             install.Enabled = check.Enabled = false;
+            var approvedRelease = displayedRelease;
             progress.Value = 0;
             progressText.Text = "در حال دانلود… برای لغو، پنجره را ببندید.";
             try
             {
-                var file = await UpdateClient.DownloadAsync(service.State.Latest, new Progress<int>(value =>
+                var file = await UpdateClient.DownloadAsync(approvedRelease, new Progress<int>(value =>
                 {
                     if (!IsDisposed && !installing) { progress.Value = value; progressText.Text = "در حال دانلود و بررسی فایل…  " + value + "٪"; }
                 }), cancellation.Token);

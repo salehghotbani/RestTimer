@@ -120,6 +120,7 @@ class UpdateDialog(QDialog):
 
     def show_latest(self):
         release = self.updater.state["latest"]
+        self.displayed_release = release
         newer = core.stable(release) and core.version_tuple(release["tag_name"]) > core.version_tuple(self.controller.version)
         self.description.setText("نسخهٔ نصب‌شده: " + self.controller.version + ("    ·    نسخهٔ جدید: " + release["tag_name"] if newer else ""))
         self.latest_notes.setPlainText(release["tag_name"] + "\n\n" + (release.get("body") or "توضیحی ثبت نشده است.")
@@ -167,9 +168,10 @@ class UpdateDialog(QDialog):
     def download(self):
         if not self.install.isEnabled():
             return
+        approved_release = self.displayed_release
         try:
             kind = core.package_kind()
-            core.installer_asset(self.updater.state["latest"], kind)
+            core.installer_asset(approved_release, kind)
         except (OSError, ValueError):
             self.status.setText("بستهٔ سازگار با این سیستم هنوز آماده نشده است.")
             return
@@ -180,7 +182,7 @@ class UpdateDialog(QDialog):
             if not self.closed:
                 self.install_package(path, kind)
 
-        self.run_job(lambda worker: core.download(self.updater.state["latest"], kind, self.updater.directory / "downloads",
+        self.run_job(lambda worker: core.download(approved_release, kind, self.updater.directory / "downloads",
                                                   worker.cancelled, worker.progress.emit), received, self.progress.setValue)
 
     def install_package(self, path, kind):
