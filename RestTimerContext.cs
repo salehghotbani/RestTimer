@@ -64,12 +64,12 @@ namespace RestTimer
             {
                 RightToLeft = I18n.Flow,
                 Renderer = new TrayMenuRenderer(),
-                Font = Theme.BodyFont,
+                Font = Theme.SmallFont,
                 BackColor = Theme.Surface,
                 ForeColor = Theme.Text,
                 ShowImageMargin = false,
                 ShowCheckMargin = true,
-                Padding = new Padding(6)
+                Padding = new Padding(2)
             };
             menu.Items.AddRange(new ToolStripItem[]
             {
@@ -77,7 +77,7 @@ namespace RestTimer
                 new ToolStripSeparator(), settings, startup, updates, history, new ToolStripSeparator(), exit
             });
             foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
-                item.Padding = new Padding(12, 7, 12, 7);
+                item.Padding = new Padding(6, 2, 6, 2);
             menu.Opening += (_, __) => { Theme.Refresh(); Theme.Apply(menu); UpdateStartupItem(); };
 
             icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);

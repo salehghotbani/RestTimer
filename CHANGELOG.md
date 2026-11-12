@@ -1,5 +1,9 @@
 # RestTimer changelog
 
+## 1.8.2
+- Make the tray menu more compact on Windows and Linux, with smaller row padding and outer margins.
+- Use smaller Windows menu text and tighter rounded highlights and separators while retaining light/dark colors and all timer controls.
+
 ## 1.8.1
 - Replace the full-width reserved Windows strip with a compact floating timer sized to its localized label and countdown.
 - Add a solid light/dark background, rounded corners, subtle border and distinct work/break colors.

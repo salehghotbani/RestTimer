@@ -47,7 +47,7 @@
 بستهٔ DEB را در مدیر نرم‌افزار باز کنید یا در پوشهٔ دانلودشده اجرا کنید.
 
 ```bash
-sudo apt install ./RestTimer-v1.8.1-linux-amd64.deb
+sudo apt install ./RestTimer-v1.8.2-linux-amd64.deb
 ```
 
 ### Fedora
@@ -55,7 +55,7 @@ sudo apt install ./RestTimer-v1.8.1-linux-amd64.deb
 بستهٔ RPM را در مدیر نرم‌افزار باز کنید یا اجرا کنید.
 
 ```bash
-sudo dnf install ./RestTimer-v1.8.1-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.8.2-linux-x86_64.rpm
 ```
 
 سپس RestTimer را از منوی برنامه‌ها یا فرمان `resttimer` اجرا کنید. Python و Qt مورد نیاز در بسته‌های لینوکس قرار دارند. حذف برنامه با `sudo apt remove resttimer` یا `sudo dnf remove resttimer` انجام می‌شود.
@@ -123,9 +123,9 @@ sudo dnf install ./RestTimer-v1.8.1-linux-x86_64.rpm
 </div>
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.1/RestTimer-v1.8.1-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.1/RestTimer-v1.8.1-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.1/RestTimer-v1.8.1-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.2/RestTimer-v1.8.2-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.2/RestTimer-v1.8.2-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.2/RestTimer-v1.8.2-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

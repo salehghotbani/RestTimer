@@ -56,11 +56,11 @@ QFrame#timeField {
     background: #0c1623; border: 1px solid #2c3e52; border-radius: 10px;
 }
 QCheckBox { color: #9bb0c3; spacing: 10px; }
-QMenu { border: 1px solid #2c3e52; padding: 7px; }
-QMenu::item { padding: 11px 30px; border-radius: 7px; }
+QMenu { border: 1px solid #2c3e52; padding: 3px; }
+QMenu::item { padding: 4px 12px; border-radius: 4px; }
 QMenu::item:selected { background: #223a48; color: #83e6c4; }
 QMenu::item:disabled { color: #9bb0c3; }
-QMenu::separator { height: 1px; background: #2c3e52; margin: 5px 12px; }
+QMenu::separator { height: 1px; background: #2c3e52; margin: 2px 6px; }
 """
 
 

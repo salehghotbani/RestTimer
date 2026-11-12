@@ -22,8 +22,9 @@ namespace RestTimer
                 return;
 
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            var bounds = new RectangleF(4, 2, e.Item.Width - 8, e.Item.Height - 4);
-            using (var path = Theme.RoundedRectangle(bounds, 7 * e.ToolStrip.DeviceDpi / 96f))
+            float scale = e.ToolStrip.DeviceDpi / 96f;
+            var bounds = new RectangleF(2 * scale, scale, e.Item.Width - 4 * scale, e.Item.Height - 2 * scale);
+            using (var path = Theme.RoundedRectangle(bounds, 4 * scale))
             using (var fill = new SolidBrush(Theme.Selection))
                 e.Graphics.FillPath(fill, path);
         }
@@ -37,7 +38,10 @@ namespace RestTimer
         protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
         {
             using (var pen = new Pen(Theme.Border))
-                e.Graphics.DrawLine(pen, 12, e.Item.Height / 2, e.Item.Width - 12, e.Item.Height / 2);
+            {
+                float inset = 6 * e.ToolStrip.DeviceDpi / 96f;
+                e.Graphics.DrawLine(pen, inset, e.Item.Height / 2, e.Item.Width - inset, e.Item.Height / 2);
+            }
         }
 
         protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
