@@ -133,6 +133,11 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     dialog.tabs.setCurrentIndex(1)
     app.processEvents()
     dialog.grab().save(str(output / "linux-history.png"))
+    controller.update_dialog = dialog
+    dialog.process = object()
+    controller.quit()
+    assert not controller.quitting, "Quitting interrupted an active package installation"
+    dialog.process = None
     dialog.reject()
     assert dialog.closed
     results = []

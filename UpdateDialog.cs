@@ -137,7 +137,7 @@ namespace RestTimer
             {
                 var file = await UpdateClient.DownloadAsync(service.State.Latest, new Progress<int>(value =>
                 {
-                    if (!IsDisposed) { progress.Value = value; progressText.Text = "در حال دانلود و بررسی فایل…  " + value + "٪"; }
+                    if (!IsDisposed && !installing) { progress.Value = value; progressText.Text = "در حال دانلود و بررسی فایل…  " + value + "٪"; }
                 }), cancellation.Token);
                 if (IsDisposed) return;
                 UpdateClient.Install(file);

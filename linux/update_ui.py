@@ -31,7 +31,11 @@ class Worker(QObject):
             if not self.cancelled.is_set():
                 self.failed.emit(str(error))
         finally:
-            self.finished.emit()
+            try:
+                self.finished.emit()
+            except RuntimeError:
+                # The application can exit while a cancelled network read finishes.
+                pass
 
 
 class UpdateDialog(QDialog):

@@ -583,6 +583,11 @@ class Controller:
         self.quit()
 
     def quit(self):
+        if self.update_dialog is not None and self.update_dialog.process is not None:
+            self.update_dialog.status.setText("نصب در حال انجام است. پس از پایان نصب می‌توانید برنامه را ببندید.")
+            self.update_dialog.show()
+            self.update_dialog.raise_()
+            return
         self.quitting = True
         self.timer.stop()
         self.update_timer.stop()
