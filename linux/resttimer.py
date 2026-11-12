@@ -638,6 +638,8 @@ def main():
     app.setStyleSheet(STYLE)
     controller = Controller(app)
     if "--smoke-test" in sys.argv:
+        if update_core.tls_context().cert_store_stats()["x509_ca"] == 0:
+            raise RuntimeError("No system certificate authorities available for updates.")
         controller.begin_break()
         QTimer.singleShot(300, controller.begin_work)
         QTimer.singleShot(600, controller.quit)

@@ -6,6 +6,7 @@ from pathlib import Path
 import platform
 import re
 import shutil
+import ssl
 import tempfile
 import time
 import urllib.error
@@ -31,10 +32,17 @@ def stable(release):
         return False
 
 
+def tls_context():
+    # The bundled Python was built on Ubuntu; Fedora stores its CA bundle elsewhere.
+    candidates = (os.environ.get("SSL_CERT_FILE"), "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt")
+    bundle = next((path for path in candidates if path and Path(path).is_file()), None)
+    return ssl.create_default_context(cafile=bundle)
+
+
 def request_json(url):
     request = urllib.request.Request(url, headers={"User-Agent": "RestTimer-Updater", "Accept": "application/vnd.github+json",
                                                   "X-GitHub-Api-Version": "2022-11-28"})
-    with urllib.request.urlopen(request, timeout=20) as response:
+    with urllib.request.urlopen(request, timeout=20, context=tls_context()) as response:
         data = response.read(8 * 1024 * 1024 + 1)
         if len(data) > 8 * 1024 * 1024:
             raise ValueError("Release response too large")
@@ -141,7 +149,7 @@ def download(release, kind, directory, cancelled, progress=lambda value: None, o
     partial = None
     try:
         request = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "RestTimer-Updater"})
-        with opener(request, timeout=30) as response, tempfile.NamedTemporaryFile(dir=directory, suffix=".part", delete=False) as output:
+        with opener(request, timeout=30, context=tls_context()) as response, tempfile.NamedTemporaryFile(dir=directory, suffix=".part", delete=False) as output:
             partial = Path(output.name)
             length = response.headers.get("Content-Length")
             if length is not None and int(length) != asset["size"]:
