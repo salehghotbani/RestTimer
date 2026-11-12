@@ -46,6 +46,11 @@ def main():
             (ROOT / "LICENSE", "usr/share/doc/resttimer/copyright"),
             (ROOT / "THIRD_PARTY_NOTICES.md", "usr/share/doc/resttimer/THIRD_PARTY_NOTICES.md"),
             (ROOT / "README.md", "usr/share/doc/resttimer/README.md"),
+            (ROOT / "README.fa.md", "usr/share/doc/resttimer/README.fa.md"),
+            (ROOT / "CONTRIBUTING.md", "usr/share/doc/resttimer/CONTRIBUTING.md"),
+            (ROOT / "CONTRIBUTING.fa.md", "usr/share/doc/resttimer/CONTRIBUTING.fa.md"),
+            (ROOT / "assets/RestTimer.png", "usr/share/doc/resttimer/assets/RestTimer.png"),
+            (ROOT / "LICENSE", "usr/share/doc/resttimer/LICENSE"),
             (ROOT / "CHANGELOG.md", "usr/share/doc/resttimer/CHANGELOG.md"),
         ):
             target = package / destination

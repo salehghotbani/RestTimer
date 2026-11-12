@@ -1,46 +1,48 @@
+**English** | [فارسی](README.fa.md)
+
 <div align="center">
-  <img src="assets/RestTimer.png" width="88" height="88" alt="آیکن RestTimer">
+  <img src="assets/RestTimer.png" width="88" height="88" alt="RestTimer icon">
   <h1>RestTimer</h1>
-  <p dir="rtl"><strong>یادآوری استراحت روی همهٔ مانیتورها، برای ویندوز و لینوکس</strong></p>
-  <p dir="rtl">پیش‌فرض ۶۰ دقیقه کار و ۱۵ دقیقه استراحت است. زمان هر دوره را با ساعت، دقیقه و ثانیه تنظیم کنید.</p>
+  <p><strong>Work and break reminders across all your monitors, on Windows and Linux.</strong></p>
+  <p>Work for 60 minutes, then take a 15-minute break. Customize both periods in hours, minutes and seconds.</p>
 </div>
 
 <div align="center">
 
-[![آخرین نسخه][release-badge]][releases]
-[![نصاب ویندوز][windows-badge]][windows]
-[![بستهٔ Ubuntu][ubuntu-badge]][ubuntu]
-[![بستهٔ Fedora][fedora-badge]][fedora]
-[![مجوز MIT][license-badge]](LICENSE)
+[![Latest release][release-badge]][releases]
+[![Windows installer][windows-badge]][windows]
+[![Ubuntu package][ubuntu-badge]][ubuntu]
+[![Fedora package][fedora-badge]][fedora]
+[![MIT license][license-badge]](LICENSE)
 
-[![ساخت و آزمون نصاب‌ها][build-badge]][workflow]
-[![معماری x86-64][arch-badge]][releases]
+[![Build and installer checks][build-badge]][workflow]
+[![x86-64 architecture][arch-badge]][releases]
 
-**[دریافت برنامه][releases] · [گزارش اشکال][issues] · [راهنمای مشارکت](CONTRIBUTING.md)**
+**[Get RestTimer][releases] · [Report an issue][issues] · [Contribute](CONTRIBUTING.md)**
 
 </div>
 
-<div dir="rtl">
+During a break, a horizontal reminder appears at the top center of every monitor, with a shared countdown. A small skip button sits on the left, while the rest of the screen is blurred and dimmed. When the timer ends, or you skip the break or press Esc, the next work period begins.
 
-هنگام استراحت، بالای مرکز هر مانیتور یک نوار افقی با شمارش معکوس مشترک نمایش داده می‌شود. دکمهٔ کوچک رد کردن در سمت چپ قرار دارد و پس‌زمینه محو و تیره می‌شود. پایان تایمر، رد کردن یا زدن Esc، دورهٔ بعدی کار را آغاز می‌کند.
+The application controls currently use Persian. The Windows installer supports both **English and Persian**. This documentation is available in [English](README.md) and [Persian](README.fa.md).
 
-## دانلود و نصب
+## Download and install
 
-فایل مناسب سیستم خود را از [آخرین انتشار](https://github.com/salehghotbani/RestTimer/releases/latest) دریافت کنید. بسته‌ها برای معماری **x86-64** ساخته می‌شوند.
+Choose the installer for your system from the [latest release][releases]. Packages target **x86-64**.
 
-| سیستم | قالب بسته | دریافت |
+| System | Package | Download |
 | --- | --- | --- |
-| **Windows 10 / 11** | نصاب EXE | [نصب ویندوز][windows] |
-| **Ubuntu 22.04 یا جدیدتر** | بستهٔ DEB | [نصب Ubuntu][ubuntu] |
-| **Fedora 43 یا جدیدتر** | بستهٔ RPM | [نصب Fedora][fedora] |
+| **Windows 10 / 11** | EXE installer | [Windows installer][windows] |
+| **Ubuntu 22.04 or later** | DEB package | [Ubuntu package][ubuntu] |
+| **Fedora 43 or later** | RPM package | [Fedora package][fedora] |
 
-### ویندوز
+### Windows
 
-فایل **setup.exe** را اجرا کنید. پیش از شروع مراحل نصب، پنجرهٔ انتخاب **فارسی / English** نمایش داده می‌شود. مراحل و گزینه‌های نصب مطابق زبان انتخاب‌شده نمایش داده می‌شوند. نصاب برنامه را برای حساب فعلی نصب می‌کند و میانبر منوی Start و امکان حذف از تنظیمات ویندوز را ایجاد می‌کند. گزینه‌های اجرای خودکار و میانبر دسکتاپ در نصاب قابل انتخاب‌اند. برنامه به .NET Framework 4.8 نیاز دارد که نصاب وجود آن را بررسی می‌کند.
+Run **setup.exe** and select **English** or **فارسی** before installation begins. The installation and uninstallation steps follow your selected language. Setup installs RestTimer for the current account, creates a Start menu shortcut, and supports removal through Windows Settings. Launch at sign-in and a desktop shortcut are optional. Setup checks for the required .NET Framework 4.8.
 
 ### Ubuntu
 
-بستهٔ DEB را در مدیر نرم‌افزار باز کنید یا در پوشهٔ دانلودشده اجرا کنید.
+Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
 sudo apt install ./RestTimer-v1.6.0-linux-amd64.deb
@@ -48,66 +50,76 @@ sudo apt install ./RestTimer-v1.6.0-linux-amd64.deb
 
 ### Fedora
 
-بستهٔ RPM را در مدیر نرم‌افزار باز کنید یا اجرا کنید.
+Open the RPM in your software manager, or run:
 
 ```bash
 sudo dnf install ./RestTimer-v1.6.0-linux-x86_64.rpm
 ```
 
-سپس RestTimer را از منوی برنامه‌ها یا فرمان `resttimer` اجرا کنید. Python و Qt مورد نیاز در بسته‌های لینوکس قرار دارند. حذف برنامه با `sudo apt remove resttimer` یا `sudo dnf remove resttimer` انجام می‌شود.
+Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
 
-## استفاده
+## Using RestTimer
 
-دکمه‌های «شروع»، «توقف» و «شروع استراحت همین حالا» بالاترین گزینه‌های منو هستند. در ویندوز، رنگ پنجرهٔ به‌روزرسانی و منو از حالت رنگی برنامه‌ها در تنظیمات ویندوز پیروی می‌کند و حالت کنتراست بالا نیز رعایت می‌شود. تغییر رنگ هنگام باز بودن پنجره اعمال می‌شود. در لینوکس، حالت رنگی اعلام‌شده از دسکتاپ توسط Qt استفاده می‌شود. یادداشت‌های انتشار با جهت مناسب فارسی و انگلیسی، تیتر و فاصله‌گذاری نمایش داده می‌شوند. پنجرهٔ ویندوز قابل تغییر اندازه است و تاریخچهٔ آن فهرست جداگانه‌ای برای انتخاب نسخه دارد.
+- Left-click or right-click the tray icon to open the menu. **Start** («شروع»), **Stop** («توقف»), and **Start a break now** («شروع استراحت همین حالا») are the first entries. You can also change durations, toggle launch at sign-in, check for updates, and quit.
+- The countdown starts when the application launches. Skipping a break resets the next work period.
+- Start and Stop are available in the tray menu, settings, and break reminder. Stop pauses the current period; Start resumes from its remaining time. During a paused break, reminders stay open and can be resumed from any monitor. Skipping a break or changing durations preserves the paused state.
+- On Windows, the update window and menu follow the Windows **application** color mode and support high contrast. Theme changes apply while the window is open. Linux follows the desktop color scheme reported by Qt.
+- Release notes have headings, spacing, and paragraph direction appropriate for Persian and English. The Windows update window is resizable and has a separate version list for browsing release history.
 
-در ویندوز، یک کادر شناور ثابت سمت چپ ناحیهٔ آیکن‌های تسک‌بار و کنار chevron، زمان کار یا استراحت و حالت مکث را در یک ردیف باریک با فونت ریز نشان می‌دهد؛ عنوان سمت راست و زمان سمت چپ است. پس‌زمینه و قاب ندارد و رنگ متن با حالت رنگی روشن یا تاریک ویندوز و حالت کنتراست بالا هماهنگ می‌شود. در تنظیمات با گزینهٔ «نمایش زمان کنار فلش آیکن‌های تسک‌بار» و زدن «ذخیرهٔ تنظیمات» آن را فعال یا غیرفعال کنید. این انتخاب پس از اجرای مجدد حفظ می‌شود و تغییر آن شمارش را از نو شروع نمی‌کند. کادر قابل کشیدن نیست و کلیک‌ها از آن عبور می‌کنند. با پنهان شدن تسک‌بار یا اجرای تمام‌صفحهٔ برنامه‌های دیگر پنهان می‌شود. این نمایشگر روی تسک‌بار افقی اصلی قرار می‌گیرد و فضایی در چیدمان ویندوز رزرو نمی‌کند.
+### Windows taskbar countdown
 
-- با کلیک چپ یا راست روی آیکن کنار ساعت، منوی برنامه باز می‌شود. می‌توانید زمان‌ها را تنظیم کنید، استراحت را همان لحظه شروع کنید، اجرای خودکار را تغییر دهید، به‌روزرسانی را بررسی کنید یا از برنامه خارج شوید.
-- شمارش از زمان اجرا شروع می‌شود. رد کردن استراحت، زمان کار بعدی را از نو آغاز می‌کند.
-- دکمه‌های **شروع** و **توقف** در منوی آیکن، تنظیمات و کادر استراحت قرار دارند. توقف، شمارش همان دوره را مکث می‌کند و شروع از زمان باقی‌مانده ادامه می‌دهد. در حالت توقف، کادر استراحت باز می‌ماند و دکمهٔ شروع روی همهٔ مانیتورها فعال است. رد کردن استراحت یا تغییر زمان‌ها، وضعیت توقف را حفظ می‌کند.
-- تنظیمات ویندوز در حساب فعلی و تنظیمات لینوکس در `~/.config/resttimer/settings.json` ذخیره می‌شوند. تنظیمات قدیمیِ دقیقه‌ای ویندوز نیز خوانده می‌شوند.
-- اجرای خودکار لینوکس از `~/.config/autostart/resttimer.desktop` استفاده می‌کند.
+A fixed, single-line countdown appears just left of the notification area, beside the chevron. It shows the work or break period and paused state, with the label on the right and time on the left. It has no background or border; its text follows the Windows **system** color mode and high-contrast settings.
 
-### دسکتاپ‌های لینوکس
+In settings, toggle **«نمایش زمان کنار فلش آیکن‌های تسک‌بار»** (show the countdown beside the taskbar icons), then select **«ذخیرهٔ تنظیمات»** (save settings). Your choice persists across restarts and does not reset the timer.
 
-نسخهٔ لینوکس روی X11 و Wayland اجرا می‌شود. در Wayland، در صورت در دسترس نبودن تصویر دسکتاپ، پوشش نیمه‌شفاف صفحه را تیره می‌کند. جای‌گذاری و اولویت پنجره‌ها تحت کنترل مدیر پنجرهٔ سیستم است.
+The countdown cannot be dragged and lets mouse clicks pass through. It hides with an auto-hidden taskbar and when another application runs fullscreen. It uses the primary horizontal taskbar and does not reserve space in the Windows taskbar layout.
 
-در GNOME، نمایش آیکن سینی سیستم و رفتار کلیک‌های آن به پشتیبانی دسکتاپ یا افزونهٔ AppIndicator وابسته است. اگر سینی سیستم موجود نباشد، پنجرهٔ کنترل برنامه نمایش داده می‌شود. در این حالت، بستن پنجره برنامه را هم می‌بندد. اجرای دوباره از منوی برنامه‌ها، پنجرهٔ نسخهٔ در حال اجرا را باز می‌کند.
+### Settings and startup
 
-## به‌روزرسانی
+Windows settings are stored in the current user's account; older minute-based settings are still read. Linux stores settings in `~/.config/resttimer/settings.json` and its launch-at-sign-in entry in `~/.config/autostart/resttimer.desktop`.
 
-برنامه هنگام اجرا و سپس هر ۲۴ ساعت، آخرین نسخهٔ پایدار را بررسی می‌کند. اگر اینترنت در دسترس نباشد، ۶ ساعت بعد دوباره تلاش می‌کند. نتیجه بین اجراها ذخیره می‌شود و برای هر نسخه یک اعلان نمایش داده می‌شود. با کلیک روی اعلان یا گزینهٔ «به‌روزرسانی و تغییرات»، تغییرات نسخهٔ جدید را بخوانید و با «دانلود و نصب» تأیید کنید. دانلود دارای نوار پیشرفت و امکان لغو است؛ اندازه و SHA-256 فایل پیش از نصب بررسی می‌شوند. بررسی روزانه را می‌توان در همین پنجره غیرفعال کرد.
+### Linux desktops
 
-در ویندوز، نصب با زبان و مسیر فعلی انجام می‌شود و برنامه خودکار بسته و دوباره اجرا می‌شود. در Ubuntu و Fedora، نصب از طریق apt یا dnf با درخواست مجوز مدیر سیستم انجام می‌شود. رد کردن مجوز یا خطای دانلود، نسخهٔ در حال اجرا را نمی‌بندد.
+The Linux frontend runs on X11 and Wayland. When desktop capture is unavailable on Wayland, a translucent overlay still dims the screen. Window placement and stacking are controlled by the desktop window manager.
 
-تب «تاریخچهٔ نسخه‌ها» تغییرات هر انتشار را از GitHub نمایش می‌دهد. [فهرست تغییرات](CHANGELOG.md) نیز همراه برنامه برای مشاهدهٔ آفلاین قرار دارد. برای دیدن اعلان‌ها، اعلان‌های RestTimer باید در تنظیمات سیستم مجاز باشند.
+On GNOME, tray visibility and click behavior depend on desktop support or an AppIndicator extension. If no system tray is available, RestTimer shows its control window; closing that window quits the application. Launching RestTimer again from the application menu opens the existing instance's settings window.
 
-در ویندوز **نصاب EXE جدید** را اجرا کنید. اگر RestTimer باز باشد، نصاب پیش از بستن برنامه اطلاع می‌دهد، آن را خودکار می‌بندد و پس از پایان نصب دوباره اجرا می‌کند. پیام‌ها با زبان انتخاب‌شدهٔ فارسی یا انگلیسی نمایش داده می‌شوند. در Ubuntu یا Fedora، بستهٔ جدید را با همان دستور نصب کنید. تنظیمات زمان‌ها در ارتقا حفظ می‌شوند.
+## Updates
 
-## فناوری‌های استفاده‌شده
+While running, RestTimer checks the latest stable release at startup when due, then every 24 hours. A failed check is retried six hours later. The schedule persists across restarts, and each new version generates one notification. You can disable daily checks in the update window. System notifications must be allowed for RestTimer to show alerts.
 
-[![C# و WinForms][csharp-badge]][winforms]
+Click the notification or open **«به‌روزرسانی و تغییرات»** (updates and changes), read the release notes, and approve **«دانلود و نصب»** (download and install). **RestTimer downloads and installs the update itself.** Downloads show progress and can be cancelled. File size and SHA-256 are checked before installation.
+
+Windows updates use the current installation path and installer language; Setup closes the running application and reopens it after installation. Ubuntu and Fedora updates use apt or dnf and request administrator authorization. Download failures or declined authorization leave the current application running.
+
+The **«تاریخچهٔ نسخه‌ها»** (version history) page retrieves release notes from GitHub. A bundled [changelog](CHANGELOG.md), currently in Persian, is available offline.
+
+For a manual upgrade on Windows, run the new **EXE installer**. If RestTimer is running, Setup explains that it will close and reopen the application, then does so automatically. On Ubuntu and Fedora, install the new package using the same command as above. Your duration settings are preserved during upgrades.
+
+## Built with
+
+[![C# and WinForms][csharp-badge]][winforms]
 [![.NET Framework][dotnet-badge]][dotnet]
 [![Python][python-badge]][python]
 [![PySide6 Essentials][pyside-badge]][pyside]
 [![PyInstaller][pyinstaller-badge]][pyinstaller]
 [![Inno Setup][inno-badge]][inno]
 
-| فناوری | کاربرد |
+| Technology | Purpose |
 | --- | --- |
-| **C#، WinForms و .NET Framework 4.8** | رابط ویندوز، منوی کنار ساعت و پوشش هم‌زمان مانیتورها |
-| **Python 3.11 و PySide6 Essentials / Qt 6.12** | رابط لینوکس، تنظیم زمان‌ها، آیکن سینی سیستم و پنجره‌های استراحت |
-| **Inno Setup 6** | ساخت نصاب EXE، میانبرها و حذف برنامه در ویندوز |
-| **PyInstaller، dpkg-deb و rpmbuild** | بسته‌بندی وابستگی‌های لینوکس و تولید DEB و RPM |
-| **GitHub Actions، Xvfb، Weston و Docker** | ساخت و آزمون نصب، حذف و اجرای برنامه روی Windows، Ubuntu، Fedora، X11 و Wayland |
+| **C#, WinForms and .NET Framework 4.8** | Windows interface, tray menu, and synchronized monitor overlays |
+| **Python 3.11 and PySide6 Essentials / Qt 6.12** | Linux interface, duration controls, tray icon, and break windows |
+| **Inno Setup 6** | Windows EXE installer, shortcuts, and uninstallation |
+| **PyInstaller, dpkg-deb and rpmbuild** | Bundling Linux dependencies and building DEB and RPM packages |
+| **GitHub Actions, Xvfb, Weston and Docker** | Building and checking installation, removal, and desktop execution on Windows, Ubuntu, Fedora, X11, and Wayland |
 
-## ساخت و مشارکت
+## Building and contributing
 
-دستورهای ساخت نصاب ویندوز، بسته‌های لینوکس و آزمون‌ها در [راهنمای مشارکت](CONTRIBUTING.md) آمده‌اند. workflow مخزن نصب و حذف نصاب ویندوز و بسته‌ها در Ubuntu و Fedora، و اجرای رابط لینوکس روی X11 و Wayland را بررسی می‌کند.
+See the [contribution guide](CONTRIBUTING.md) for build commands, packaging, and checks. The repository workflow verifies Windows installation and removal, Ubuntu and Fedora package installation and removal, and Linux execution on X11 and Wayland.
 
-کد پروژه با [مجوز MIT](LICENSE) منتشر می‌شود. مجوز و سورس وابستگی‌های همراه در [اعلان اجزای ثالث](THIRD_PARTY_NOTICES.md) مشخص شده‌اند.
+English is the default documentation language. Keep the [Persian README](README.fa.md) and [Persian contribution guide](CONTRIBUTING.fa.md) in sync when updating the English guides.
 
-</div>
+RestTimer is released under the [MIT license](LICENSE). Bundled dependency licenses and source information are listed in [third-party notices](THIRD_PARTY_NOTICES.md).
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
 [windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.6.0/RestTimer-v1.6.0-windows-x64-setup.exe

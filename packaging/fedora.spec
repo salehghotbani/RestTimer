@@ -31,7 +31,12 @@ cp -a "%{app_payload}/." "%{buildroot}/"
 /usr/share/applications/resttimer.desktop
 /usr/share/icons/hicolor/256x256/apps/resttimer.png
 %license /usr/share/doc/resttimer/copyright
+%license /usr/share/doc/resttimer/LICENSE
 %doc /usr/share/doc/resttimer/THIRD_PARTY_NOTICES.md
 %doc /usr/share/doc/resttimer/README.md
+%doc /usr/share/doc/resttimer/README.fa.md
+%doc /usr/share/doc/resttimer/CONTRIBUTING.md
+%doc /usr/share/doc/resttimer/CONTRIBUTING.fa.md
+%doc /usr/share/doc/resttimer/assets
 %doc /usr/share/doc/resttimer/CHANGELOG.md
 %doc /usr/share/doc/resttimer/licenses

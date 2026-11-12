@@ -1,12 +1,14 @@
-# مشارکت در RestTimer
+# Contributing to RestTimer
 
-گزارش اشکال و پیشنهادها را در [Issues](https://github.com/salehghotbani/RestTimer/issues) ثبت کنید. برای اشکال‌های رابط، نسخهٔ برنامه، سیستم‌عامل، تعداد مانیتورها، درصد بزرگ‌نمایی و در لینوکس نوع نشست X11 یا Wayland را ذکر کنید.
+**English** | [فارسی](CONTRIBUTING.fa.md)
 
-برای تغییر کد، مخزن را fork کنید و تغییر مرتبط را در یک شاخهٔ جداگانه بفرستید. توضیح Pull Request باید رفتار جدید و روش آزمون آن را مشخص کند. تغییرات ظاهری را همراه تصویر رابط بفرستید.
+Report bugs and suggest improvements in [Issues](https://github.com/salehghotbani/RestTimer/issues). For interface issues, include the application version, operating system, monitor count, display scaling, and, on Linux, whether you use X11 or Wayland.
 
-## توسعهٔ ویندوز
+Fork the repository and submit related changes on a separate branch. Explain the resulting behavior and how you verified it in your pull request. Include screenshots for visual changes.
 
-به .NET SDK، .NET Framework 4.8 Developer Pack و برای ساخت نصاب به Inno Setup 6 نیاز است.
+## Windows development
+
+Install a .NET SDK, the .NET Framework 4.8 Developer Pack, and Inno Setup 6 for installer builds.
 
 ```powershell
 dotnet build -c Release
@@ -15,11 +17,11 @@ dotnet build tests/updates/WindowsUpdateTests.csproj -c Release -o obj/update-te
 ./obj/update-tests/WindowsUpdateTests.exe
 ```
 
-در صورت نصب Inno Setup در مسیر سفارشی، متغیر محیطی `ISCC` را به مسیر `ISCC.exe` تنظیم کنید.
+If Inno Setup is installed in a custom location, set the `ISCC` environment variable to the full path of `ISCC.exe`.
 
-## توسعهٔ لینوکس
+## Linux development
 
-نسخهٔ لینوکس در `linux/resttimer.py` قرار دارد. محیط مجازی بسازید و وابستگی‌ها را نصب کنید.
+The Linux frontend is in `linux/resttimer.py`. Create a virtual environment and install the build dependencies:
 
 ```bash
 python3 -m venv .venv
@@ -31,16 +33,27 @@ QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
 bash tools/build_linux.sh
 ```
 
-ساخت بسته‌ها روی Linux x86-64 به `dpkg-deb`، `rpmbuild` و `desktop-file-validate` نیاز دارد. فایل workflow مخزن وابستگی‌های ساخت و آزمون نصب روی Ubuntu و Fedora را مشخص می‌کند.
+Building packages requires Linux x86-64, `dpkg-deb`, `rpmbuild`, and `desktop-file-validate`. The [workflow](https://github.com/salehghotbani/RestTimer/blob/main/.github/workflows/packages.yml) lists the build dependencies and checks installation on Ubuntu and Fedora.
 
-## بررسی تغییرات
+## Reviewing changes
 
-- کار و استراحت یک‌ثانیه‌ای، رد کردن و شروع دوبارهٔ دوره را امتحان کنید.
-- منوی آیکن باید با هر دو کلیک چپ و راست باز شود و با کلیک بیرون یا Esc بسته شود.
-- نمایش هم‌زمان روی چند مانیتور و تنظیم ساعت، دقیقه و ثانیه را بررسی کنید.
-- برای تغییر قالب تنظیمات، خواندن داده‌های نسخه‌های پیشین را حفظ کنید.
-- فایل `VERSION` مرجع نسخهٔ مشترک ویندوز و لینوکس است. نسخهٔ جدید باید همراه نصاب EXE و بسته‌های DEB و RPM منتشر شود.
-- تغییرات هر نسخه را در `CHANGELOG.md` و توضیح انتشار بنویسید؛ برنامه از توضیح انتشار برای نمایش تغییرات نسخهٔ جدید استفاده می‌کند.
-- مسیر به‌روزرسانی را با قطع اتصال، لغو دانلود، فایل ناقص، رد شدن مجوز نصب و اجرای دوباره پس از ارتقا بررسی کنید. آزمون دانلود نباید نصاب واقعی اجرا کند.
+- Try one-second work and break periods, skipping a break, and starting the next period.
+- Check that both left-click and right-click open the tray menu, and that clicking outside it or pressing Esc closes it.
+- Verify synchronized reminders across monitors and the hour, minute, and second controls.
+- Preserve compatibility with previous settings when changing their format.
+- Treat `VERSION` as the shared Windows and Linux version source. Each application release should include an EXE installer, a DEB package, and an RPM package.
+- Add release changes to `CHANGELOG.md` and the GitHub release notes. The application uses release notes to explain new versions.
+- Check updates with a disconnected network, cancelled downloads, incomplete files, declined installation authorization, and restarting after an upgrade. Download checks must not launch a real installer.
 
-با ارسال تغییرات، مشارکت خود را تحت مجوز MIT همین مخزن ارائه می‌کنید.
+## Documentation languages
+
+**English is the default documentation language.** Maintain these matching guides:
+
+| Guide | English (default) | Persian |
+| --- | --- | --- |
+| Application guide | [README.md](README.md) | [README.fa.md](README.fa.md) |
+| Contribution guide | [CONTRIBUTING.md](CONTRIBUTING.md) | [CONTRIBUTING.fa.md](CONTRIBUTING.fa.md) |
+
+Update both language versions when changing documented behavior or instructions. Keep the language selectors, installation commands, release links, and technology badges consistent. Use English by default for new documentation.
+
+See the [README](README.md) for installation and usage. By submitting changes, you agree to contribute them under the repository's [MIT license](LICENSE).

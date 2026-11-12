@@ -1,0 +1,58 @@
+[English](CONTRIBUTING.md) | **فارسی**
+
+<div dir="rtl">
+
+# مشارکت در RestTimer
+
+گزارش اشکال و پیشنهادها را در [Issues](https://github.com/salehghotbani/RestTimer/issues) ثبت کنید. برای اشکال‌های رابط، نسخهٔ برنامه، سیستم‌عامل، تعداد مانیتورها، درصد بزرگ‌نمایی و در لینوکس نوع نشست X11 یا Wayland را ذکر کنید.
+
+برای تغییر کد، مخزن را fork کنید و تغییر مرتبط را در یک شاخهٔ جداگانه بفرستید. توضیح Pull Request باید رفتار جدید و روش آزمون آن را مشخص کند. تغییرات ظاهری را همراه تصویر رابط بفرستید.
+
+## توسعهٔ ویندوز
+
+به .NET SDK، .NET Framework 4.8 Developer Pack و برای ساخت نصاب به Inno Setup 6 نیاز است.
+
+```powershell
+dotnet build -c Release
+powershell -File tools/build_windows.ps1
+dotnet build tests/updates/WindowsUpdateTests.csproj -c Release -o obj/update-tests
+./obj/update-tests/WindowsUpdateTests.exe
+```
+
+در صورت نصب Inno Setup در مسیر سفارشی، متغیر محیطی `ISCC` را به مسیر `ISCC.exe` تنظیم کنید.
+
+## توسعهٔ لینوکس
+
+نسخهٔ لینوکس در `linux/resttimer.py` قرار دارد. محیط مجازی بسازید و وابستگی‌ها را نصب کنید.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-build-linux.txt
+python linux/resttimer.py
+python tests/test_update_core.py
+QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+bash tools/build_linux.sh
+```
+
+ساخت بسته‌ها روی Linux x86-64 به `dpkg-deb`، `rpmbuild` و `desktop-file-validate` نیاز دارد. فایل workflow مخزن وابستگی‌های ساخت و آزمون نصب روی Ubuntu و Fedora را مشخص می‌کند.
+
+## بررسی تغییرات
+
+- کار و استراحت یک‌ثانیه‌ای، رد کردن و شروع دوبارهٔ دوره را امتحان کنید.
+- منوی آیکن باید با هر دو کلیک چپ و راست باز شود و با کلیک بیرون یا Esc بسته شود.
+- نمایش هم‌زمان روی چند مانیتور و تنظیم ساعت، دقیقه و ثانیه را بررسی کنید.
+- برای تغییر قالب تنظیمات، خواندن داده‌های نسخه‌های پیشین را حفظ کنید.
+- فایل `VERSION` مرجع نسخهٔ مشترک ویندوز و لینوکس است. نسخهٔ جدید باید همراه نصاب EXE و بسته‌های DEB و RPM منتشر شود.
+- تغییرات هر نسخه را در `CHANGELOG.md` و توضیح انتشار بنویسید؛ برنامه از توضیح انتشار برای نمایش تغییرات نسخهٔ جدید استفاده می‌کند.
+- مسیر به‌روزرسانی را با قطع اتصال، لغو دانلود، فایل ناقص، رد شدن مجوز نصب و اجرای دوباره پس از ارتقا بررسی کنید. آزمون دانلود نباید نصاب واقعی اجرا کند.
+
+با ارسال تغییرات، مشارکت خود را تحت مجوز MIT همین مخزن ارائه می‌کنید.
+
+## زبان مستندات
+
+زبان پیش‌فرض مستندات انگلیسی است. فایل‌های `README.md` و `CONTRIBUTING.md` نسخهٔ اصلی انگلیسی و فایل‌های `README.fa.md` و `CONTRIBUTING.fa.md` نسخهٔ فارسی هستند. هنگام تغییر راهنما یا رفتار برنامه، هر دو نسخه را به‌روز نگه دارید و لینک جابه‌جایی زبان‌ها را حفظ کنید.
+
+[راهنمای برنامه](README.fa.md)
+
+</div>

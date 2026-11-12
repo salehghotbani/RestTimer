@@ -59,6 +59,11 @@ Name: "desktopicon"; Description: "{cm:DesktopIcon}"; Flags: unchecked
 Source: "..\dist\Windows\RestTimer.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\Windows\RestTimer.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\README.fa.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\CONTRIBUTING.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\CONTRIBUTING.fa.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\assets\RestTimer.png"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
