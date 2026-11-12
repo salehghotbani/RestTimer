@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.6.0-linux-amd64.deb
+sudo apt install ./RestTimer-v1.7.0-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.6.0-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.6.0-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.7.0-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -66,13 +66,13 @@ Launch RestTimer from the application menu or with `resttimer`. The Linux packag
 - On Windows, the update window and menu follow the Windows **application** color mode and support high contrast. Theme changes apply while the window is open. Linux follows the desktop color scheme reported by Qt.
 - Release notes have headings, spacing, and paragraph direction appropriate for Persian and English. The Windows update window is resizable and has a separate version list for browsing release history.
 
-### Windows taskbar countdown
+### Windows countdown strip
 
-A fixed, single-line countdown appears just left of the notification area, beside the chevron. It shows the work or break period and paused state, with the label on the right and time on the left. It has no background or border; its text follows the Windows **system** color mode and high-contrast settings.
+A thin, independent strip sits above the primary bottom taskbar. Windows reserves a full-width row, 24 logical pixels high (scaled for your display), so maximized windows leave room for it and taskbar icons cannot appear beneath the countdown. The text sits near the notification area, with the work or break label on the right and time on the left, and indicates when paused. It has no background or border; its text follows the Windows **system** color mode and high-contrast settings.
 
-In settings, toggle **«نمایش زمان کنار فلش آیکن‌های تسک‌بار»** (show the countdown beside the taskbar icons), then select **«ذخیرهٔ تنظیمات»** (save settings). Your choice persists across restarts and does not reset the timer.
+In settings, toggle **«نمایش نوار زمان بالای تسک‌بار»** (show the countdown strip above the taskbar), then select **«ذخیرهٔ تنظیمات»** (save settings). Your choice persists across restarts and does not reset the timer. Turning it off or quitting RestTimer releases the reserved space immediately.
 
-The countdown cannot be dragged and lets mouse clicks pass through. It hides with an auto-hidden taskbar and when another application runs fullscreen. It uses the primary horizontal taskbar and does not reserve space in the Windows taskbar layout.
+The countdown cannot be dragged and lets mouse clicks pass through. The strip keeps its reserved space when the taskbar auto-hides; the countdown hides while another application runs fullscreen. It is available on Windows with the primary taskbar at the bottom of the screen. The reservation uses the [Windows desktop appbar API](https://learn.microsoft.com/en-us/windows/win32/shell/application-desktop-toolbars).
 
 ### Settings and startup
 
@@ -122,9 +122,9 @@ English is the default documentation language. Keep the [Persian README](README.
 RestTimer is released under the [MIT license](LICENSE). Bundled dependency licenses and source information are listed in [third-party notices](THIRD_PARTY_NOTICES.md).
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.6.0/RestTimer-v1.6.0-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.6.0/RestTimer-v1.6.0-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.6.0/RestTimer-v1.6.0-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.0/RestTimer-v1.7.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.0/RestTimer-v1.7.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.0/RestTimer-v1.7.0-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

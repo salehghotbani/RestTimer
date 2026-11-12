@@ -95,7 +95,7 @@ namespace RestTimer
                 Text = "انصراف", DialogResult = DialogResult.Cancel,
                 Bounds = new Rectangle(28, 518, 100, 38), TabIndex = 7
             };
-            showTaskbarCountdown = new CheckBox { Text = "نمایش زمان کنار فلش آیکن‌های تسک‌بار", Checked = preferences.ShowTaskbarCountdown,
+            showTaskbarCountdown = new CheckBox { Text = "نمایش نوار زمان بالای تسک‌بار", Checked = preferences.ShowTaskbarCountdown,
                 Bounds = new Rectangle(28, 434, 480, 30), TabIndex = 4 };
             Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration,
                 startTimer, stopTimer, timerStatus, showTaskbarCountdown, note, save, updates, cancel });

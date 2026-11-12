@@ -40,7 +40,10 @@ namespace RestTimer
         private DateTime nextPosition;
         private Color textColor = Color.White;
         private bool dirty = true;
+        private readonly AppbarReservation reservation = new AppbarReservation();
         internal bool FrameUploaded { get; private set; }
+        internal Rectangle ReservedBounds => reservation.Bounds;
+        internal bool HasReservation => reservation.Registered;
 
         public TaskbarCountdown()
         {
@@ -51,6 +54,7 @@ namespace RestTimer
             TopMost = true;
             DoubleBuffered = true;
             AccessibleName = "شمارش معکوس RestTimer";
+            reservation.LayoutChanged += () => nextPosition = DateTime.MinValue;
         }
         protected override bool ShowWithoutActivation => true;
         protected override CreateParams CreateParams
@@ -65,16 +69,15 @@ namespace RestTimer
             base.WndProc(ref message);
         }
 
-        internal static Rectangle Place(Rectangle taskbar, Rectangle tray, Rectangle screen, float scale)
+        internal static Rectangle Place(Rectangle reservedStrip, Rectangle tray, Rectangle screen, float scale)
         {
             int width = (int)Math.Round(100 * scale), height = (int)Math.Round(20 * scale);
             int gap = Math.Max(3, (int)Math.Round(5 * scale));
-            // No guessed location for hidden, vertical, or unusually narrow taskbars.
-            if (taskbar.Width <= taskbar.Height || taskbar.Height < height
-                || Rectangle.Intersect(taskbar, screen).Height < taskbar.Height * 0.75
-                || tray.Width <= 0 || tray.Height <= 0 || !taskbar.IntersectsWith(tray)) return Rectangle.Empty;
-            var result = new Rectangle(tray.Left - gap - width, taskbar.Top + (taskbar.Height - height) / 2, width, height);
-            return screen.Contains(result) && taskbar.Contains(result) ? result : Rectangle.Empty;
+            if (reservedStrip.Width <= reservedStrip.Height || reservedStrip.Height < height || tray.Width <= 0
+                || tray.Height <= 0 || !screen.Contains(reservedStrip)) return Rectangle.Empty;
+            int x = Math.Max(reservedStrip.Left, Math.Min(tray.Left - gap - width, reservedStrip.Right - width));
+            var result = new Rectangle(x, reservedStrip.Top + (reservedStrip.Height - height) / 2, width, height);
+            return screen.Contains(result) && reservedStrip.Contains(result) ? result : Rectangle.Empty;
         }
 
         private bool CoveredByFullscreen(Rectangle screen, IntPtr taskbar)
@@ -97,7 +100,7 @@ namespace RestTimer
                 AccessibleDescription = (resting ? "استراحت " : "کار ") + countdown + (running ? "" : "، متوقف");
                 dirty = true;
             }
-            if (!enabled) { Hide(); nextPosition = DateTime.MinValue; return; }
+            if (!enabled) { Hide(); reservation.Release(); nextPosition = DateTime.MinValue; return; }
             if (DateTime.UtcNow < nextPosition)
             {
                 if (Visible && dirty && !PaintLayered(Bounds)) Hide();
@@ -109,11 +112,15 @@ namespace RestTimer
             var taskbar = FindWindow("Shell_TrayWnd", null);
             var tray = FindWindowEx(taskbar, IntPtr.Zero, "TrayNotifyWnd", null);
             if (taskbar == IntPtr.Zero || tray == IntPtr.Zero || !IsWindowVisible(taskbar)
-                || !GetWindowRect(taskbar, out NativeRect bar) || !GetWindowRect(tray, out NativeRect icons)) { Hide(); return; }
+                || !GetWindowRect(taskbar, out NativeRect bar) || !GetWindowRect(tray, out NativeRect icons)) { Hide(); reservation.Release(); return; }
             var monitor = Screen.FromRectangle(bar.Rectangle);
             float scale = monitor.Bounds.Height > 0 ? GetScale(taskbar) : 1;
-            var target = Place(bar.Rectangle, icons.Rectangle, monitor.Bounds, scale);
-            if (target.IsEmpty || CoveredByFullscreen(monitor.Bounds, taskbar)) { Hide(); return; }
+            if (bar.Rectangle.Width <= bar.Rectangle.Height || bar.Rectangle.Top < monitor.Bounds.Top + monitor.Bounds.Height / 2
+                || !reservation.Reserve(monitor.Bounds, (int)Math.Ceiling(24 * scale)))
+            { Hide(); reservation.Release(); return; }
+            var target = Place(reservation.Bounds, icons.Rectangle, monitor.Bounds, scale);
+            if (target.IsEmpty) { Hide(); reservation.Release(); return; }
+            if (CoveredByFullscreen(monitor.Bounds, taskbar)) { Hide(); return; }
             bool paint = dirty || !Visible || Size != target.Size;
             Bounds = target;
             if (paint && !PaintLayered(target)) { Hide(); return; }
@@ -190,6 +197,12 @@ namespace RestTimer
                     if (screenDC != IntPtr.Zero) ReleaseDC(IntPtr.Zero, screenDC);
                 }
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) reservation.Dispose();
+            base.Dispose(disposing);
         }
     }
 }

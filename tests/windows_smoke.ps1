@@ -217,12 +217,13 @@ internal static class Smoke
                 var screen = new Rectangle(-1920, 0, 1920, 1080);
                 var bar = new Rectangle(-1920, 1080 - height, 1920, height);
                 var trayBounds = new Rectangle(-400, bar.Top, 400, height);
-                var position = (Rectangle)place.Invoke(null, new object[] { bar, trayBounds, screen, scale });
-                if (position.IsEmpty || position.Right >= trayBounds.Left || !screen.Contains(position) || !bar.Contains(position))
-                    throw new Exception("Taskbar countdown placement failed for negative coordinates or display scaling.");
+                var strip = new Rectangle(screen.Left, bar.Top - (int)(24 * scale), screen.Width, (int)(24 * scale));
+                var position = (Rectangle)place.Invoke(null, new object[] { strip, trayBounds, screen, scale });
+                if (position.IsEmpty || position.Right >= trayBounds.Left || !screen.Contains(position) || !strip.Contains(position) || bar.IntersectsWith(position))
+                    throw new Exception("Countdown must fit inside its reserved strip, above the taskbar, at all display scales.");
                 var hidden = new Rectangle(bar.X, 1078, bar.Width, bar.Height);
                 if (!((Rectangle)place.Invoke(null, new object[] { hidden, new Rectangle(-400, hidden.Top, 400, height), screen, scale })).IsEmpty)
-                    throw new Exception("The countdown must hide with an auto-hidden taskbar.");
+                    throw new Exception("An out-of-bounds reservation must not display a countdown.");
             }
             using (var badge = (Form)Activator.CreateInstance(badgeType))
             {
@@ -264,12 +265,51 @@ internal static class Smoke
                         }
                     }
                 }
+                var reservationType = app.GetType("RestTimer.AppbarReservation", true);
+                var workArea = reservationType.GetMethod("WorkArea", BindingFlags.Static | BindingFlags.NonPublic);
+                var primary = Screen.PrimaryScreen.Bounds;
+                var before = (Rectangle)workArea.Invoke(null, new object[] { primary });
                 updateBadge.Invoke(badge, new object[] { "47:12", false, true, true });
                 Application.DoEvents();
                 Console.WriteLine("Live taskbar anchor: visible=" + badge.Visible + ", bounds=" + badge.Bounds);
+                bool reserved = (bool)badgeType.GetProperty("HasReservation", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
+                var reservedBounds = (Rectangle)badgeType.GetProperty("ReservedBounds", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
+                if (reserved)
+                {
+                    var during = (Rectangle)workArea.Invoke(null, new object[] { primary });
+                    if (during.Bottom > before.Bottom - reservedBounds.Height || !reservedBounds.Contains(badge.Bounds))
+                        throw new Exception("The Shell did not reserve real workspace for the countdown.");
+                    Console.WriteLine("Reserved work area: before=" + before + ", during=" + during + ", strip=" + reservedBounds);
+                    for (int attempt = 0; attempt < 3; attempt++)
+                    {
+                        badgeType.GetField("nextPosition", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(badge, DateTime.MinValue);
+                        updateBadge.Invoke(badge, new object[] { "47:11", attempt == 1, attempt != 2, true });
+                        Application.DoEvents();
+                        if ((Rectangle)workArea.Invoke(null, new object[] { primary }) != during)
+                            throw new Exception("Refreshing the countdown accumulated additional workspace reservations.");
+                    }
+                }
+                if (badge.Visible && !reserved) throw new Exception("A countdown must never overlay the taskbar without a reservation.");
                 if (badge.Visible && !(bool)badgeType.GetProperty("FrameUploaded", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge))
                     throw new Exception("The per-pixel transparent taskbar frame was not uploaded to Windows.");
                 updateBadge.Invoke(badge, new object[] { "47:12", false, true, false });
+                Application.DoEvents();
+                if ((bool)badgeType.GetProperty("HasReservation", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge))
+                    throw new Exception("Disabling the countdown did not unregister its appbar.");
+                if (reserved && (Rectangle)workArea.Invoke(null, new object[] { primary }) != before)
+                    throw new Exception("Disabling the countdown did not restore the previous work area.");
+                if (reserved)
+                {
+                    updateBadge.Invoke(badge, new object[] { "15:00", true, true, true });
+                    Application.DoEvents();
+                    if (!(bool)badgeType.GetProperty("HasReservation", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge))
+                        throw new Exception("Re-enabling the countdown failed to reserve workspace.");
+                    badge.Dispose();
+                    Application.DoEvents();
+                    if ((Rectangle)workArea.Invoke(null, new object[] { primary }) != before)
+                        throw new Exception("Closing the countdown did not restore the previous work area.");
+                    Console.WriteLine("Repeated refresh, disable/re-enable and disposal restored the original workspace.");
+                }
             }
             var updaterType = app.GetType("RestTimer.UpdateService", true);
             var updateService = Activator.CreateInstance(updaterType, new object[] { System.IO.Path.GetFullPath("obj/smoke/update-ui") });
