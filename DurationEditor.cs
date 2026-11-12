@@ -18,19 +18,19 @@ namespace RestTimer
             Controls.Add(new Label
             {
                 Text = title, Font = Theme.TitleFont, ForeColor = Theme.Text,
-                BackColor = Color.Transparent, RightToLeft = RightToLeft.Yes,
-                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(300, 10, 160, 27)
+                BackColor = Color.Transparent, RightToLeft = I18n.Flow,
+                TextAlign = ContentAlignment.MiddleLeft, Bounds = I18n.IsRtl ? new Rectangle(300, 10, 160, 27) : new Rectangle(20, 10, 230, 27)
             });
             Controls.Add(new Label
             {
                 Text = hint, Tag = "muted", Font = Theme.SmallFont, ForeColor = Theme.Muted,
-                BackColor = Color.Transparent, RightToLeft = RightToLeft.Yes,
-                TextAlign = ContentAlignment.MiddleRight, Bounds = new Rectangle(20, 10, 265, 27)
+                BackColor = Color.Transparent, RightToLeft = I18n.Flow,
+                TextAlign = ContentAlignment.MiddleRight, Bounds = I18n.IsRtl ? new Rectangle(20, 10, 265, 27) : new Rectangle(260, 10, 200, 27)
             });
 
-            hours = CreatePart("ساعت", title + "، ساعت", duration / 3600, 74);
-            minutes = CreatePart("دقیقه", title + "، دقیقه", duration / 60 % 60, 194);
-            seconds = CreatePart("ثانیه", title + "، ثانیه", duration % 60, 314);
+            hours = CreatePart(I18n.T("hours"), title + " – " + I18n.T("hours"), duration / 3600, 74);
+            minutes = CreatePart(I18n.T("minutes"), title + " – " + I18n.T("minutes"), duration / 60 % 60, 194);
+            seconds = CreatePart(I18n.T("seconds"), title + " – " + I18n.T("seconds"), duration % 60, 314);
             foreach (int left in new[] { 166, 286 })
                 Controls.Add(new Label
                 {
@@ -70,7 +70,7 @@ namespace RestTimer
             Controls.Add(new Label
             {
                 Text = label, Tag = "muted", Font = Theme.SmallFont, ForeColor = Theme.Muted, BackColor = Color.Transparent,
-                RightToLeft = RightToLeft.Yes, TextAlign = ContentAlignment.MiddleCenter,
+                RightToLeft = I18n.Flow, TextAlign = ContentAlignment.MiddleCenter,
                 Bounds = new Rectangle(left, 96, 92, 22)
             });
             return input;

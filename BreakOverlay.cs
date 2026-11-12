@@ -43,21 +43,21 @@ namespace RestTimer
 
             card = new RoundedPanel { CornerRadius = 18 };
             separator = new Panel { BackColor = Theme.Border };
-            heading = CenteredLabel("وقت استراحت است", headingFont, Theme.Text, RightToLeft.Yes);
+            heading = CenteredLabel(I18n.T("break_heading"), headingFont, Theme.Text, I18n.Flow);
             heading.TextAlign = ContentAlignment.MiddleLeft;
             countdown = CenteredLabel("", countdownFont, Theme.Mint, RightToLeft.No);
-            countdown.AccessibleName = "زمان باقی‌ماندهٔ استراحت";
-            countdownCaption = CenteredLabel("زمان باقی‌مانده", Theme.SmallFont, Theme.Muted, RightToLeft.Yes);
-            caption = CenteredLabel("چند دقیقه از صفحه فاصله بگیر.", Theme.BodyFont, Theme.Muted, RightToLeft.Yes);
+            countdown.AccessibleName = I18n.T("remaining_break");
+            countdownCaption = CenteredLabel(I18n.T("remaining"), Theme.SmallFont, Theme.Muted, I18n.Flow);
+            caption = CenteredLabel(I18n.T("break_caption"), Theme.BodyFont, Theme.Muted, I18n.Flow);
             caption.TextAlign = ContentAlignment.MiddleLeft;
             Skip = new RoundedButton
             {
-                Text = "رد کردن استراحت",
+                Text = I18n.T("skip"),
                 Font = Theme.SmallFont,
-                RightToLeft = RightToLeft.Yes
+                RightToLeft = I18n.Flow
             };
-            Start = new RoundedButton(primary: true) { Text = "شروع", Font = Theme.SmallFont, RightToLeft = RightToLeft.Yes };
-            Stop = new RoundedButton { Text = "توقف", Font = Theme.SmallFont, RightToLeft = RightToLeft.Yes };
+            Start = new RoundedButton(primary: true) { Text = I18n.T("start"), Font = Theme.SmallFont, RightToLeft = I18n.Flow };
+            Stop = new RoundedButton { Text = I18n.T("stop"), Font = Theme.SmallFont, RightToLeft = I18n.Flow };
             card.Controls.AddRange(new Control[] { separator, heading, countdown, countdownCaption, caption, Skip, Start, Stop });
             Controls.Add(card);
             SizeChanged += (_, __) => LayoutCard();
@@ -83,8 +83,8 @@ namespace RestTimer
         {
             Start.Enabled = !running;
             Stop.Enabled = running;
-            heading.Text = running ? "وقت استراحت است" : "استراحت متوقف شده";
-            countdownCaption.Text = running ? "زمان باقی‌مانده" : "تایمر متوقف است";
+            heading.Text = running ? I18n.T("break_heading") : I18n.T("break_paused");
+            countdownCaption.Text = running ? I18n.T("remaining") : I18n.T("timer_paused");
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

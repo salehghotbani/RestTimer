@@ -40,6 +40,7 @@ namespace RestTimer
         private DateTime nextPosition;
         private Color textColor = Color.White;
         private bool dirty = true;
+        private string languageCode;
         private readonly AppbarReservation reservation = new AppbarReservation();
         internal bool FrameUploaded { get; private set; }
         internal Rectangle ReservedBounds => reservation.Bounds;
@@ -53,7 +54,7 @@ namespace RestTimer
             AutoScaleMode = AutoScaleMode.None;
             TopMost = true;
             DoubleBuffered = true;
-            AccessibleName = "شمارش معکوس RestTimer";
+            AccessibleName = I18n.T("countdown_accessible");
             reservation.LayoutChanged += () => nextPosition = DateTime.MinValue;
         }
         protected override bool ShowWithoutActivation => true;
@@ -101,10 +102,12 @@ namespace RestTimer
 
         public void UpdateDisplay(string text, bool isResting, bool isRunning, bool enabled)
         {
-            if (countdown != text || resting != isResting || running != isRunning)
+            if (countdown != text || resting != isResting || running != isRunning || languageCode != I18n.Code)
             {
+                languageCode = I18n.Code;
+                AccessibleName = I18n.T("countdown_accessible");
                 countdown = text; resting = isResting; running = isRunning;
-                AccessibleDescription = (resting ? "استراحت " : "کار ") + countdown + (running ? "" : "، متوقف");
+                AccessibleDescription = I18n.T(resting ? "break_short" : "work_short") + " " + countdown + (running ? "" : " · " + I18n.T("paused"));
                 dirty = true;
             }
             if (!enabled) { Hide(); reservation.Release(); nextPosition = DateTime.MinValue; return; }
@@ -157,14 +160,14 @@ namespace RestTimer
             using (var brush = new SolidBrush(foreground))
             using (var timeFormat = new StringFormat(StringFormat.GenericTypographic) { Alignment = StringAlignment.Near,
                 LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap })
-            using (var captionFormat = new StringFormat(StringFormat.GenericTypographic) { Alignment = StringAlignment.Near,
-                LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap | StringFormatFlags.DirectionRightToLeft })
+            using (var captionFormat = new StringFormat(StringFormat.GenericTypographic) { Alignment = I18n.IsRtl ? StringAlignment.Near : StringAlignment.Far,
+                LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap | (I18n.IsRtl ? StringFormatFlags.DirectionRightToLeft : 0) })
             {
                 graphics.Clear(Color.Transparent);
                 // Grayscale anti-aliasing preserves alpha without a colored background fringe.
                 graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
                 graphics.DrawString(time, font, brush, new RectangleF(2 * scale, 0, 53 * scale, size.Height), timeFormat);
-                graphics.DrawString(isResting ? "استراحت" : "کار", font, brush,
+                graphics.DrawString(isResting ? I18n.T("break_short") : I18n.T("work_short"), font, brush,
                     new RectangleF(57 * scale, 0, size.Width - 59 * scale, size.Height), captionFormat);
                 if (!isRunning)
                 {

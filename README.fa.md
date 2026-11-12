@@ -26,7 +26,7 @@
 
 هنگام استراحت، بالای مرکز هر مانیتور یک نوار افقی با شمارش معکوس مشترک نمایش داده می‌شود. دکمهٔ کوچک رد کردن در سمت چپ قرار دارد و پس‌زمینه محو و تیره می‌شود. پایان تایمر، رد کردن یا زدن Esc، دورهٔ بعدی کار را آغاز می‌کند.
 
-رابط برنامه فعلاً فارسی است و نصاب ویندوز فارسی و انگلیسی را پشتیبانی می‌کند. زبان پیش‌فرض مستندات انگلیسی است؛ [README انگلیسی](README.md) و [راهنمای مشارکت انگلیسی](CONTRIBUTING.md) در کنار همین نسخهٔ فارسی نگهداری می‌شوند.
+رابط برنامه از ۱۳ زبان پشتیبانی می‌کند: انگلیسی، فارسی، عربی، چینی ساده‌شده، اسپانیایی، فرانسوی، آلمانی، پرتغالی، روسی، ژاپنی، کره‌ای، هندی و ترکی. نصاب ویندوز فارسی و انگلیسی را پشتیبانی می‌کند. زبان پیش‌فرض مستندات انگلیسی است؛ [README انگلیسی](README.md) و [راهنمای مشارکت انگلیسی](CONTRIBUTING.md) در کنار همین نسخهٔ فارسی نگهداری می‌شوند.
 
 ## دانلود و نصب
 
@@ -47,7 +47,7 @@
 بستهٔ DEB را در مدیر نرم‌افزار باز کنید یا در پوشهٔ دانلودشده اجرا کنید.
 
 ```bash
-sudo apt install ./RestTimer-v1.7.1-linux-amd64.deb
+sudo apt install ./RestTimer-v1.8.0-linux-amd64.deb
 ```
 
 ### Fedora
@@ -55,7 +55,7 @@ sudo apt install ./RestTimer-v1.7.1-linux-amd64.deb
 بستهٔ RPM را در مدیر نرم‌افزار باز کنید یا اجرا کنید.
 
 ```bash
-sudo dnf install ./RestTimer-v1.7.1-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.8.0-linux-x86_64.rpm
 ```
 
 سپس RestTimer را از منوی برنامه‌ها یا فرمان `resttimer` اجرا کنید. Python و Qt مورد نیاز در بسته‌های لینوکس قرار دارند. حذف برنامه با `sudo apt remove resttimer` یا `sudo dnf remove resttimer` انجام می‌شود.
@@ -78,6 +78,7 @@ sudo dnf install ./RestTimer-v1.7.1-linux-x86_64.rpm
 - شمارش از زمان اجرا شروع می‌شود. رد کردن استراحت، زمان کار بعدی را از نو آغاز می‌کند.
 - دکمه‌های **شروع** و **توقف** در منوی آیکن، تنظیمات و کادر استراحت قرار دارند. توقف، شمارش همان دوره را مکث می‌کند و شروع از زمان باقی‌مانده ادامه می‌دهد. در حالت توقف، کادر استراحت باز می‌ماند و دکمهٔ شروع روی همهٔ مانیتورها فعال است. رد کردن استراحت یا تغییر زمان‌ها، وضعیت توقف را حفظ می‌کند.
 - تنظیمات ویندوز در حساب فعلی و تنظیمات لینوکس در `~/.config/resttimer/settings.json` ذخیره می‌شوند. تنظیمات قدیمیِ دقیقه‌ای ویندوز نیز خوانده می‌شوند.
+- زبان رابط به‌صورت پیش‌فرض از زبان سیستم انتخاب می‌شود؛ برای زبان پشتیبانی‌نشده انگلیسی نمایش داده می‌شود. از **تنظیمات ← زبان**، زبان دلخواه یا «زبان سیستم» را انتخاب و «ذخیرهٔ تنظیمات» را بزنید. انتخاب پس از اجرای مجدد حفظ می‌شود و بدون شروع دوبارهٔ تایمر یا از دست رفتن مکث اعمال می‌شود. فارسی و عربی راست‌به‌چپ و دیگر زبان‌ها چپ‌به‌راست هستند. نام هر زبان به زبان بومی خودش نمایش داده می‌شود.
 - اجرای خودکار لینوکس از `~/.config/autostart/resttimer.desktop` استفاده می‌کند.
 
 ### دسکتاپ‌های لینوکس
@@ -92,7 +93,7 @@ sudo dnf install ./RestTimer-v1.7.1-linux-x86_64.rpm
 
 در ویندوز، نصب با زبان و مسیر فعلی انجام می‌شود و برنامه خودکار بسته و دوباره اجرا می‌شود. در Ubuntu و Fedora، نصب از طریق apt یا dnf با درخواست مجوز مدیر سیستم انجام می‌شود. رد کردن مجوز یا خطای دانلود، نسخهٔ در حال اجرا را نمی‌بندد.
 
-تب «تاریخچهٔ نسخه‌ها» تغییرات هر انتشار را از GitHub نمایش می‌دهد. [فهرست تغییرات](CHANGELOG.md) نیز همراه برنامه برای مشاهدهٔ آفلاین قرار دارد. برای دیدن اعلان‌ها، اعلان‌های RestTimer باید در تنظیمات سیستم مجاز باشند.
+تب «تاریخچهٔ نسخه‌ها» تغییرات هر انتشار را از GitHub به زبان منتشرشده نمایش می‌دهد. [تاریخچهٔ انگلیسی](CHANGELOG.md) و [تاریخچهٔ فارسی](CHANGELOG.fa.md) همراه برنامه برای مشاهدهٔ آفلاین قرار دارند. رابط فارسی تاریخچهٔ آفلاین فارسی و سایر زبان‌ها تاریخچهٔ انگلیسی را نشان می‌دهند. برای دیدن اعلان‌ها، اعلان‌های RestTimer باید در تنظیمات سیستم مجاز باشند.
 
 در ویندوز **نصاب EXE جدید** را اجرا کنید. اگر RestTimer باز باشد، نصاب پیش از بستن برنامه اطلاع می‌دهد، آن را خودکار می‌بندد و پس از پایان نصب دوباره اجرا می‌کند. پیام‌ها با زبان انتخاب‌شدهٔ فارسی یا انگلیسی نمایش داده می‌شوند. در Ubuntu یا Fedora، بستهٔ جدید را با همان دستور نصب کنید. تنظیمات زمان‌ها در ارتقا حفظ می‌شوند.
 
@@ -122,9 +123,9 @@ sudo dnf install ./RestTimer-v1.7.1-linux-x86_64.rpm
 </div>
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.1/RestTimer-v1.7.1-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.1/RestTimer-v1.7.1-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.1/RestTimer-v1.7.1-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.0/RestTimer-v1.8.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.0/RestTimer-v1.8.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.0/RestTimer-v1.8.0-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

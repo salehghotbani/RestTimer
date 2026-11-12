@@ -22,7 +22,7 @@ namespace RestTimer
             ScrollBars = RichTextBoxScrollBars.Vertical;
             BackColor = Theme.Surface;
             ForeColor = Theme.Text;
-            AccessibleName = "تغییرات نسخه";
+            AccessibleName = I18n.T("release_notes");
         }
         internal void SetNotes(string markdown)
         {
@@ -53,7 +53,7 @@ namespace RestTimer
                 string line = raw.Trim();
                 string plain = line.TrimStart('#', ' ', '*');
                 if (line.Length == 0) continue;
-                if (beginning && (plain == "تغییرات RestTimer" || Regex.IsMatch(plain, @"^(?:RestTimer\s+[vV]?\d+(?:\.\d+){1,3}|نسخه[ٔ\s]*[\d٫.]+(?:\s+RestTimer)?)$"))) continue;
+                if (beginning && (plain == "تغییرات RestTimer" || plain == "RestTimer changelog" || Regex.IsMatch(plain, @"^(?:RestTimer\s+[vV]?\d+(?:\.\d+){1,3}|نسخه[ٔ\s]*[\d٫.]+(?:\s+RestTimer)?)$"))) continue;
                 beginning = false;
                 bool heading = line.StartsWith("#") || Regex.IsMatch(line, @"^[A-Za-z ]+:$");
                 line = Regex.Replace(plain, @"\[([^\]]+)\]\([^)]*\)", "$1").Replace("**", "").Replace("`", "");
@@ -76,7 +76,7 @@ namespace RestTimer
     {
         private int value;
         public int Value { get => value; set { this.value = Math.Max(0, Math.Min(100, value)); Invalidate(); } }
-        public UpdateProgress() { DoubleBuffered = true; Height = 6; AccessibleName = "پیشرفت دانلود"; }
+        public UpdateProgress() { DoubleBuffered = true; Height = 6; AccessibleName = I18n.T("download_progress"); }
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(Theme.Input);

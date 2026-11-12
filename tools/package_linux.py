@@ -52,6 +52,7 @@ def main():
             (ROOT / "assets/RestTimer.png", "usr/share/doc/resttimer/assets/RestTimer.png"),
             (ROOT / "LICENSE", "usr/share/doc/resttimer/LICENSE"),
             (ROOT / "CHANGELOG.md", "usr/share/doc/resttimer/CHANGELOG.md"),
+            (ROOT / "CHANGELOG.fa.md", "usr/share/doc/resttimer/CHANGELOG.fa.md"),
         ):
             target = package / destination
             target.parent.mkdir(parents=True, exist_ok=True)

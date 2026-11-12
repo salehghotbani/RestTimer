@@ -24,7 +24,7 @@
 
 During a break, a horizontal reminder appears at the top center of every monitor, with a shared countdown. A small skip button sits on the left, while the rest of the screen is blurred and dimmed. When the timer ends, or you skip the break or press Esc, the next work period begins.
 
-The application controls currently use Persian. The Windows installer supports both **English and Persian**. This documentation is available in [English](README.md) and [Persian](README.fa.md).
+The interface supports **13 languages**: English, Persian, Arabic, Simplified Chinese, Spanish, French, German, Portuguese, Russian, Japanese, Korean, Hindi and Turkish. The Windows installer supports **English and Persian**. This documentation is available in [English](README.md) and [Persian](README.fa.md).
 
 ## Download and install
 
@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.7.1-linux-amd64.deb
+sudo apt install ./RestTimer-v1.8.0-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.7.1-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.7.1-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.8.0-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -76,11 +76,13 @@ A thin, independent horizontal strip works with the primary taskbar at the botto
 | Top | Below the taskbar, near the notification area |
 | Left or right | In a thin row at the bottom of the screen, near the same side; text stays horizontal |
 
-In settings, toggle **«نمایش نوار شمارش‌گر»** (show the countdown strip), then select **«ذخیرهٔ تنظیمات»** (save settings). Your choice persists across restarts and does not reset the timer. Turning it off or quitting RestTimer releases the reserved space immediately.
+In settings, toggle **Show countdown strip**, then select **Save settings**. Your choice persists across restarts and does not reset the timer. Turning it off or quitting RestTimer releases the reserved space immediately.
 
 The countdown adapts automatically when the taskbar moves. It cannot be dragged and lets mouse clicks pass through. The strip keeps its reserved space when the taskbar auto-hides; the countdown hides while another application runs fullscreen. Available taskbar positions depend on your Windows desktop configuration. The reservation uses the [Windows desktop appbar API](https://learn.microsoft.com/en-us/windows/win32/shell/application-desktop-toolbars).
 
 ### Settings and startup
+
+The interface follows your system UI language by default. Unsupported languages fall back to English. In **Settings → Language**, choose a language or **System language**, then **Save settings**. Your choice persists across restarts and applies immediately without resetting the remaining time or paused state. Persian and Arabic use right-to-left layouts; other languages use left-to-right layouts. Language names appear in their own language.
 
 Windows settings are stored in the current user's account; older minute-based settings are still read. Linux stores settings in `~/.config/resttimer/settings.json` and its launch-at-sign-in entry in `~/.config/autostart/resttimer.desktop`.
 
@@ -94,11 +96,11 @@ On GNOME, tray visibility and click behavior depend on desktop support or an App
 
 While running, RestTimer checks the latest stable release at startup when due, then every 24 hours. A failed check is retried six hours later. The schedule persists across restarts, and each new version generates one notification. You can disable daily checks in the update window. System notifications must be allowed for RestTimer to show alerts.
 
-Click the notification or open **«به‌روزرسانی و تغییرات»** (updates and changes), read the release notes, and approve **«دانلود و نصب»** (download and install). **RestTimer downloads and installs the update itself.** Downloads show progress and can be cancelled. File size and SHA-256 are checked before installation.
+Click the notification or open **Updates and changes**, read the release notes, and approve **Download and install**. **RestTimer downloads and installs the update itself.** Downloads show progress and can be cancelled. File size and SHA-256 are checked before installation.
 
 Windows updates use the current installation path and installer language; Setup closes the running application and reopens it after installation. Ubuntu and Fedora updates use apt or dnf and request administrator authorization. Download failures or declined authorization leave the current application running.
 
-The **«تاریخچهٔ نسخه‌ها»** (version history) page retrieves release notes from GitHub. A bundled [changelog](CHANGELOG.md), currently in Persian, is available offline.
+The **Version history** page retrieves release notes from GitHub in their published language. An [English changelog](CHANGELOG.md) and [Persian changelog](CHANGELOG.fa.md) are bundled for offline use. Persian users see the Persian offline history; other interface languages use English offline history.
 
 For a manual upgrade on Windows, run the new **EXE installer**. If RestTimer is running, Setup explains that it will close and reopen the application, then does so automatically. On Ubuntu and Fedora, install the new package using the same command as above. Your duration settings are preserved during upgrades.
 
@@ -128,9 +130,9 @@ English is the default documentation language. Keep the [Persian README](README.
 RestTimer is released under the [MIT license](LICENSE). Bundled dependency licenses and source information are listed in [third-party notices](THIRD_PARTY_NOTICES.md).
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.1/RestTimer-v1.7.1-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.1/RestTimer-v1.7.1-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.7.1/RestTimer-v1.7.1-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.0/RestTimer-v1.8.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.0/RestTimer-v1.8.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.8.0/RestTimer-v1.8.0-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

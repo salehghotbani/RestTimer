@@ -37,10 +37,10 @@ namespace RestTimer
             this.service = service ?? new UpdateService();
             this.checkOnShow = checkOnShow;
             Theme.Refresh();
-            Text = "به‌روزرسانی و تغییرات — RestTimer";
+            Text = I18n.T("updates_title") + " — RestTimer";
             Icon = icon;
             Font = Theme.BodyFont;
-            RightToLeft = RightToLeft.Yes;
+            RightToLeft = I18n.Flow;
             AutoScaleMode = AutoScaleMode.Dpi;
             AutoScaleDimensions = new SizeF(96, 96);
             StartPosition = FormStartPosition.CenterParent;
@@ -58,21 +58,21 @@ namespace RestTimer
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
             var header = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
-            header.Controls.Add(new Label { Text = "به‌روزرسانی و تغییرات", Font = Theme.HeadingFont,
+            header.Controls.Add(new Label { Text = I18n.T("updates_title"), Font = Theme.HeadingFont,
                 TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Top, Height = 40 });
             description = new Label { Tag = "accent", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleLeft,
                 Dock = DockStyle.Bottom, Height = 38 };
             header.Controls.Add(description);
             layout.Controls.Add(header, 0, 0);
-            var daily = new ThemedCheckBox { Text = "بررسی روزانه و اعلان نسخهٔ جدید", Checked = this.service.State.DailyEnabled,
+            var daily = new ThemedCheckBox { Text = I18n.T("daily_check"), Checked = this.service.State.DailyEnabled,
                 Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 6) };
             daily.CheckedChanged += (_, __) => { this.service.State.DailyEnabled = daily.Checked; this.service.Save(); };
             layout.Controls.Add(daily, 0, 1);
             var navigation = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0, 0, 0, 8) };
             navigation.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             navigation.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            latestTab = new RoundedButton { Text = "آخرین نسخه", Dock = DockStyle.Fill, Margin = new Padding(4, 0, 0, 0) };
-            historyTab = new RoundedButton { Text = "تاریخچهٔ نسخه‌ها", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 4, 0) };
+            latestTab = new RoundedButton { Text = I18n.T("latest"), Dock = DockStyle.Fill, Margin = new Padding(4, 0, 0, 0) };
+            historyTab = new RoundedButton { Text = I18n.T("version_history"), Dock = DockStyle.Fill, Margin = new Padding(0, 0, 4, 0) };
             latestTab.Click += (_, __) => SelectPage(false);
             historyTab.Click += (_, __) => SelectPage(true);
             navigation.Controls.Add(latestTab, 0, 0);
@@ -82,34 +82,34 @@ namespace RestTimer
             latestPanel = new Panel { Dock = DockStyle.Fill };
             latestNotes = new ReleaseNotesBox();
             latestPanel.Controls.Add(latestNotes);
-            latestPanel.Controls.Add(new Label { Text = "یادداشت‌های انتشار", Font = Theme.TitleFont, Dock = DockStyle.Top,
+            latestPanel.Controls.Add(new Label { Text = I18n.T("release_notes"), Font = Theme.TitleFont, Dock = DockStyle.Top,
                 Height = 36, TextAlign = ContentAlignment.MiddleLeft });
             historyPanel = new Panel { Dock = DockStyle.Fill };
             historyNotes = new ReleaseNotesBox();
-            historyTitle = new Label { Text = "تغییرات نسخه‌ها", Font = Theme.TitleFont, Dock = DockStyle.Top,
+            historyTitle = new Label { Text = I18n.T("version_history"), Font = Theme.TitleFont, Dock = DockStyle.Top,
                 Height = 36, TextAlign = ContentAlignment.MiddleLeft };
             var historyBody = new Panel { Dock = DockStyle.Fill };
             historyBody.Controls.Add(historyNotes);
             historyBody.Controls.Add(historyTitle);
-            versions = new ListBox { Dock = DockStyle.Right, Width = 154, BorderStyle = BorderStyle.None,
+            versions = new ListBox { Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left, Width = 154, BorderStyle = BorderStyle.None,
                 DrawMode = DrawMode.OwnerDrawFixed, ItemHeight = 40, IntegralHeight = false, Font = Theme.BodyFont,
-                AccessibleName = "انتخاب نسخه" };
+                AccessibleName = I18n.T("version_selector") };
             versions.DrawItem += (_, e) =>
             {
                 if (e.Index < 0) return;
                 bool selected = (e.State & DrawItemState.Selected) != 0;
                 using (var brush = new SolidBrush(selected ? Theme.Selection : Theme.Surface)) e.Graphics.FillRectangle(brush, e.Bounds);
-                string title = versions.Items[e.Index] is ReleaseInfo release ? "نسخهٔ " + release.Version.ToString(3) : "نسخه‌های همراه";
+                string title = versions.Items[e.Index] is ReleaseInfo release ? I18n.T("version_label", release.Version.ToString(3)) : I18n.T("bundled_versions");
                 TextRenderer.DrawText(e.Graphics, title, Theme.BodyFont, Rectangle.Inflate(e.Bounds, -10, 0),
-                    selected ? Theme.OnSelection : Theme.Text, TextFormatFlags.RightToLeft | TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
+                    selected ? Theme.OnSelection : Theme.Text, (I18n.IsRtl ? TextFormatFlags.RightToLeft | TextFormatFlags.Right : TextFormatFlags.Left) | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
                 if ((e.State & DrawItemState.Focus) != 0) e.DrawFocusRectangle();
             };
-            versions.Items.Add("نسخه‌های همراه (آفلاین)");
+            versions.Items.Add(I18n.T("bundled_history"));
             versions.SelectedIndexChanged += (_, __) =>
             {
                 var release = versions.SelectedItem as ReleaseInfo;
-                historyTitle.Text = release == null ? "تغییرات نسخه‌های همراه برنامه" : "تغییرات نسخهٔ " + release.Version.ToString(3);
-                historyNotes.SetNotes(release?.Notes ?? UpdateService.BundledHistory());
+                historyTitle.Text = release == null ? I18n.T("bundled_history") : I18n.T("history_version", release.Version.ToString(3));
+                historyNotes.SetNotes(release?.Notes ?? UpdateService.BundledHistory(I18n.Code));
             };
             historyPanel.Controls.Add(historyBody);
             historyPanel.Controls.Add(versions);
@@ -117,7 +117,7 @@ namespace RestTimer
             content.Controls.Add(historyPanel);
             layout.Controls.Add(content, 0, 3);
             versions.SelectedIndex = 0;
-            var consent = new Label { Tag = "muted", Text = "با تأیید «دانلود و نصب»، خود برنامه فایل را دریافت و نصب می‌کند. برنامه بسته و پس از پایان نصب دوباره اجرا می‌شود.",
+            var consent = new Label { Tag = "muted", Text = I18n.T("consent_windows"),
                 Font = Theme.SmallFont, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 4) };
             layout.Controls.Add(consent, 0, 4);
             progress = new UpdateProgress { Dock = DockStyle.Fill, Visible = false, Margin = new Padding(0, 2, 0, 2) };
@@ -129,11 +129,11 @@ namespace RestTimer
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 29));
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 29));
-            install = new RoundedButton(primary: true) { Text = "دانلود و نصب", Enabled = false, Dock = DockStyle.Fill, Margin = new Padding(6, 0, 0, 0) };
+            install = new RoundedButton(primary: true) { Text = I18n.T("install"), Enabled = false, Dock = DockStyle.Fill, Margin = new Padding(6, 0, 0, 0) };
             install.Click += async (_, __) => await InstallAsync();
-            check = new RoundedButton { Text = "بررسی دوباره", Dock = DockStyle.Fill, Margin = new Padding(6, 0, 6, 0) };
+            check = new RoundedButton { Text = I18n.T("check_again"), Dock = DockStyle.Fill, Margin = new Padding(6, 0, 6, 0) };
             check.Click += async (_, __) => await RefreshAsync();
-            var close = new RoundedButton { Text = "بستن / لغو", DialogResult = DialogResult.Cancel, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 6, 0) };
+            var close = new RoundedButton { Text = I18n.T("close_cancel"), DialogResult = DialogResult.Cancel, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 6, 0) };
             actions.Controls.Add(install, 0, 0);
             actions.Controls.Add(check, 1, 0);
             actions.Controls.Add(close, 2, 0);
@@ -171,35 +171,35 @@ namespace RestTimer
             var release = service.State.Latest;
             displayedRelease = release;
             bool newer = UpdateClient.IsStable(release) && release.Version > UpdateClient.CurrentVersion;
-            description.Text = "نصب‌شده  \u200e" + UpdateClient.CurrentVersion.ToString(3)
-                + (newer ? "     •     نسخهٔ جدید  \u200e" + release.Version.ToString(3) : "");
-            latestNotes.SetNotes(release?.Notes ?? UpdateService.BundledHistory());
+            description.Text = I18n.T("installed", "\u200e" + UpdateClient.CurrentVersion.ToString(3))
+                + (newer ? "     •     " + I18n.T("new_version", "\u200e" + release.Version.ToString(3)) : "");
+            latestNotes.SetNotes(release?.Notes ?? UpdateService.BundledHistory(I18n.Code));
             install.Enabled = newer && !working && !installing;
-            install.Text = newer ? "دانلود و نصب " + release.Version.ToString(3) : "دانلود و نصب";
+            install.Text = I18n.T("install") + (newer ? " " + release.Version.ToString(3) : "");
         }
         private async Task RefreshAsync()
         {
             if (working || installing) return;
             working = true;
             check.Enabled = install.Enabled = false;
-            progressText.Text = "در حال بررسی نسخه و دریافت تغییرات…";
+            progressText.Text = I18n.T("checking");
             try
             {
                 await service.CheckAsync(cancellation.Token);
                 if (IsDisposed) return;
                 ShowLatest();
                 progressText.Text = service.State.Latest != null && service.State.Latest.Version > UpdateClient.CurrentVersion
-                    ? "نسخهٔ جدید آماده است. تغییرات را بخوانید و برای نصب تأیید کنید." : "برنامهٔ شما به‌روز است.";
+                    ? I18n.T("update_ready") : I18n.T("up_to_date");
                 var releases = await UpdateClient.GetHistoryAsync(cancellation.Token);
                 if (IsDisposed) return;
                 versions.Items.Clear();
-                versions.Items.Add("تغییرات همراه برنامه (آفلاین)");
+                versions.Items.Add(I18n.T("bundled_history"));
                 foreach (var release in releases) versions.Items.Add(release);
                 versions.SelectedIndex = versions.Items.Count > 1 ? 1 : 0;
             }
             catch (Exception ex) when (ExpectedFailure(ex))
             {
-                if (!IsDisposed) progressText.Text = "اتصال برقرار نشد. تغییرات ذخیره‌شده در دسترس است؛ دوباره تلاش کنید.";
+                if (!IsDisposed) progressText.Text = I18n.T("connection_error");
             }
             finally
             {
@@ -214,21 +214,21 @@ namespace RestTimer
             install.Enabled = check.Enabled = false;
             var approvedRelease = displayedRelease;
             progress.Value = 0; progress.Visible = true;
-            progressText.Text = "در حال دانلود… برای لغو، پنجره را ببندید.";
+            progressText.Text = I18n.T("downloading");
             try
             {
                 var file = await UpdateClient.DownloadAsync(approvedRelease, new Progress<int>(value =>
                 {
-                    if (!IsDisposed && !installing) { progress.Value = value; progressText.Text = "در حال دانلود و بررسی فایل…  " + value + "٪"; }
+                    if (!IsDisposed && !installing) { progress.Value = value; progressText.Text = I18n.T("download_percent", value); }
                 }), cancellation.Token);
                 if (IsDisposed) return;
                 UpdateClient.Install(file);
                 installing = true;
-                progressText.Text = "نصب شروع شد. برنامه به‌طور خودکار بسته و دوباره اجرا می‌شود.";
+                progressText.Text = I18n.T("install_started");
             }
             catch (Exception ex) when (ExpectedFailure(ex) || ex is Win32Exception || ex is InvalidOperationException)
             {
-                if (!IsDisposed) progressText.Text = "دانلود یا اجرای نصاب ممکن نشد. دوباره تلاش کنید؛ فایل ناقص نصب نمی‌شود.";
+                if (!IsDisposed) progressText.Text = I18n.T("download_error");
             }
             finally
             {

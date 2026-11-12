@@ -35,6 +35,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release download v1.3.1 --repo salehghotbani/RestTimer --pattern '*windows-x64-setup.exe' --dir obj/legacy
+      - name: Test all interface languages and directions
+        shell: pwsh
+        run: ./tests/windows_localization.ps1 -TestPersistence
       - name: Test installation, automatic close/restart, upgrade and removal in both languages
         shell: pwsh
         run: |
@@ -52,6 +55,7 @@ jobs:
           path: |
             obj/smoke/*.png
             obj/smoke/*.log
+            obj/localization/*.png
 
   linux:
     runs-on: ubuntu-22.04
@@ -69,8 +73,10 @@ jobs:
           python -m pip install -r requirements-build-linux.txt
       - name: Test Linux frontend
         run: |
+          python tests/test_localization.py
           python tests/test_update_core.py
           QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+          QT_QPA_PLATFORM=offscreen python tests/linux_localization.py
       - name: Upload frontend previews before packaging
         uses: actions/upload-artifact@v4
         if: always()

@@ -13,6 +13,8 @@
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
     <EmbeddedResource Include="CHANGELOG.md" />
+    <EmbeddedResource Include="CHANGELOG.fa.md" WithCulture="false" LogicalName="RestTimer.CHANGELOG.fa.md" />
+    <EmbeddedResource Include="locales/*.json" WithCulture="false" LogicalName="RestTimer.Locales.%(Filename)%(Extension)" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>

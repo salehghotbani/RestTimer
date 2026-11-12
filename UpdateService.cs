@@ -76,9 +76,9 @@ namespace RestTimer
             Save();
             return release;
         }
-        public static string BundledHistory()
+        public static string BundledHistory(string language = "en")
         {
-            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("RestTimer.CHANGELOG.md"))
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(language == "fa" ? "RestTimer.CHANGELOG.fa.md" : "RestTimer.CHANGELOG.md"))
             using (var reader = new StreamReader(stream)) return reader.ReadToEnd();
         }
     }

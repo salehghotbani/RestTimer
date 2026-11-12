@@ -49,19 +49,20 @@ namespace RestTimer
         {
             this.enableAutomaticUpdates = enableAutomaticUpdates;
             preferences = Preferences.Load();
+            I18n.Use(preferences.Language);
             if (enableTaskbarCountdown) taskbarCountdown = new TaskbarCountdown();
             status = new ToolStripMenuItem { Enabled = false };
-            startTimer = new ToolStripMenuItem("شروع", null, (_, __) => StartTimer());
-            stopTimer = new ToolStripMenuItem("توقف", null, (_, __) => StopTimer());
-            startBreak = new ToolStripMenuItem("شروع استراحت همین حالا", null, (_, __) => breakRequested = true);
-            settings = new ToolStripMenuItem("تنظیم زمان‌ها…", null, (_, __) => EditSettings());
-            startup = new ToolStripMenuItem("اجرا با ورود به ویندوز", null, (_, __) => ToggleStartup());
-            updates = new ToolStripMenuItem("بررسی به‌روزرسانی…", null, (_, __) => ShowUpdates());
-            var history = new ToolStripMenuItem("تاریخچهٔ تغییرات…", null, (_, __) => ShowUpdates(true));
-            var exit = new ToolStripMenuItem("خروج", null, (_, __) => ExitThread());
+            startTimer = new ToolStripMenuItem(I18n.T("start"), null, (_, __) => StartTimer());
+            stopTimer = new ToolStripMenuItem(I18n.T("stop"), null, (_, __) => StopTimer());
+            startBreak = new ToolStripMenuItem(I18n.T("start_break"), null, (_, __) => breakRequested = true);
+            settings = new ToolStripMenuItem(I18n.T("settings_menu"), null, (_, __) => EditSettings());
+            startup = new ToolStripMenuItem(I18n.T("startup"), null, (_, __) => ToggleStartup());
+            updates = new ToolStripMenuItem(I18n.T("updates_menu"), null, (_, __) => ShowUpdates());
+            var history = new ToolStripMenuItem(I18n.T("history"), null, (_, __) => ShowUpdates(true));
+            var exit = new ToolStripMenuItem(I18n.T("quit"), null, (_, __) => ExitThread());
             menu = new ContextMenuStrip
             {
-                RightToLeft = RightToLeft.Yes,
+                RightToLeft = I18n.Flow,
                 Renderer = new TrayMenuRenderer(),
                 Font = Theme.BodyFont,
                 BackColor = Theme.Surface,
@@ -157,10 +158,10 @@ namespace RestTimer
             string countdown = rounded.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
             if (rounded.TotalHours >= 1)
                 countdown = ((int)rounded.TotalHours).ToString(CultureInfo.InvariantCulture) + ":" + countdown;
-            status.Text = (breaking ? "پایان استراحت  " : "تا استراحت بعدی  ") + "\u200e" + countdown;
+            status.Text = I18n.T(breaking ? "end_break" : "next_break") + "  \u200e" + countdown;
             if (!running)
-                status.Text = "متوقف · " + status.Text;
-            trayIcon.Text = (running ? "RestTimer  " : "RestTimer · متوقف  ") + countdown;
+                status.Text = I18n.T("paused") + " · " + status.Text;
+            trayIcon.Text = (running ? "RestTimer  " : "RestTimer · " + I18n.T("paused") + "  ") + countdown;
             taskbarCountdown?.UpdateDisplay(countdown, breaking, running, preferences.ShowTaskbarCountdown);
 
             if (editingSettings) return;
@@ -261,6 +262,7 @@ namespace RestTimer
                     if (updated.WorkSeconds != preferences.WorkSeconds || updated.BreakSeconds != preferences.BreakSeconds)
                         ResetClock();
                     preferences = updated;
+                    ApplyLanguage();
                 }
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is SecurityException)
@@ -274,6 +276,15 @@ namespace RestTimer
             }
         }
 
+        private void ApplyLanguage()
+        {
+            I18n.Use(preferences.Language);
+            menu.RightToLeft = I18n.Flow;
+            string[] keys = { "start", "stop", "start_break", "settings_menu", "startup", "updates_menu", "history", "quit" };
+            var items = menu.Items.OfType<ToolStripMenuItem>().Where(item => item != status).ToArray();
+            for (int i = 0; i < keys.Length; i++) items[i].Text = I18n.T(keys[i]);
+        }
+
         private async System.Threading.Tasks.Task CheckDailyUpdatesAsync()
         {
             if (!enableAutomaticUpdates || updater.Checking || !updater.State.IsDue(DateTime.UtcNow)) return;
@@ -285,11 +296,10 @@ namespace RestTimer
         {
             var release = updater.State.Latest;
             if (breaking || editingSettings || !UpdateClient.IsStable(release) || release.Version <= UpdateClient.CurrentVersion) return;
-            updates.Text = "نسخهٔ " + release.Version.ToString(3) + " آماده است…";
+            updates.Text = I18n.T("update_available", release.Version.ToString(3));
             if (!updater.State.DailyEnabled) return;
             if (updater.State.NotifiedTag == release.Tag) return;
-            trayIcon.ShowBalloonTip(10000, "به‌روزرسانی RestTimer", "نسخهٔ " + release.Version.ToString(3)
-                + " منتشر شد. برای دیدن تغییرات و تأیید نصب کلیک کنید.", ToolTipIcon.Info);
+            trayIcon.ShowBalloonTip(10000, I18n.T("update_title"), I18n.T("update_notification", release.Version.ToString(3)), ToolTipIcon.Info);
             updater.State.NotifiedTag = release.Tag;
             updater.Save();
         }
@@ -338,8 +348,8 @@ namespace RestTimer
 
         private static void ShowSettingsError(Exception ex)
         {
-            MessageBox.Show("ذخیرهٔ تنظیمات ممکن نبود.\n" + ex.Message, "RestTimer", MessageBoxButtons.OK,
-                MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, MessageBoxOptions.RtlReading);
+            MessageBox.Show(I18n.T("save_error") + "\n" + ex.Message, "RestTimer", MessageBoxButtons.OK,
+                MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, I18n.MessageOptions);
         }
 
         protected override void Dispose(bool disposing)

@@ -17,6 +17,7 @@ dotnet build -c Release
 powershell -File tools/build_windows.ps1
 dotnet build tests/updates/WindowsUpdateTests.csproj -c Release -o obj/update-tests
 ./obj/update-tests/WindowsUpdateTests.exe
+./tests/windows_localization.ps1
 ```
 
 در صورت نصب Inno Setup در مسیر سفارشی، متغیر محیطی `ISCC` را به مسیر `ISCC.exe` تنظیم کنید.
@@ -31,7 +32,9 @@ source .venv/bin/activate
 python -m pip install -r requirements-build-linux.txt
 python linux/resttimer.py
 python tests/test_update_core.py
+python tests/test_localization.py
 QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+QT_QPA_PLATFORM=offscreen python tests/linux_localization.py
 bash tools/build_linux.sh
 ```
 
@@ -51,6 +54,8 @@ bash tools/build_linux.sh
 با ارسال تغییرات، مشارکت خود را تحت مجوز MIT همین مخزن ارائه می‌کنید.
 
 ## زبان مستندات
+
+ترجمه‌های رابط در فایل‌های مشترک `locales/*.json` هستند. کلیدها و جای‌نگهدارهای `locales/en.json` مرجع‌اند و همهٔ فایل‌های زبان باید کامل باشند. جای‌نگهدارهای `{0}` و جهت زبان را حفظ کنید: برای فارسی و عربی `rtl` و برای دیگر زبان‌های پشتیبانی‌شده `ltr`. پس از تغییر ترجمه، آزمون‌های ترجمه و رابط را اجرا کنید. انتخاب زبان نباید تایمر را تغییر دهد و گزینهٔ «زبان سیستم» باید تشخیص خودکار را برگرداند. نام زبان‌ها در هر دو رابط به زبان بومی خودشان نمایش داده می‌شود.
 
 زبان پیش‌فرض مستندات انگلیسی است. فایل‌های `README.md` و `CONTRIBUTING.md` نسخهٔ اصلی انگلیسی و فایل‌های `README.fa.md` و `CONTRIBUTING.fa.md` نسخهٔ فارسی هستند. هنگام تغییر راهنما یا رفتار برنامه، هر دو نسخه را به‌روز نگه دارید و لینک جابه‌جایی زبان‌ها را حفظ کنید.
 

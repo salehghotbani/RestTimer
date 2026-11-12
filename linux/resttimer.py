@@ -12,17 +12,20 @@ from PySide6.QtCore import QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QT
 from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
-    QAbstractSpinBox, QApplication, QCheckBox, QDialog, QFrame, QHBoxLayout, QLabel,
-    QMenu, QMessageBox, QPushButton, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
+    QAbstractSpinBox, QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLabel,
+    QMenu, QMessageBox, QPushButton, QScrollArea, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 import update_core
+import i18n
+from i18n import tr
 from update_ui import UpdateDialog, Worker
 
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-DEFAULTS = {"work_seconds": 3600, "break_seconds": 900}
+DEFAULTS = {"work_seconds": 3600, "break_seconds": 900, "language": "auto"}
 STYLE = """
 QDialog, QMenu { background: #0d1521; color: #edf4fa; }
+QScrollArea, QScrollArea > QWidget > QWidget { background: #0d1521; border: none; }
 QTextEdit, QComboBox, QTabWidget::pane { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; border-radius: 6px; padding: 8px; }
 QTabBar::tab { background: #1e2e40; color: #edf4fa; padding: 10px 20px; }
 QTabBar::tab:selected { background: #223a48; color: #83e6c4; }
@@ -82,7 +85,8 @@ def read_preferences():
         if (isinstance(data, dict) and type(data.get("work_seconds")) is int
                 and type(data.get("break_seconds")) is int
                 and 1 <= data["work_seconds"] <= 86400 and 1 <= data["break_seconds"] <= 7200):
-            return {key: data[key] for key in DEFAULTS}
+            return {"work_seconds": data["work_seconds"], "break_seconds": data["break_seconds"],
+                    "language": i18n.preference(data.get("language"))}
     except (OSError, ValueError):
         pass
     return DEFAULTS.copy()
@@ -135,7 +139,8 @@ def version_tuple(tag):
 def label(text, name="", center=False):
     widget = QLabel(text)
     widget.setObjectName(name)
-    widget.setAlignment(Qt.AlignCenter if center else Qt.AlignAbsolute | Qt.AlignRight | Qt.AlignVCenter)
+    widget.setAlignment(Qt.AlignCenter if center else Qt.AlignAbsolute | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft) | Qt.AlignVCenter)
+    widget.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
     return widget
 
 
@@ -148,18 +153,21 @@ class DurationEditor(QFrame):
         heading = label(title)
         heading.setFont(QFont("DejaVu Sans", 11, QFont.Bold))
         layout.addWidget(heading)
-        fields = QHBoxLayout()
+        fields_container = QWidget()
+        fields_container.setLayoutDirection(Qt.LeftToRight)
+        fields = QHBoxLayout(fields_container)
+        fields.setContentsMargins(0, 0, 0, 0)
         fields.setDirection(QHBoxLayout.LeftToRight)
         fields.setSpacing(14)
         self.parts = []
         for caption, value, maximum in (
-            ("ساعت", seconds // 3600, max_hours),
-            ("دقیقه", seconds // 60 % 60, 59),
-            ("ثانیه", seconds % 60, 59),
+            (tr("hours"), seconds // 3600, max_hours),
+            (tr("minutes"), seconds // 60 % 60, 59),
+            (tr("seconds"), seconds % 60, 59),
         ):
             column = QVBoxLayout()
             spin = QSpinBox()
-            spin.setAccessibleName(title + "، " + caption)
+            spin.setAccessibleName(title + " – " + caption)
             spin.setRange(0, maximum)
             spin.setValue(value)
             spin.setFrame(False)
@@ -176,7 +184,7 @@ class DurationEditor(QFrame):
             column.addWidget(label(caption, "muted", center=True))
             fields.addLayout(column)
             self.parts.append(spin)
-        layout.addLayout(fields)
+        layout.addWidget(fields_container)
 
     def seconds(self):
         for part in self.parts:
@@ -189,27 +197,35 @@ class SettingsDialog(QDialog):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
-        self.setWindowTitle("RestTimer — زمان‌بندی استراحت")
+        self.setWindowTitle("RestTimer — " + tr("settings_title"))
         self.setWindowIcon(controller.icon)
         self.setMinimumWidth(520)
-        layout = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        body = QWidget()
+        layout = QVBoxLayout(body)
+        scroll.setWidget(body)
+        outer.addWidget(scroll)
         layout.setContentsMargins(26, 24, 26, 24)
         layout.setSpacing(16)
-        layout.addWidget(label("زمان‌بندی استراحت", "title"))
-        layout.addWidget(label("زمان هر دوره را با ساعت، دقیقه و ثانیه تنظیم کن.", "muted"))
-        self.work = DurationEditor("زمان کار", controller.preferences["work_seconds"], 24)
-        self.rest = DurationEditor("زمان استراحت", controller.preferences["break_seconds"], 2)
+        layout.addWidget(label(tr("settings_title"), "title"))
+        layout.addWidget(label(tr("settings_subtitle"), "muted"))
+        self.work = DurationEditor(tr("work_duration"), controller.preferences["work_seconds"], 24)
+        self.rest = DurationEditor(tr("break_duration"), controller.preferences["break_seconds"], 2)
         layout.addWidget(self.work)
         layout.addWidget(self.rest)
-        self.startup = QCheckBox("اجرا با ورود به سیستم")
+        self.startup = QCheckBox(tr("startup"))
         self.startup.setChecked(startup_path().exists())
         self.startup.clicked.connect(controller.toggle_startup)
         layout.addWidget(self.startup)
         timer_controls = QHBoxLayout()
-        self.start_timer = QPushButton("شروع")
+        self.start_timer = QPushButton(tr("start"))
         self.start_timer.setObjectName("primary")
         self.start_timer.clicked.connect(controller.start_timer)
-        self.stop_timer = QPushButton("توقف")
+        self.stop_timer = QPushButton(tr("stop"))
         self.stop_timer.clicked.connect(controller.stop_timer)
         self.timer_status = label("", "muted")
         self.timer_status.setWordWrap(True)
@@ -217,7 +233,21 @@ class SettingsDialog(QDialog):
         timer_controls.addWidget(self.stop_timer)
         timer_controls.addWidget(self.timer_status, 1)
         layout.addLayout(timer_controls)
-        self.note = label("با تغییر زمان‌ها، شمارش کار از نو شروع می‌شود.", "muted")
+        languages = QHBoxLayout()
+        languages.addWidget(label(tr("language")))
+        self.language = QComboBox()
+        self.language.setAccessibleName(tr("language"))
+        self.language.setLayoutDirection(Qt.LeftToRight)
+        self.language.addItem(tr("system_language"), "auto")
+        for code in i18n.SUPPORTED:
+            self.language.addItem(i18n.native_name(code), code)
+        self.language.setCurrentIndex(self.language.findData(controller.preferences.get("language", "auto")))
+        languages.addWidget(self.language, 1)
+        layout.addLayout(languages)
+        language_hint = label(tr("language_hint"), "muted")
+        language_hint.setWordWrap(True)
+        layout.addWidget(language_hint)
+        self.note = label(tr("duration_note"), "muted")
         self.note.setWordWrap(True)
         layout.addWidget(self.note)
         self.update_notice = QPushButton()
@@ -225,39 +255,44 @@ class SettingsDialog(QDialog):
         self.update_notice.clicked.connect(controller.check_updates)
         layout.addWidget(self.update_notice)
         buttons = QHBoxLayout()
-        self.save = QPushButton("ذخیرهٔ زمان‌ها")
+        self.save = QPushButton(tr("save"))
         self.save.setObjectName("primary")
         self.save.clicked.connect(self.save_durations)
         buttons.addWidget(self.save)
-        self.updates = QPushButton("به‌روزرسانی و تغییرات")
+        self.updates = QPushButton(tr("updates_title"))
         self.updates.clicked.connect(controller.check_updates)
         buttons.addWidget(self.updates)
-        start = QPushButton("استراحت")
+        start = QPushButton(tr("break_short"))
         start.clicked.connect(controller.begin_break)
         buttons.addWidget(start)
         layout.addLayout(buttons)
-        exit_button = QPushButton("خروج از برنامه")
+        exit_button = QPushButton(tr("quit_app"))
         exit_button.clicked.connect(controller.quit)
         layout.addWidget(exit_button)
+        screen = controller.app.primaryScreen()
+        self.resize(580, min(820, screen.availableGeometry().height() - 48))
+        self.setMinimumHeight(360)
 
     def save_durations(self):
         work, rest = self.work.seconds(), self.rest.seconds()
         if not 1 <= work <= 86400 or not 1 <= rest <= 7200:
-            self.note.setText("زمان کار باید بین ۱ ثانیه و ۲۴ ساعت و استراحت بین ۱ ثانیه و ۲ ساعت باشد.")
+            self.note.setText(tr("combined_validation"))
             return
         if self.controller.breaking:
-            self.note.setText("پس از پایان استراحت، زمان‌ها را ذخیره کن.")
+            self.note.setText(tr("save_during_break"))
             return
-        updated = {"work_seconds": work, "break_seconds": rest}
+        updated = {"work_seconds": work, "break_seconds": rest, "language": self.language.currentData()}
         try:
             atomic_write(config_root() / "resttimer/settings.json", json.dumps(updated))
         except OSError:
-            self.note.setText("ذخیرهٔ تنظیمات ممکن نشد. دسترسی به پوشهٔ تنظیمات را بررسی کن.")
+            self.note.setText(tr("config_error"))
             return
-        if updated != self.controller.preferences:
-            self.controller.preferences = updated
+        durations_changed = any(updated[key] != self.controller.preferences[key] for key in ("work_seconds", "break_seconds"))
+        self.controller.preferences = updated
+        if durations_changed:
             self.controller.begin_work()
-        self.note.setText("زمان‌ها ذخیره شدند.")
+        self.controller.apply_language()
+        self.controller.settings.note.setText(tr("settings_saved"))
 
     def closeEvent(self, event):
         if not self.controller.tray.isSystemTrayAvailable():
@@ -280,6 +315,7 @@ class BreakOverlay(QWidget):
         self.winId()
         self.windowHandle().setScreen(screen)
         self.card = QFrame(self)
+        self.card.setLayoutDirection(Qt.LeftToRight)
         self.card.setObjectName("breakCard")
         self.card.setLayoutDirection(Qt.LeftToRight)
         row = QHBoxLayout(self.card)
@@ -292,15 +328,15 @@ class BreakOverlay(QWidget):
         controls_column.setSpacing(6)
         timer_controls = QHBoxLayout()
         timer_controls.setSpacing(8)
-        self.start = QPushButton("شروع")
+        self.start = QPushButton(tr("start"))
         self.start.setObjectName("primary")
         self.start.clicked.connect(start)
-        self.stop = QPushButton("توقف")
+        self.stop = QPushButton(tr("stop"))
         self.stop.clicked.connect(stop)
         timer_controls.addWidget(self.start)
         timer_controls.addWidget(self.stop)
         controls_column.addLayout(timer_controls)
-        self.skip = QPushButton("رد کردن استراحت")
+        self.skip = QPushButton(tr("skip"))
         self.skip.setStyleSheet("font-size: 12px;")
         self.skip.clicked.connect(finish)
         controls_column.addWidget(self.skip)
@@ -311,15 +347,15 @@ class BreakOverlay(QWidget):
         self.countdown.setLayoutDirection(Qt.LeftToRight)
         self.countdown.setMinimumWidth(160)
         timer_column.addWidget(self.countdown)
-        self.timer_caption = label("زمان باقی‌مانده", "muted", center=True)
+        self.timer_caption = label(tr("remaining"), "muted", center=True)
         timer_column.addWidget(self.timer_caption)
         row.addLayout(timer_column)
         text = QVBoxLayout()
-        self.heading = label("وقت استراحت است")
+        self.heading = label(tr("break_heading"))
         self.heading.setFont(QFont("DejaVu Sans", 13, QFont.Bold))
         self.heading.setWordWrap(True)
         text.addWidget(self.heading)
-        self.caption = label("چند دقیقه از صفحه فاصله بگیر.", "muted")
+        self.caption = label(tr("break_caption"), "muted")
         self.caption.setWordWrap(True)
         text.addWidget(self.caption)
         row.addLayout(text, 1)
@@ -334,8 +370,8 @@ class BreakOverlay(QWidget):
     def set_running(self, running):
         self.start.setEnabled(not running)
         self.stop.setEnabled(running)
-        self.heading.setText("وقت استراحت است" if running else "استراحت متوقف شده")
-        self.timer_caption.setText("زمان باقی‌مانده" if running else "تایمر متوقف است")
+        self.heading.setText(tr("break_heading") if running else tr("break_paused"))
+        self.timer_caption.setText(tr("remaining") if running else tr("timer_paused"))
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -359,6 +395,8 @@ class Controller:
     def __init__(self, app):
         self.app = app
         self.preferences = read_preferences()
+        i18n.use(self.preferences.get("language", "auto"), QLocale.system().uiLanguages())
+        app.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
         self.icon = QIcon(str(ROOT / "assets/RestTimer.png"))
         self.breaking = False
         self.paused_at = None
@@ -373,23 +411,23 @@ class Controller:
         self.instance = None
         self.deadline = time.monotonic() + self.preferences["work_seconds"]
         self.menu = QMenu()
-        self.start_timer_action = self.menu.addAction("شروع", self.start_timer)
-        self.stop_timer_action = self.menu.addAction("توقف", self.stop_timer)
-        self.start_action = self.menu.addAction("شروع استراحت همین حالا", self.begin_break)
+        self.start_timer_action = self.menu.addAction(tr("start"), self.start_timer)
+        self.stop_timer_action = self.menu.addAction(tr("stop"), self.stop_timer)
+        self.start_action = self.menu.addAction(tr("start_break"), self.begin_break)
         self.menu.addSeparator()
         self.status = self.menu.addAction("RestTimer")
         self.status.setEnabled(False)
         self.menu.addSeparator()
-        self.settings_action = self.menu.addAction("تنظیم زمان‌ها…", self.show_settings)
-        self.startup_action = QAction("اجرا با ورود به سیستم", self.menu)
+        self.settings_action = self.menu.addAction(tr("settings_menu"), self.show_settings)
+        self.startup_action = QAction(tr("startup"), self.menu)
         self.startup_action.setCheckable(True)
         self.startup_action.setChecked(startup_path().exists())
         self.startup_action.triggered.connect(self.toggle_startup)
         self.menu.addAction(self.startup_action)
-        self.update_action = self.menu.addAction("بررسی به‌روزرسانی…", self.check_updates)
-        self.menu.addAction("تاریخچهٔ تغییرات…", lambda: self.check_updates(history=True))
+        self.update_action = self.menu.addAction(tr("updates_menu"), self.check_updates)
+        self.history_action = self.menu.addAction(tr("history"), lambda: self.check_updates(history=True))
         self.menu.addSeparator()
-        self.menu.addAction("خروج", self.quit)
+        self.quit_action = self.menu.addAction(tr("quit"), self.quit)
         self.tray = QSystemTrayIcon(self.icon, app)
         self.tray.setContextMenu(self.menu)
         self.tray.activated.connect(self.tray_activated)
@@ -414,6 +452,28 @@ class Controller:
         if reason == QSystemTrayIcon.Trigger:
             self.menu.popup(QCursor.pos())
 
+    def apply_language(self):
+        previous = i18n.code
+        i18n.use(self.preferences.get("language", "auto"), QLocale.system().uiLanguages())
+        if previous == i18n.code:
+            return
+        self.app.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
+        for action, key in ((self.start_timer_action, "start"), (self.stop_timer_action, "stop"),
+                            (self.start_action, "start_break"), (self.settings_action, "settings_menu"),
+                            (self.startup_action, "startup"), (self.update_action, "updates_menu"),
+                            (self.history_action, "history"), (self.quit_action, "quit")):
+            action.setText(tr(key))
+        previous_settings = self.settings
+        visible = previous_settings.isVisible()
+        self.settings = SettingsDialog(self)
+        if visible:
+            self.settings.show()
+        previous_settings.hide()
+        previous_settings.deleteLater()
+        if self.update_dialog is not None and not self.update_dialog.closed:
+            self.update_dialog.retranslate(previous)
+        self.tick()
+
     def show_settings(self):
         if not self.breaking:
             self.settings.show()
@@ -424,7 +484,7 @@ class Controller:
         try:
             set_startup(enabled)
         except OSError:
-            QMessageBox.warning(self.settings, "RestTimer", "ذخیرهٔ اجرای خودکار ممکن نشد.")
+            QMessageBox.warning(self.settings, "RestTimer", tr("startup_error"))
         actual = startup_path().exists()
         self.startup_action.setChecked(actual)
         self.settings.startup.setChecked(actual)
@@ -509,11 +569,11 @@ class Controller:
         text = f"{minutes:02}:{seconds:02}"
         if hours:
             text = f"{hours}:{text}"
-        self.status.setText(("پایان استراحت  " if self.breaking else "تا استراحت بعدی  ") + "\u200e" + text)
+        self.status.setText(tr("end_break" if self.breaking else "next_break") + "  \u200e" + text)
         if not self.running:
-            self.status.setText("متوقف · " + self.status.text())
+            self.status.setText(tr("paused") + " · " + self.status.text())
         self.settings.timer_status.setText(self.status.text())
-        self.tray.setToolTip(("RestTimer  " if self.running else "RestTimer · متوقف  ") + text)
+        self.tray.setToolTip(("RestTimer  " if self.running else "RestTimer · " + tr("paused") + "  ") + text)
         self.notify_update()
         if self.breaking:
             self.refresh_displays()
@@ -553,7 +613,7 @@ class Controller:
         release = self.updater.state["latest"]
         if self.breaking or not update_core.stable(release) or version_tuple(release["tag_name"]) <= version_tuple(VERSION):
             return
-        text = "نسخهٔ " + release["tag_name"] + " آماده است؛ تغییرات و نصب…"
+        text = tr("update_available", release["tag_name"])
         self.update_action.setText(text)
         self.settings.update_notice.setText(text)
         self.settings.update_notice.setVisible(True)
@@ -562,7 +622,7 @@ class Controller:
         if self.updater.state["notified_tag"] == release["tag_name"]:
             return
         if QSystemTrayIcon.isSystemTrayAvailable():
-            self.tray.showMessage("به‌روزرسانی RestTimer", text, QSystemTrayIcon.Information, 10000)
+            self.tray.showMessage(tr("update_title"), text, QSystemTrayIcon.Information, 10000)
         else:
             self.settings.show()
             self.app.alert(self.settings)
@@ -589,14 +649,14 @@ class Controller:
                 self.instance = None
             subprocess.Popen(["/opt/resttimer/resttimer", "--background"], env=update_core.system_environment(), close_fds=True)
         except OSError:
-            self.update_dialog.status.setText("نصب کامل شد؛ برنامه را ببندید و از منوی برنامه‌ها دوباره اجرا کنید.")
+            self.update_dialog.status.setText(tr("restart_failed"))
             self.instance = acquire_instance(self)
             return
         self.quit()
 
     def quit(self):
         if self.update_dialog is not None and self.update_dialog.process is not None:
-            self.update_dialog.status.setText("نصب در حال انجام است. پس از پایان نصب می‌توانید برنامه را ببندید.")
+            self.update_dialog.status.setText(tr("install_busy"))
             self.update_dialog.show()
             self.update_dialog.raise_()
             return
@@ -645,12 +705,10 @@ def acquire_instance(controller):
 
 
 def main():
-    QLocale.setDefault(QLocale(QLocale.Persian))
     app = QApplication(sys.argv)
     app.setApplicationName("RestTimer")
     app.setOrganizationName("RestTimer")
     app.setQuitOnLastWindowClosed(False)
-    app.setLayoutDirection(Qt.RightToLeft)
     app.setFont(QFont("DejaVu Sans", 10))
     apply_color_scheme(app, app.styleHints().colorScheme())
     app.styleHints().colorSchemeChanged.connect(lambda scheme: apply_color_scheme(app, scheme))

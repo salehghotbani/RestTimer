@@ -15,6 +15,7 @@ dotnet build -c Release
 powershell -File tools/build_windows.ps1
 dotnet build tests/updates/WindowsUpdateTests.csproj -c Release -o obj/update-tests
 ./obj/update-tests/WindowsUpdateTests.exe
+./tests/windows_localization.ps1
 ```
 
 If Inno Setup is installed in a custom location, set the `ISCC` environment variable to the full path of `ISCC.exe`.
@@ -29,7 +30,9 @@ source .venv/bin/activate
 python -m pip install -r requirements-build-linux.txt
 python linux/resttimer.py
 python tests/test_update_core.py
+python tests/test_localization.py
 QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+QT_QPA_PLATFORM=offscreen python tests/linux_localization.py
 bash tools/build_linux.sh
 ```
 
@@ -47,6 +50,8 @@ Building packages requires Linux x86-64, `dpkg-deb`, `rpmbuild`, and `desktop-fi
 - Check updates with a disconnected network, cancelled downloads, incomplete files, declined installation authorization, and restarting after an upgrade. Download checks must not launch a real installer.
 
 ## Documentation languages
+
+Interface translations live in the shared `locales/*.json` catalogs. Use the keys and placeholders in `locales/en.json` as the reference; keep every supported catalog complete. Preserve `{0}` placeholders and the catalog direction (`rtl` for Persian and Arabic, `ltr` for the other supported languages). Run the catalog and UI localization checks after changing translations. Verify that selecting a language preserves the timer and that **System language** restores automatic detection. Native language names are used in both selectors.
 
 **English is the default documentation language.** Maintain these matching guides:
 

@@ -39,4 +39,5 @@ cp -a "%{app_payload}/." "%{buildroot}/"
 %doc /usr/share/doc/resttimer/CONTRIBUTING.fa.md
 %doc /usr/share/doc/resttimer/assets
 %doc /usr/share/doc/resttimer/CHANGELOG.md
+%doc /usr/share/doc/resttimer/CHANGELOG.fa.md
 %doc /usr/share/doc/resttimer/licenses

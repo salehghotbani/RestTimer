@@ -19,11 +19,15 @@ namespace RestTimer
         public int WorkSeconds { get; }
         public int BreakSeconds { get; }
         public bool ShowTaskbarCountdown { get; }
+        public string Language { get; }
 
         public Preferences(int workSeconds = 3600, int breakSeconds = 900)
             : this(workSeconds, breakSeconds, true) { }
 
         public Preferences(int workSeconds, int breakSeconds, bool showTaskbarCountdown)
+            : this(workSeconds, breakSeconds, showTaskbarCountdown, "auto") { }
+
+        public Preferences(int workSeconds, int breakSeconds, bool showTaskbarCountdown, string language)
         {
             if (workSeconds < 1 || workSeconds > MaxWorkSeconds)
                 throw new ArgumentOutOfRangeException(nameof(workSeconds));
@@ -32,6 +36,7 @@ namespace RestTimer
             WorkSeconds = workSeconds;
             BreakSeconds = breakSeconds;
             ShowTaskbarCountdown = showTaskbarCountdown;
+            Language = I18n.Preference(language);
         }
 
         public static Preferences Load()
@@ -42,7 +47,8 @@ namespace RestTimer
                     ?? ReadDurations(key?.GetValue(DurationsName), 60)
                     ?? new Preferences();
                 return new Preferences(durations.WorkSeconds, durations.BreakSeconds,
-                    !(key?.GetValue("ShowTaskbarCountdown") is int enabled) || enabled != 0);
+                    !(key?.GetValue("ShowTaskbarCountdown") is int enabled) || enabled != 0,
+                    key?.GetValue("Language") as string);
             }
         }
 
@@ -63,6 +69,7 @@ namespace RestTimer
             using (var key = Registry.CurrentUser.CreateSubKey(SettingsKey))
             {
                 key.SetValue("ShowTaskbarCountdown", ShowTaskbarCountdown ? 1 : 0, RegistryValueKind.DWord);
+                key.SetValue("Language", Language, RegistryValueKind.String);
                 key.SetValue(DurationsSecondsName, new[]
                 {
                     WorkSeconds.ToString(CultureInfo.InvariantCulture),
@@ -82,7 +89,7 @@ namespace RestTimer
         public static void SetStartup(bool enabled)
         {
             if (enabled && StartupCommand.Length > 260)
-                throw new IOException("مسیر برنامه برای اجرای خودکار طولانی است. برنامه را به مسیر کوتاه‌تری منتقل کنید.");
+                throw new IOException(I18n.T("startup_path_error"));
 
             using (var key = Registry.CurrentUser.CreateSubKey(RunKey))
             {

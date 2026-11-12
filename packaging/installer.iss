@@ -65,6 +65,7 @@ Source: "..\CONTRIBUTING.fa.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\assets\RestTimer.png"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\CHANGELOG.fa.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]

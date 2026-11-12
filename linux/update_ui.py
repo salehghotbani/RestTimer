@@ -9,6 +9,8 @@ from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QTabWidget, QTextEdit, QVBoxLayout, QWidget
 
 import update_core as core
+import i18n
+from i18n import tr
 
 
 def notes_html(markdown):
@@ -19,7 +21,7 @@ def notes_html(markdown):
         plain = line.lstrip("# *")
         if not line:
             continue
-        if beginning and (plain == "تغییرات RestTimer" or re.fullmatch(r"RestTimer\s+[vV]?\d+(?:\.\d+){1,3}|نسخه[ٔ\s]*[\d٫.]+(?:\s+RestTimer)?", plain)):
+        if beginning and (plain == "تغییرات RestTimer" or plain == "RestTimer changelog" or re.fullmatch(r"RestTimer\s+[vV]?\d+(?:\.\d+){1,3}|نسخه[ٔ\s]*[\d٫.]+(?:\s+RestTimer)?", plain)):
             continue
         beginning = False
         heading = line.startswith("#") or re.fullmatch(r"[A-Za-z ]+:", line)
@@ -85,41 +87,43 @@ class UpdateDialog(QDialog):
         self.worker = None
         self.process = None
         self.closed = False
-        self.setWindowTitle("RestTimer — به‌روزرسانی و تغییرات")
+        self.setWindowTitle("RestTimer — " + tr("updates_title"))
         self.setWindowIcon(controller.icon)
         self.resize(700, 640)
         self.setMinimumSize(620, 540)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 22, 24, 22)
         layout.setSpacing(14)
-        title = QLabel("به‌روزرسانی و تغییرات")
+        title = QLabel(tr("updates_title"))
+        self.heading = title
         title.setObjectName("title")
         layout.addWidget(title)
         self.description = QLabel()
         self.description.setWordWrap(True)
         layout.addWidget(self.description)
-        self.daily = QCheckBox("بررسی خودکار روزانه و اعلان نسخهٔ جدید")
+        self.daily = QCheckBox(tr("daily_check"))
         self.daily.setChecked(self.updater.state["daily_enabled"])
         self.daily.toggled.connect(self.toggle_daily)
         layout.addWidget(self.daily)
         self.tabs = QTabWidget()
         self.latest_notes = QTextEdit()
         self.latest_notes.setReadOnly(True)
-        self.tabs.addTab(self.latest_notes, "آخرین نسخه")
+        self.tabs.addTab(self.latest_notes, tr("latest"))
         history_tab = QWidget()
         history_layout = QVBoxLayout(history_tab)
         self.versions = QComboBox()
-        self.versions.addItem("تغییرات همراه برنامه (آفلاین)", None)
+        self.versions.addItem(tr("bundled_history"), None)
         self.versions.currentIndexChanged.connect(self.select_history)
         self.history_notes = QTextEdit()
         self.history_notes.setReadOnly(True)
         history_layout.addWidget(self.versions)
         history_layout.addWidget(self.history_notes)
-        self.tabs.addTab(history_tab, "تاریخچهٔ نسخه‌ها")
+        self.tabs.addTab(history_tab, tr("version_history"))
         self.tabs.setCurrentIndex(1 if history else 0)
         layout.addWidget(self.tabs, 1)
         set_notes(self.history_notes, self.bundled_history())
-        consent = QLabel("با انتخاب «دانلود و نصب»، به‌روزرسانی انجام می‌شود. برای نصب، مجوز مدیر سیستم درخواست می‌شود و برنامه پس از نصب دوباره اجرا خواهد شد.")
+        consent = QLabel(tr("consent_linux"))
+        self.consent = consent
         consent.setObjectName("muted")
         consent.setWordWrap(True)
         layout.addWidget(consent)
@@ -132,12 +136,12 @@ class UpdateDialog(QDialog):
         self.status.setObjectName("muted")
         layout.addWidget(self.status)
         buttons = QHBoxLayout()
-        self.install = QPushButton("دانلود و نصب")
+        self.install = QPushButton(tr("install"))
         self.install.setObjectName("primary")
         self.install.clicked.connect(self.download)
-        self.check = QPushButton("بررسی دوباره")
+        self.check = QPushButton(tr("check_again"))
         self.check.clicked.connect(self.refresh)
-        self.close_button = QPushButton("بستن / لغو")
+        self.close_button = QPushButton(tr("close_cancel"))
         self.close_button.clicked.connect(self.close)
         for button in (self.install, self.check, self.close_button):
             buttons.addWidget(button)
@@ -146,8 +150,27 @@ class UpdateDialog(QDialog):
         if check_on_show:
             QTimer.singleShot(0, self.refresh)
 
+    def retranslate(self, previous=None):
+        self.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
+        self.setWindowTitle("RestTimer — " + tr("updates_title"))
+        self.heading.setText(tr("updates_title"))
+        self.daily.setText(tr("daily_check"))
+        self.tabs.setTabText(0, tr("latest"))
+        self.tabs.setTabText(1, tr("version_history"))
+        self.versions.setItemText(0, tr("bundled_history"))
+        self.consent.setText(tr("consent_linux"))
+        self.check.setText(tr("check_again"))
+        self.close_button.setText(tr("close_cancel"))
+        if previous:
+            for key, value in i18n.catalog(previous)["strings"].items():
+                if self.status.text() == value:
+                    self.status.setText(tr(key))
+                    break
+        self.show_latest()
+        self.select_history()
+
     def bundled_history(self):
-        return (self.controller.root / "CHANGELOG.md").read_text(encoding="utf-8")
+        return (self.controller.root / ("CHANGELOG.fa.md" if i18n.code == "fa" else "CHANGELOG.md")).read_text(encoding="utf-8")
 
     def toggle_daily(self, enabled):
         self.updater.state["daily_enabled"] = enabled
@@ -155,22 +178,22 @@ class UpdateDialog(QDialog):
 
     def select_history(self):
         release = self.versions.currentData()
-        set_notes(self.history_notes, (release.get("body") or "توضیحی ثبت نشده است.") if release else self.bundled_history())
+        set_notes(self.history_notes, (release.get("body") or tr("no_notes")) if release else self.bundled_history())
 
     def show_latest(self):
         release = self.updater.state["latest"]
         self.displayed_release = release
         newer = core.stable(release) and core.version_tuple(release["tag_name"]) > core.version_tuple(self.controller.version)
-        self.description.setText("نسخهٔ نصب‌شده: " + self.controller.version + ("    ·    نسخهٔ جدید: " + release["tag_name"] if newer else ""))
-        set_notes(self.latest_notes, (release.get("body") or "توضیحی ثبت نشده است.") if core.stable(release) else self.bundled_history())
+        self.description.setText(tr("installed", self.controller.version) + ("    ·    " + tr("new_version", release["tag_name"]) if newer else ""))
+        set_notes(self.latest_notes, (release.get("body") or tr("no_notes")) if core.stable(release) else self.bundled_history())
         self.install.setEnabled(bool(newer) and self.worker is None and self.process is None)
         self.check.setEnabled(self.worker is None and self.process is None)
-        self.install.setText("دانلود و نصب " + release["tag_name"] if newer else "دانلود و نصب")
+        self.install.setText(tr("install") + (" " + release["tag_name"] if newer else ""))
 
     def run_job(self, job, success, progress=None):
         def failed(_):
             if not self.closed:
-                self.status.setText("دریافت اطلاعات یا فایل ممکن نشد. اتصال را بررسی و دوباره تلاش کنید؛ فایل ناقص نصب نمی‌شود.")
+                self.status.setText(tr("download_error"))
 
         def finished():
             self.worker = None
@@ -183,7 +206,7 @@ class UpdateDialog(QDialog):
     def refresh(self):
         if self.worker is not None or self.process is not None or self.closed:
             return
-        self.status.setText("در حال بررسی نسخه و دریافت تغییرات…")
+        self.status.setText(tr("checking"))
         self.updater.attempt()
 
         def received(result):
@@ -193,13 +216,13 @@ class UpdateDialog(QDialog):
             self.updater.accept_latest(latest)
             self.show_latest()
             self.versions.clear()
-            self.versions.addItem("تغییرات همراه برنامه (آفلاین)", None)
+            self.versions.addItem(tr("bundled_history"), None)
             for release in history:
                 self.versions.addItem("RestTimer " + release["tag_name"], release)
             self.versions.setCurrentIndex(1 if history else 0)
-            self.status.setText("نسخهٔ جدید آماده است. تغییرات را بخوانید و برای نصب تأیید کنید."
+            self.status.setText(tr("update_ready")
                                 if core.stable(latest) and core.version_tuple(latest["tag_name"]) > core.version_tuple(self.controller.version)
-                                else "برنامهٔ شما به‌روز است.")
+                                else tr("up_to_date"))
 
         self.run_job(lambda worker: (self.updater.latest(), self.updater.history()), received)
 
@@ -211,11 +234,11 @@ class UpdateDialog(QDialog):
             kind = core.package_kind()
             core.installer_asset(approved_release, kind)
         except (OSError, ValueError):
-            self.status.setText("بستهٔ سازگار با این سیستم هنوز آماده نشده است.")
+            self.status.setText(tr("package_unavailable"))
             return
         self.progress.setValue(0)
         self.progress.setVisible(True)
-        self.status.setText("در حال دانلود و بررسی فایل… برای لغو پنجره را ببندید.")
+        self.status.setText(tr("downloading"))
 
         def received(path):
             if not self.closed:
@@ -228,7 +251,7 @@ class UpdateDialog(QDialog):
         try:
             command = core.install_command(path, kind)
         except (OSError, ValueError):
-            self.status.setText("مدیر نصب یا سرویس مجوز سیستم در دسترس نیست. بسته را از پوشهٔ دانلودهای RestTimer نصب کنید.")
+            self.status.setText(tr("installer_unavailable"))
             return
         self.process = QProcess(self)
         env = QProcessEnvironment()
@@ -240,7 +263,7 @@ class UpdateDialog(QDialog):
         self.process.finished.connect(self.install_finished)
         self.process.errorOccurred.connect(self.install_error)
         self.close_button.setEnabled(False)
-        self.status.setText("در حال نصب… درخواست مجوز مدیر سیستم را تأیید کنید.")
+        self.status.setText(tr("installing"))
         self.process.start(command[0], command[1:])
 
     def install_finished(self, exit_code, exit_status):
@@ -249,10 +272,10 @@ class UpdateDialog(QDialog):
             process.deleteLater()
         self.close_button.setEnabled(True)
         if exit_code == 0 and exit_status == QProcess.NormalExit:
-            self.status.setText("نصب کامل شد. در حال اجرای دوبارهٔ برنامه…")
+            self.status.setText(tr("install_complete"))
             self.controller.restart_after_update()
         else:
-            self.status.setText("نصب انجام نشد یا مجوز رد شد. برنامهٔ فعلی همچنان باز است؛ می‌توانید دوباره تلاش کنید.")
+            self.status.setText(tr("install_failed"))
         self.show_latest()
 
     def install_error(self, error):
