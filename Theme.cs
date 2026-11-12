@@ -146,13 +146,21 @@ namespace RestTimer
                 return;
 
             Color fill = primary ? Theme.Mint : Color.FromArgb(30, 46, 64);
-            if (hovered || pressed)
+            Color text = ForeColor;
+            Color borderColor = primary ? Theme.Mint : Theme.Border;
+            if (!Enabled)
+            {
+                fill = Theme.Input;
+                text = Theme.Muted;
+                borderColor = Theme.Border;
+            }
+            else if (hovered || pressed)
                 fill = ControlPaint.Light(fill, pressed ? 0.08f : 0.16f);
 
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             using (var path = Theme.RoundedRectangle(new RectangleF(0.5f, 0.5f, Width - 1, Height - 1), 9 * DeviceDpi / 96f))
             using (var brush = new SolidBrush(fill))
-            using (var border = new Pen(primary ? Theme.Mint : Theme.Border))
+            using (var border = new Pen(borderColor))
             {
                 e.Graphics.FillPath(brush, path);
                 e.Graphics.DrawPath(border, path);
@@ -160,7 +168,7 @@ namespace RestTimer
             var flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine;
             if (RightToLeft == RightToLeft.Yes)
                 flags |= TextFormatFlags.RightToLeft;
-            TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, ForeColor, flags);
+            TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, text, flags);
             if (Focused && ShowFocusCues)
                 ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -5, -5), ForeColor, fill);
         }

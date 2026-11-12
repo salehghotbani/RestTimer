@@ -18,6 +18,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 [assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8")]
 internal static class Smoke
@@ -45,14 +46,90 @@ internal static class Smoke
                     bitmap.Save("obj/smoke/windows-menu.png", ImageFormat.Png);
                 }
                 menu.Close();
+                var preferencesType = app.GetType("RestTimer.Preferences", true);
+                type.GetField("preferences", flags).SetValue(context, Activator.CreateInstance(preferencesType, 2, 2));
+                var clock = (System.Diagnostics.Stopwatch)type.GetField("clock", flags).GetValue(context);
+                var update = type.GetMethod("UpdateTimer", flags);
+                var startTimer = (ToolStripMenuItem)type.GetField("startTimer", flags).GetValue(context);
+                var stopTimer = (ToolStripMenuItem)type.GetField("stopTimer", flags).GetValue(context);
+                clock.Restart();
+                Thread.Sleep(100);
+                stopTimer.PerformClick();
+                var frozen = clock.Elapsed;
+                Thread.Sleep(2200);
+                Application.DoEvents();
+                update.Invoke(context, null);
+                if (clock.Elapsed != frozen || Application.OpenForms.Count != 0 || !startTimer.Enabled)
+                    throw new Exception("Work did not remain paused past its original deadline.");
+                startTimer.PerformClick();
+                if (!clock.IsRunning || clock.Elapsed < frozen || startTimer.Enabled)
+                    throw new Exception("Start reset the work timer instead of resuming.");
+                stopTimer.PerformClick();
                 ((ToolStripMenuItem)type.GetField("startBreak", flags).GetValue(context)).PerformClick();
-                type.GetMethod("UpdateTimer", flags).Invoke(context, null);
+                update.Invoke(context, null);
+                if (!clock.IsRunning) throw new Exception("Explicitly starting a break must start its timer.");
                 if (Application.OpenForms.Count != Screen.AllScreens.Length) throw new Exception("Display coverage failed.");
                 var overlay = Application.OpenForms[0];
+                ((Button)overlay.GetType().GetProperty("Stop").GetValue(overlay)).PerformClick();
+                frozen = clock.Elapsed;
+                Thread.Sleep(2200);
+                Application.DoEvents();
+                update.Invoke(context, null);
+                if (clock.Elapsed != frozen || Application.OpenForms.Count != Screen.AllScreens.Length)
+                    throw new Exception("The break expired while stopped.");
+                type.GetMethod("CloseOverlays", flags).Invoke(context, null);
+                update.Invoke(context, null);
+                foreach (Form display in Application.OpenForms)
+                {
+                    if (!((Button)display.GetType().GetProperty("Start").GetValue(display)).Enabled
+                        || ((Button)display.GetType().GetProperty("Stop").GetValue(display)).Enabled)
+                        throw new Exception("Paused controls were not restored on a recreated display.");
+                }
+                overlay = Application.OpenForms[0];
+                var card = (Control)overlay.GetType().GetField("card", flags).GetValue(overlay);
+                using (var bitmap = new Bitmap(card.Width, card.Height))
+                {
+                    card.DrawToBitmap(bitmap, new Rectangle(Point.Empty, card.Size));
+                    bitmap.Save("obj/smoke/windows-overlay-paused.png", ImageFormat.Png);
+                }
+                ((Button)overlay.GetType().GetProperty("Start").GetValue(overlay)).PerformClick();
+                if (!clock.IsRunning || clock.Elapsed < frozen)
+                    throw new Exception("Overlay start did not resume the shared break timer.");
+                foreach (Form display in Application.OpenForms)
+                    if (((Button)display.GetType().GetProperty("Start").GetValue(display)).Enabled)
+                        throw new Exception("Displays disagree about running state.");
+                stopTimer.PerformClick();
                 ((Button)overlay.GetType().GetProperty("Skip").GetValue(overlay)).PerformClick();
                 if (Application.OpenForms.Count != 0) throw new Exception("Skip failed.");
+                if (clock.IsRunning || clock.Elapsed != TimeSpan.Zero)
+                    throw new Exception("Skip unexpectedly resumed a stopped timer.");
+                var start = (Action)Delegate.CreateDelegate(typeof(Action), context, type.GetMethod("StartTimer", flags));
+                var stop = (Action)Delegate.CreateDelegate(typeof(Action), context, type.GetMethod("StopTimer", flags));
+                using (var dialog = (Form)Activator.CreateInstance(app.GetType("RestTimer.SettingsDialog", true),
+                    Activator.CreateInstance(preferencesType, 2, 2), SystemIcons.Application, start, stop))
+                {
+                    type.GetField("settingsDialog", flags).SetValue(context, dialog);
+                    type.GetField("editingSettings", flags).SetValue(context, true);
+                    dialog.StartPosition = FormStartPosition.Manual;
+                    dialog.Location = new Point(-10000, -10000);
+                    dialog.Show();
+                    update.Invoke(context, null);
+                    ((Button)dialog.GetType().GetField("startTimer", flags).GetValue(dialog)).PerformClick();
+                    if (!clock.IsRunning) throw new Exception("Settings start failed.");
+                    ((Button)dialog.GetType().GetField("stopTimer", flags).GetValue(dialog)).PerformClick();
+                    if (clock.IsRunning) throw new Exception("Settings stop failed.");
+                    type.GetMethod("ResetClock", flags).Invoke(context, null);
+                    if (clock.IsRunning) throw new Exception("Changing durations must preserve a stopped timer.");
+                    using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
+                    {
+                        dialog.DrawToBitmap(bitmap, new Rectangle(Point.Empty, dialog.Size));
+                        bitmap.Save("obj/smoke/windows-settings.png", ImageFormat.Png);
+                    }
+                    type.GetField("settingsDialog", flags).SetValue(context, null);
+                    type.GetField("editingSettings", flags).SetValue(context, false);
+                }
             }
-            Console.WriteLine("Windows tray menus, display coverage and skip passed.");
+            Console.WriteLine("Windows tray, settings and overlay start/stop, exact resume, display coverage and skip passed.");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }

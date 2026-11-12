@@ -43,7 +43,7 @@
 بستهٔ DEB را در مدیر نرم‌افزار باز کنید یا در پوشهٔ دانلودشده اجرا کنید.
 
 ```bash
-sudo apt install ./RestTimer-v1.2.0-linux-amd64.deb
+sudo apt install ./RestTimer-v1.3.0-linux-amd64.deb
 ```
 
 ### Fedora
@@ -51,7 +51,7 @@ sudo apt install ./RestTimer-v1.2.0-linux-amd64.deb
 بستهٔ RPM را در مدیر نرم‌افزار باز کنید یا اجرا کنید.
 
 ```bash
-sudo dnf install ./RestTimer-v1.2.0-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.3.0-linux-x86_64.rpm
 ```
 
 سپس RestTimer را از منوی برنامه‌ها یا فرمان `resttimer` اجرا کنید. Python و Qt مورد نیاز در بسته‌های لینوکس قرار دارند. حذف برنامه با `sudo apt remove resttimer` یا `sudo dnf remove resttimer` انجام می‌شود.
@@ -60,6 +60,7 @@ sudo dnf install ./RestTimer-v1.2.0-linux-x86_64.rpm
 
 - با کلیک چپ یا راست روی آیکن کنار ساعت، منوی برنامه باز می‌شود. می‌توانید زمان‌ها را تنظیم کنید، استراحت را همان لحظه شروع کنید، اجرای خودکار را تغییر دهید، به‌روزرسانی را بررسی کنید یا از برنامه خارج شوید.
 - شمارش از زمان اجرا شروع می‌شود. رد کردن استراحت، زمان کار بعدی را از نو آغاز می‌کند.
+- دکمه‌های **شروع** و **توقف** در منوی آیکن، تنظیمات و کادر استراحت قرار دارند. توقف، شمارش همان دوره را مکث می‌کند و شروع از زمان باقی‌مانده ادامه می‌دهد. در حالت توقف، کادر استراحت باز می‌ماند و دکمهٔ شروع روی همهٔ مانیتورها فعال است. رد کردن استراحت یا تغییر زمان‌ها، وضعیت توقف را حفظ می‌کند.
 - تنظیمات ویندوز در حساب فعلی و تنظیمات لینوکس در `~/.config/resttimer/settings.json` ذخیره می‌شوند. تنظیمات قدیمیِ دقیقه‌ای ویندوز نیز خوانده می‌شوند.
 - اجرای خودکار لینوکس از `~/.config/autostart/resttimer.desktop` استفاده می‌کند.
 
@@ -101,9 +102,9 @@ sudo dnf install ./RestTimer-v1.2.0-linux-x86_64.rpm
 </div>
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.2.0/RestTimer-v1.2.0-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.2.0/RestTimer-v1.2.0-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.2.0/RestTimer-v1.2.0-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.3.0/RestTimer-v1.3.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.3.0/RestTimer-v1.3.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.3.0/RestTimer-v1.3.0-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

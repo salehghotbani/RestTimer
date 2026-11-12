@@ -16,6 +16,8 @@ namespace RestTimer
         private readonly NotifyIcon trayIcon;
         private readonly ContextMenuStrip menu;
         private readonly ToolStripMenuItem status;
+        private readonly ToolStripMenuItem startTimer;
+        private readonly ToolStripMenuItem stopTimer;
         private readonly ToolStripMenuItem startBreak;
         private readonly ToolStripMenuItem settings;
         private readonly ToolStripMenuItem startup;
@@ -28,11 +30,14 @@ namespace RestTimer
         private bool breaking;
         private bool editingSettings;
         private bool breakRequested;
+        private SettingsDialog settingsDialog;
 
         public RestTimerContext()
         {
             preferences = Preferences.Load();
             status = new ToolStripMenuItem { Enabled = false };
+            startTimer = new ToolStripMenuItem("شروع", null, (_, __) => StartTimer());
+            stopTimer = new ToolStripMenuItem("توقف", null, (_, __) => StopTimer());
             startBreak = new ToolStripMenuItem("شروع استراحت همین حالا", null, (_, __) => breakRequested = true);
             settings = new ToolStripMenuItem("تنظیم زمان‌ها…", null, (_, __) => EditSettings());
             startup = new ToolStripMenuItem("اجرا با ورود به ویندوز", null, (_, __) => ToggleStartup());
@@ -51,7 +56,8 @@ namespace RestTimer
             };
             menu.Items.AddRange(new ToolStripItem[]
             {
-                status, new ToolStripSeparator(), startBreak, settings, startup, updates, new ToolStripSeparator(), exit
+                status, new ToolStripSeparator(), startTimer, stopTimer, startBreak,
+                settings, startup, updates, new ToolStripSeparator(), exit
             });
             foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
                 item.Padding = new Padding(12, 7, 12, 7);
@@ -82,33 +88,42 @@ namespace RestTimer
 
         private void UpdateTimer()
         {
+            bool running = clock.IsRunning;
+            startTimer.Enabled = !running;
+            stopTimer.Enabled = running;
+            settingsDialog?.SetRunning(running);
             if (editingSettings)
                 return;
 
             TimeSpan remaining = TimeSpan.FromSeconds(breaking ? preferences.BreakSeconds : preferences.WorkSeconds)
                 - clock.Elapsed;
-            if (breaking && remaining <= TimeSpan.Zero)
+            if (running && breaking && remaining <= TimeSpan.Zero)
             {
                 BeginWork();
                 return;
             }
 
-            if (!breaking && (breakRequested || remaining <= TimeSpan.Zero))
+            if (!breaking && (breakRequested || (running && remaining <= TimeSpan.Zero)))
             {
                 breakRequested = false;
                 menu.Close();
                 breaking = true;
                 startBreak.Enabled = settings.Enabled = updates.Enabled = false;
                 clock.Restart();
+                running = true;
+                startTimer.Enabled = false;
+                stopTimer.Enabled = true;
                 remaining = TimeSpan.FromSeconds(preferences.BreakSeconds);
             }
 
-            var rounded = TimeSpan.FromSeconds(Math.Ceiling(remaining.TotalSeconds));
+            var rounded = TimeSpan.FromSeconds(Math.Max(0, Math.Ceiling(remaining.TotalSeconds)));
             string countdown = rounded.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
             if (rounded.TotalHours >= 1)
                 countdown = ((int)rounded.TotalHours).ToString(CultureInfo.InvariantCulture) + ":" + countdown;
             status.Text = (breaking ? "پایان استراحت  " : "تا استراحت بعدی  ") + "\u200e" + countdown;
-            trayIcon.Text = "RestTimer  " + countdown;
+            if (!running)
+                status.Text = "متوقف · " + status.Text;
+            trayIcon.Text = (running ? "RestTimer  " : "RestTimer · متوقف  ") + countdown;
 
             if (!breaking)
                 return;
@@ -121,8 +136,11 @@ namespace RestTimer
                 foreach (var overlay in overlays)
                 {
                     overlay.Skip.Click += (_, __) => BeginWork();
+                    overlay.Start.Click += (_, __) => StartTimer();
+                    overlay.Stop.Click += (_, __) => StopTimer();
                     overlay.FormClosed += OverlayClosed;
                     overlay.SetCountdown(countdown);
+                    overlay.SetRunning(running);
                     overlay.Show();
                 }
                 overlays.FirstOrDefault(overlay => overlay.IsPrimary)?.Activate();
@@ -130,7 +148,31 @@ namespace RestTimer
             }
 
             foreach (var overlay in overlays)
+            {
                 overlay.SetCountdown(countdown);
+                overlay.SetRunning(running);
+            }
+        }
+
+        private void StartTimer()
+        {
+            clock.Start();
+            UpdateTimer();
+        }
+
+        private void StopTimer()
+        {
+            breakRequested = false;
+            clock.Stop();
+            UpdateTimer();
+        }
+
+        private void ResetClock()
+        {
+            bool running = clock.IsRunning;
+            clock.Reset();
+            if (running)
+                clock.Start();
         }
 
         private void OverlayClosed(object sender, FormClosedEventArgs e)
@@ -144,7 +186,7 @@ namespace RestTimer
             breaking = false;
             startBreak.Enabled = settings.Enabled = updates.Enabled = true;
             CloseOverlays();
-            clock.Restart();
+            ResetClock();
             UpdateTimer();
         }
 
@@ -167,15 +209,17 @@ namespace RestTimer
             editingSettings = true;
             try
             {
-                using (var dialog = new SettingsDialog(preferences, icon))
+                using (var dialog = new SettingsDialog(preferences, icon, StartTimer, StopTimer))
                 {
+                    settingsDialog = dialog;
+                    dialog.SetRunning(clock.IsRunning);
                     if (dialog.ShowDialog() != DialogResult.OK)
                         return;
 
                     var updated = dialog.SelectedPreferences;
                     updated.Save();
                     if (updated.WorkSeconds != preferences.WorkSeconds || updated.BreakSeconds != preferences.BreakSeconds)
-                        clock.Restart();
+                        ResetClock();
                     preferences = updated;
                 }
             }
@@ -185,6 +229,7 @@ namespace RestTimer
             }
             finally
             {
+                settingsDialog = null;
                 editingSettings = false;
             }
         }

@@ -9,6 +9,9 @@ namespace RestTimer
         private readonly DurationEditor workDuration;
         private readonly DurationEditor breakDuration;
         private readonly Label note;
+        private readonly Button startTimer;
+        private readonly Button stopTimer;
+        private readonly Label timerStatus;
 
         public Preferences SelectedPreferences { get; private set; }
 
@@ -18,7 +21,7 @@ namespace RestTimer
             Theme.ApplyWindowFrame(Handle);
         }
 
-        public SettingsDialog(Preferences preferences, Icon icon)
+        public SettingsDialog(Preferences preferences, Icon icon, Action start, Action stop)
         {
             Text = "زمان‌بندی استراحت — RestTimer";
             Icon = icon;
@@ -31,7 +34,7 @@ namespace RestTimer
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
-            ClientSize = new Size(536, 490);
+            ClientSize = new Size(536, 536);
 
             var title = new Label
             {
@@ -56,18 +59,27 @@ namespace RestTimer
             {
                 Text = "با تغییر زمان‌ها، شمارش کار از نو شروع می‌شود.",
                 Font = Theme.SmallFont, ForeColor = Theme.Muted,
-                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 388, 480, 30)
+                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 434, 480, 30)
+            };
+            startTimer = new RoundedButton(primary: true) { Text = "شروع", Bounds = new Rectangle(408, 388, 100, 34), TabIndex = 2 };
+            stopTimer = new RoundedButton { Text = "توقف", Bounds = new Rectangle(296, 388, 100, 34), TabIndex = 3 };
+            startTimer.Click += (_, __) => start();
+            stopTimer.Click += (_, __) => stop();
+            timerStatus = new Label
+            {
+                Font = Theme.SmallFont, ForeColor = Theme.Muted,
+                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 388, 244, 34)
             };
             var save = new RoundedButton(primary: true)
             {
-                Text = "ذخیرهٔ زمان‌ها", Bounds = new Rectangle(366, 432, 142, 38), TabIndex = 2
+                Text = "ذخیرهٔ زمان‌ها", Bounds = new Rectangle(366, 478, 142, 38), TabIndex = 4
             };
             save.Click += (_, __) => SaveDurations();
             var updates = new RoundedButton
             {
                 Text = "بررسی به‌روزرسانی",
-                Bounds = new Rectangle(144, 432, 206, 38),
-                TabIndex = 3
+                Bounds = new Rectangle(144, 478, 206, 38),
+                TabIndex = 5
             };
             updates.Click += (_, __) =>
             {
@@ -77,11 +89,19 @@ namespace RestTimer
             var cancel = new RoundedButton
             {
                 Text = "انصراف", DialogResult = DialogResult.Cancel,
-                Bounds = new Rectangle(28, 432, 100, 38), TabIndex = 4
+                Bounds = new Rectangle(28, 478, 100, 38), TabIndex = 6
             };
-            Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration, note, save, updates, cancel });
+            Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration,
+                startTimer, stopTimer, timerStatus, note, save, updates, cancel });
             AcceptButton = save;
             CancelButton = cancel;
+        }
+
+        public void SetRunning(bool running)
+        {
+            startTimer.Enabled = !running;
+            stopTimer.Enabled = running;
+            timerStatus.Text = running ? "تایمر در حال اجراست" : "تایمر متوقف است";
         }
 
         private void SaveDurations()

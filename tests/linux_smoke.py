@@ -42,12 +42,57 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert controller.preferences["work_seconds"] == 3723
     assert module.read_preferences()["work_seconds"] == 3723
     controller.preferences = {"work_seconds": 1, "break_seconds": 2}
+    controller.deadline = time.monotonic() + 0.5
+    controller.stop_timer_action.trigger()
+    paused_at = controller.paused_at
+    frozen = controller.deadline - paused_at
+    status = controller.status.text()
+    time.sleep(1.1)
+    controller.tick()
+    assert not controller.breaking and controller.paused_at == paused_at
+    assert controller.status.text() == status
+    resume_before = time.monotonic()
+    controller.start_timer_action.trigger()
+    resume_after = time.monotonic()
+    assert controller.running
+    assert resume_before + frozen - 0.001 <= controller.deadline <= resume_after + frozen + 0.001
+    controller.settings.stop_timer.click()
+    assert not controller.running
+    controller.settings.start_timer.click()
+    assert controller.running
     controller.deadline = time.monotonic() - 1
     controller.tick()
     app.processEvents()
     assert controller.breaking and len(controller.overlays) == len(app.screens())
+    controller.overlays[0].stop.click()
+    frozen = controller.deadline - controller.paused_at
+    countdown = controller.overlays[0].countdown.text()
+    time.sleep(2.1)
+    controller.tick()
+    assert controller.breaking and not controller.running
+    assert controller.overlays[0].countdown.text() == countdown
+    controller.clear_overlays()
+    controller.tick()
+    for overlay in controller.overlays:
+        assert overlay.start.isEnabled() and not overlay.stop.isEnabled()
+    resume_before = time.monotonic()
+    controller.overlays[-1].start.click()
+    resume_after = time.monotonic()
+    assert controller.running
+    assert resume_before + frozen - 0.001 <= controller.deadline <= resume_after + frozen + 0.001
+    assert all(not overlay.start.isEnabled() and overlay.stop.isEnabled() for overlay in controller.overlays)
+    controller.overlays[0].stop.click()
+    app.processEvents()
+    controller.overlays[0].card.grab().save(str(ROOT / "build/linux-overlay-paused.png"))
     controller.overlays[0].skip.click()
     assert not controller.breaking and not controller.overlays
+    assert not controller.running
+    assert controller.deadline - controller.paused_at == controller.preferences["work_seconds"]
+    controller.settings.work.parts[2].setValue(4)
+    controller.settings.save.click()
+    assert not controller.running and controller.preferences["work_seconds"] == 3724
+    controller.settings.start_timer.click()
+    assert controller.running
     controller.start_action.trigger()
     assert controller.breaking
     controller.deadline = time.monotonic() - 1

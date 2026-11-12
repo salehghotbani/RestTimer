@@ -37,6 +37,7 @@ QPushButton:focus { border-color: #83e6c4; }
 QPushButton#primary { background: #83e6c4; color: #0d1521; }
 QPushButton#primary:hover { background: #a4f2d8; }
 QPushButton:disabled { color: #9bb0c3; }
+QPushButton#primary:disabled { background: #0c1623; color: #9bb0c3; border-color: #2c3e52; }
 QSpinBox {
     background: #0c1623; color: #edf4fa; font-size: 26px;
 }
@@ -186,6 +187,18 @@ class SettingsDialog(QDialog):
         self.startup.setChecked(startup_path().exists())
         self.startup.clicked.connect(controller.toggle_startup)
         layout.addWidget(self.startup)
+        timer_controls = QHBoxLayout()
+        self.start_timer = QPushButton("شروع")
+        self.start_timer.setObjectName("primary")
+        self.start_timer.clicked.connect(controller.start_timer)
+        self.stop_timer = QPushButton("توقف")
+        self.stop_timer.clicked.connect(controller.stop_timer)
+        self.timer_status = label("", "muted")
+        self.timer_status.setWordWrap(True)
+        timer_controls.addWidget(self.start_timer)
+        timer_controls.addWidget(self.stop_timer)
+        timer_controls.addWidget(self.timer_status, 1)
+        layout.addLayout(timer_controls)
         self.note = label("با تغییر زمان‌ها، شمارش کار از نو شروع می‌شود.", "muted")
         self.note.setWordWrap(True)
         layout.addWidget(self.note)
@@ -231,7 +244,7 @@ class SettingsDialog(QDialog):
 
 
 class BreakOverlay(QWidget):
-    def __init__(self, screen, finish):
+    def __init__(self, screen, finish, start, stop):
         super().__init__(None, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.finish = finish
         self.setWindowTitle("RestTimer")
@@ -250,11 +263,26 @@ class BreakOverlay(QWidget):
         row = QHBoxLayout(self.card)
         row.setContentsMargins(20, 14, 20, 14)
         row.setSpacing(20)
+        controls = QWidget()
+        controls.setFixedWidth(172)
+        controls_column = QVBoxLayout(controls)
+        controls_column.setContentsMargins(0, 0, 0, 0)
+        controls_column.setSpacing(6)
+        timer_controls = QHBoxLayout()
+        timer_controls.setSpacing(8)
+        self.start = QPushButton("شروع")
+        self.start.setObjectName("primary")
+        self.start.clicked.connect(start)
+        self.stop = QPushButton("توقف")
+        self.stop.clicked.connect(stop)
+        timer_controls.addWidget(self.start)
+        timer_controls.addWidget(self.stop)
+        controls_column.addLayout(timer_controls)
         self.skip = QPushButton("رد کردن استراحت")
-        self.skip.setFixedWidth(120)
         self.skip.setStyleSheet("font-size: 12px;")
         self.skip.clicked.connect(finish)
-        row.addWidget(self.skip)
+        controls_column.addWidget(self.skip)
+        row.addWidget(controls)
         timer_column = QVBoxLayout()
         timer_column.setSpacing(0)
         self.countdown = label("", "timer", center=True)
@@ -265,20 +293,27 @@ class BreakOverlay(QWidget):
         timer_column.addWidget(self.timer_caption)
         row.addLayout(timer_column)
         text = QVBoxLayout()
-        heading = label("وقت استراحت است")
-        heading.setFont(QFont("DejaVu Sans", 13, QFont.Bold))
-        text.addWidget(heading)
+        self.heading = label("وقت استراحت است")
+        self.heading.setFont(QFont("DejaVu Sans", 13, QFont.Bold))
+        self.heading.setWordWrap(True)
+        text.addWidget(self.heading)
         self.caption = label("چند دقیقه از صفحه فاصله بگیر.", "muted")
         self.caption.setWordWrap(True)
         text.addWidget(self.caption)
         row.addLayout(text, 1)
 
     def resizeEvent(self, event):
-        width = min(760, self.width() - 32)
+        width = min(820, self.width() - 32)
         self.card.setGeometry((self.width() - width) // 2, 24, width, 116)
         self.caption.setVisible(width >= 620)
         self.timer_caption.setVisible(width >= 620)
         super().resizeEvent(event)
+
+    def set_running(self, running):
+        self.start.setEnabled(not running)
+        self.stop.setEnabled(running)
+        self.heading.setText("وقت استراحت است" if running else "استراحت متوقف شده")
+        self.timer_caption.setText("زمان باقی‌مانده" if running else "تایمر متوقف است")
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -304,6 +339,7 @@ class Controller:
         self.preferences = read_preferences()
         self.icon = QIcon(str(ROOT / "assets/RestTimer.png"))
         self.breaking = False
+        self.paused_at = None
         self.quitting = False
         self.overlays = []
         self.display_signature = None
@@ -313,6 +349,8 @@ class Controller:
         self.status = self.menu.addAction("RestTimer")
         self.status.setEnabled(False)
         self.menu.addSeparator()
+        self.start_timer_action = self.menu.addAction("شروع", self.start_timer)
+        self.stop_timer_action = self.menu.addAction("توقف", self.stop_timer)
         self.start_action = self.menu.addAction("شروع استراحت همین حالا", self.begin_break)
         self.settings_action = self.menu.addAction("تنظیم زمان‌ها…", self.show_settings)
         self.startup_action = QAction("اجرا با ورود به سیستم", self.menu)
@@ -363,6 +401,21 @@ class Controller:
         self.overlays = []
         self.display_signature = None
 
+    @property
+    def running(self):
+        return self.paused_at is None
+
+    def start_timer(self):
+        if not self.running:
+            self.deadline += time.monotonic() - self.paused_at
+            self.paused_at = None
+        self.tick()
+
+    def stop_timer(self):
+        if self.running:
+            self.paused_at = time.monotonic()
+        self.tick()
+
     def refresh_displays(self):
         if not self.breaking:
             return
@@ -371,9 +424,13 @@ class Controller:
         if signature == self.display_signature:
             return
         self.clear_overlays()
-        self.overlays = [BreakOverlay(screen, self.begin_work) for screen in screens]
+        self.overlays = [
+            BreakOverlay(screen, self.begin_work, self.start_timer, self.stop_timer)
+            for screen in screens
+        ]
         self.display_signature = signature
         for overlay in self.overlays:
+            overlay.set_running(self.running)
             overlay.showFullScreen()
 
     def begin_break(self):
@@ -381,6 +438,7 @@ class Controller:
             return
         self.menu.close()
         self.breaking = True
+        self.paused_at = None
         self.start_action.setEnabled(False)
         self.settings_action.setEnabled(False)
         self.deadline = time.monotonic() + self.preferences["break_seconds"]
@@ -392,12 +450,20 @@ class Controller:
         self.breaking = False
         self.start_action.setEnabled(True)
         self.settings_action.setEnabled(True)
-        self.deadline = time.monotonic() + self.preferences["work_seconds"]
+        now = time.monotonic()
+        if not self.running:
+            self.paused_at = now
+        self.deadline = now + self.preferences["work_seconds"]
         self.tick()
 
     def tick(self):
-        remaining = max(0, math.ceil(self.deadline - time.monotonic()))
-        if remaining == 0:
+        self.start_timer_action.setEnabled(not self.running)
+        self.stop_timer_action.setEnabled(self.running)
+        self.settings.start_timer.setEnabled(not self.running)
+        self.settings.stop_timer.setEnabled(self.running)
+        clock_time = time.monotonic() if self.running else self.paused_at
+        remaining = max(0, math.ceil(self.deadline - clock_time))
+        if remaining == 0 and self.running:
             if self.breaking:
                 self.begin_work()
             else:
@@ -409,11 +475,15 @@ class Controller:
         if hours:
             text = f"{hours}:{text}"
         self.status.setText(("پایان استراحت  " if self.breaking else "تا استراحت بعدی  ") + "\u200e" + text)
-        self.tray.setToolTip("RestTimer  " + text)
+        if not self.running:
+            self.status.setText("متوقف · " + self.status.text())
+        self.settings.timer_status.setText(self.status.text())
+        self.tray.setToolTip(("RestTimer  " if self.running else "RestTimer · متوقف  ") + text)
         if self.breaking:
             self.refresh_displays()
             for overlay in self.overlays:
                 overlay.countdown.setText(text)
+                overlay.set_running(self.running)
 
     def check_updates(self):
         if self.reply is not None or self.breaking:

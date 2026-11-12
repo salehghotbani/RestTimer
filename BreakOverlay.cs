@@ -22,6 +22,8 @@ namespace RestTimer
         public Rectangle DisplayBounds { get; }
         public bool IsPrimary { get; }
         public Button Skip { get; }
+        public Button Start { get; }
+        public Button Stop { get; }
 
         public BreakOverlay(Screen screen)
         {
@@ -54,7 +56,9 @@ namespace RestTimer
                 Font = Theme.SmallFont,
                 RightToLeft = RightToLeft.Yes
             };
-            card.Controls.AddRange(new Control[] { separator, heading, countdown, countdownCaption, caption, Skip });
+            Start = new RoundedButton(primary: true) { Text = "شروع", Font = Theme.SmallFont, RightToLeft = RightToLeft.Yes };
+            Stop = new RoundedButton { Text = "توقف", Font = Theme.SmallFont, RightToLeft = RightToLeft.Yes };
+            card.Controls.AddRange(new Control[] { separator, heading, countdown, countdownCaption, caption, Skip, Start, Stop });
             Controls.Add(card);
             SizeChanged += (_, __) => LayoutCard();
             DpiChanged += (_, __) => LayoutCard();
@@ -73,6 +77,14 @@ namespace RestTimer
         {
             if (countdown.Text != value)
                 countdown.Text = value;
+        }
+
+        public void SetRunning(bool running)
+        {
+            Start.Enabled = !running;
+            Stop.Enabled = running;
+            heading.Text = running ? "وقت استراحت است" : "استراحت متوقف شده";
+            countdownCaption.Text = running ? "زمان باقی‌مانده" : "تایمر متوقف است";
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -102,10 +114,10 @@ namespace RestTimer
         {
             int Scale(int units) => (units * DeviceDpi + 48) / 96;
 
-            int width = Math.Max(1, Math.Min(Scale(720), ClientSize.Width - Scale(32)));
+            int width = Math.Max(1, Math.Min(Scale(820), ClientSize.Width - Scale(32)));
             int top = Math.Max(0, Math.Min(Scale(24), ClientSize.Height - Scale(108)));
             int padding = Scale(20);
-            int buttonWidth = Math.Min(Scale(112), width / 4);
+            int buttonWidth = Math.Min(Scale(168), width / 3);
             int timerWidth = Math.Min(Scale(168), width / 3);
             int timerLeft = padding + buttonWidth + Scale(32);
             int textLeft = timerLeft + timerWidth + Scale(24);
@@ -113,7 +125,10 @@ namespace RestTimer
             bool compact = width < Scale(600);
 
             card.SetBounds((ClientSize.Width - width) / 2, top, width, Scale(108));
-            Skip.SetBounds(padding, Scale(36), buttonWidth, Scale(36));
+            int halfButton = Math.Max(1, (buttonWidth - Scale(8)) / 2);
+            Start.SetBounds(padding, Scale(18), halfButton, Scale(30));
+            Stop.SetBounds(padding + halfButton + Scale(8), Scale(18), halfButton, Scale(30));
+            Skip.SetBounds(padding, Scale(58), buttonWidth, Scale(32));
             separator.SetBounds(padding + buttonWidth + Scale(16), Scale(32), Scale(1), Scale(44));
             countdown.SetBounds(timerLeft, Scale(compact ? 24 : 15), timerWidth, Scale(54));
             countdownCaption.SetBounds(timerLeft, Scale(69), timerWidth, Scale(22));
