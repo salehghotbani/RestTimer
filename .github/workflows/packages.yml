@@ -71,6 +71,12 @@ jobs:
         run: |
           python tests/test_update_core.py
           QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+      - name: Upload frontend previews before packaging
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-ui-previews
+          path: build/*.png
       - name: Build Debian and RPM installers
         run: bash tools/build_linux.sh
       - name: Test frozen desktop on X11
