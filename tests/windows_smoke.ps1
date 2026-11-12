@@ -383,12 +383,13 @@ internal static class Smoke
                             throw new Exception("The floating timer must hide over a foreground fullscreen window without taking focus or workspace changes. Visible=" + badge.Visible + ", foreground=" + foreground + ", cover=" + cover.Handle + ", bounds=" + cover.Bounds);
                         cover.Bounds = Rectangle.Inflate(primary, -160, -120);
                         Application.DoEvents();
+                        var restoredForeground = GetForegroundWindow();
                         updateBadge.Invoke(badge, new object[] { "47:10", false, true, true });
                         Application.DoEvents();
                         if ((bool)isFullscreen.Invoke(null, new object[]{cover.Handle, primary})
-                            || !badge.Visible || GetForegroundWindow()!=foreground || WorkArea(primary)!=before)
+                            || !badge.Visible || GetForegroundWindow()!=restoredForeground || WorkArea(primary)!=before)
                             throw new Exception("The timer did not return after leaving fullscreen, or it took focus. Visible=" + badge.Visible
-                                + ", foreground before=" + foreground + ", after=" + GetForegroundWindow() + ", cover bounds=" + cover.Bounds
+                                + ", foreground before=" + restoredForeground + ", after=" + GetForegroundWindow() + ", cover=" + cover.Handle + ", badge=" + badge.Handle + ", cover bounds=" + cover.Bounds
                                 + ", fullscreen=" + isFullscreen.Invoke(null,new object[]{cover.Handle,primary}));
                         Console.WriteLine(foreground == cover.Handle ? "Fullscreen suppression and automatic restoration passed without taking focus."
                             : "Native fullscreen geometry passed; desktop foreground lock prevented activation of the simulated game.");
