@@ -6,6 +6,7 @@
 - Remove Version history from the tray menu; browse releases inside the settings window instead.
 - Preserve active downloads while switching sections or changing the Linux interface language, and prevent closing the window during installation.
 - Localize the new sections in all 13 supported languages with light/dark themes and right-to-left layouts.
+- Use Qt 6.11.3 on Linux to avoid an upstream Qt 6.12.0 reference-count crash with Python 3.11; preserve release-note scroll positions when navigating sections.
 
 ## 1.8.2
 - Make the tray menu more compact on Windows and Linux, with smaller row padding and outer margins.

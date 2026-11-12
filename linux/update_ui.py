@@ -36,6 +36,9 @@ def notes_html(markdown):
 
 
 def set_notes(widget, markdown):
+    # Keep the current document and scroll position when navigating between pages.
+    if getattr(widget, "_notes_markdown", None) == markdown:
+        return
     widget.setHtml(notes_html(markdown))
     # Qt's HTML importer can inherit the outer div's alignment. Apply both
     # paragraph properties explicitly, preserving heading and character styles.
@@ -47,6 +50,7 @@ def set_notes(widget, markdown):
         formatting.setLayoutDirection(Qt.RightToLeft if rtl else Qt.LeftToRight)
         QTextCursor(block).setBlockFormat(formatting)
         block = block.next()
+    widget._notes_markdown = markdown
 
 
 class Worker(QObject):

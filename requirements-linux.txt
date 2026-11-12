@@ -1,1 +1,2 @@
-PySide6-Essentials==6.12.0
+# Qt 6.12.0 Linux wheels corrupt reference counts on Python 3.10/3.11 (PYSIDE-3474).
+PySide6-Essentials==6.11.3

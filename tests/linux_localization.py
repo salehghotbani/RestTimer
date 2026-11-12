@@ -33,10 +33,15 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
         def __init__(self): self.cancelled = threading.Event()
     pending = PendingDownload()
     dialog.worker = pending
+    original_revision = dialog.latest_notes.document().revision()
+    dialog.latest_notes.verticalScrollBar().setValue(100)
+    original_scroll = dialog.latest_notes.verticalScrollBar().value()
     for page in ("updates", "history", "about", "general"):
         controller.settings.select_page(page)
         app.processEvents()
         assert controller.settings.update_panel is dialog and not pending.cancelled.is_set()
+    assert dialog.latest_notes.document().revision() == original_revision
+    assert dialog.latest_notes.verticalScrollBar().value() == original_scroll
     controller.settings.daily.setChecked(True)
     controller.settings.daily.setChecked(False)
     assert not dialog.daily.isChecked()

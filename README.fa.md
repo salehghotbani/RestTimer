@@ -115,7 +115,7 @@ sudo dnf install ./RestTimer-v1.9.0-linux-x86_64.rpm
 | فناوری | کاربرد |
 | --- | --- |
 | **C#، WinForms و .NET Framework 4.8** | رابط ویندوز، منوی کنار ساعت و پوشش هم‌زمان مانیتورها |
-| **Python 3.11 و PySide6 Essentials / Qt 6.12** | رابط لینوکس، تنظیم زمان‌ها، آیکن سینی سیستم و پنجره‌های استراحت |
+| **Python 3.11 و PySide6 Essentials / Qt 6.11** | رابط لینوکس، تنظیم زمان‌ها، آیکن سینی سیستم و پنجره‌های استراحت |
 | **Inno Setup 6** | ساخت نصاب EXE، میانبرها و حذف برنامه در ویندوز |
 | **PyInstaller، dpkg-deb و rpmbuild** | بسته‌بندی وابستگی‌های لینوکس و تولید DEB و RPM |
 | **GitHub Actions، Xvfb، Weston و Docker** | ساخت و آزمون نصب، حذف و اجرای برنامه روی Windows، Ubuntu، Fedora، X11 و Wayland |
@@ -144,7 +144,7 @@ sudo dnf install ./RestTimer-v1.9.0-linux-x86_64.rpm
 [csharp-badge]: https://img.shields.io/badge/C%23-WinForms-512BD4
 [dotnet-badge]: https://img.shields.io/badge/.NET_Framework-4.8-512BD4?logo=dotnet&logoColor=white
 [python-badge]: https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white
-[pyside-badge]: https://img.shields.io/badge/PySide6_Essentials-6.12.0-167a4b?logo=qt&logoColor=white
+[pyside-badge]: https://img.shields.io/badge/PySide6_Essentials-6.11.3-167a4b?logo=qt&logoColor=white
 [pyinstaller-badge]: https://img.shields.io/badge/PyInstaller-6.22.3-345d9d
 [inno-badge]: https://img.shields.io/badge/Inno_Setup-6-475569
 [winforms]: https://learn.microsoft.com/dotnet/desktop/winforms/
