@@ -4,7 +4,8 @@ import threading
 import html
 import re
 
-from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, QTimer, Signal
+from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, QTimer, Signal, Qt
+from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QTabWidget, QTextEdit, QVBoxLayout, QWidget
 
 import update_core as core
@@ -30,6 +31,20 @@ def notes_html(markdown):
         tag = "h3" if heading else "p"
         paragraphs.append(f'<{tag} dir="{direction}" style="text-align:{alignment};margin:8px 0 12px;">{html.escape(text)}</{tag}>')
     return '<div style="font-size:11pt;">' + "".join(paragraphs) + '</div>'
+
+
+def set_notes(widget, markdown):
+    widget.setHtml(notes_html(markdown))
+    # Qt's HTML importer can inherit the outer div's alignment. Apply both
+    # paragraph properties explicitly, preserving heading and character styles.
+    block = widget.document().begin()
+    while block.isValid():
+        rtl = bool(re.search(r"[\u0600-\u06ff]", block.text()))
+        formatting = block.blockFormat()
+        formatting.setAlignment(Qt.AlignRight if rtl else Qt.AlignLeft)
+        formatting.setLayoutDirection(Qt.RightToLeft if rtl else Qt.LeftToRight)
+        QTextCursor(block).setBlockFormat(formatting)
+        block = block.next()
 
 
 class Worker(QObject):
@@ -103,7 +118,7 @@ class UpdateDialog(QDialog):
         self.tabs.addTab(history_tab, "تاریخچهٔ نسخه‌ها")
         self.tabs.setCurrentIndex(1 if history else 0)
         layout.addWidget(self.tabs, 1)
-        self.history_notes.setHtml(notes_html(self.bundled_history()))
+        set_notes(self.history_notes, self.bundled_history())
         consent = QLabel("با انتخاب «دانلود و نصب»، به‌روزرسانی انجام می‌شود. برای نصب، مجوز مدیر سیستم درخواست می‌شود و برنامه پس از نصب دوباره اجرا خواهد شد.")
         consent.setObjectName("muted")
         consent.setWordWrap(True)
@@ -140,14 +155,14 @@ class UpdateDialog(QDialog):
 
     def select_history(self):
         release = self.versions.currentData()
-        self.history_notes.setHtml(notes_html((release.get("body") or "توضیحی ثبت نشده است.") if release else self.bundled_history()))
+        set_notes(self.history_notes, (release.get("body") or "توضیحی ثبت نشده است.") if release else self.bundled_history())
 
     def show_latest(self):
         release = self.updater.state["latest"]
         self.displayed_release = release
         newer = core.stable(release) and core.version_tuple(release["tag_name"]) > core.version_tuple(self.controller.version)
         self.description.setText("نسخهٔ نصب‌شده: " + self.controller.version + ("    ·    نسخهٔ جدید: " + release["tag_name"] if newer else ""))
-        self.latest_notes.setHtml(notes_html((release.get("body") or "توضیحی ثبت نشده است.") if core.stable(release) else self.bundled_history()))
+        set_notes(self.latest_notes, (release.get("body") or "توضیحی ثبت نشده است.") if core.stable(release) else self.bundled_history())
         self.install.setEnabled(bool(newer) and self.worker is None and self.process is None)
         self.check.setEnabled(self.worker is None and self.process is None)
         self.install.setText("دانلود و نصب " + release["tag_name"] if newer else "دانلود و نصب")

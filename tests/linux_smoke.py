@@ -129,6 +129,12 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     dialog.show()
     app.processEvents()
     assert dialog.install.isEnabled() and "تغییرات" in dialog.latest_notes.toPlainText()
+    block = dialog.latest_notes.document().begin()
+    while block.isValid():
+        if any("\u0600" <= character <= "\u06ff" for character in block.text()):
+            assert block.blockFormat().alignment() & Qt.AlignRight
+            assert block.blockFormat().layoutDirection() == Qt.RightToLeft
+        block = block.next()
     from update_ui import notes_html
     rendered = notes_html("تغییرات فارسی\nEnglish notes\n<img src='file:///private'>")
     assert 'dir="rtl"' in rendered and 'dir="ltr"' in rendered and "&lt;img" in rendered
