@@ -69,10 +69,11 @@ internal static class Smoke
     if (!$SkipInstaller) {
         # Exercise enabling startup after installation, when the setup task was unchecked.
         $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+        New-Item -Path $runKey -Force | Out-Null
         New-ItemProperty -LiteralPath $runKey -Name RestTimer -Value ('"' + $targetExe + '"') -PropertyType String -Force | Out-Null
         $uninstall = Start-Process -FilePath (Join-Path $installPath 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -Wait -PassThru
         if ($uninstall.ExitCode -ne 0 -or (Test-Path -LiteralPath $targetExe)) { throw 'Uninstall smoke test failed.' }
-        if (Get-ItemPropertyValue -LiteralPath $runKey -Name RestTimer -ErrorAction SilentlyContinue) { throw 'Uninstaller left its startup command behind.' }
+        if ((Get-ItemProperty -LiteralPath $runKey -ErrorAction SilentlyContinue).RestTimer) { throw 'Uninstaller left its startup command behind.' }
         Write-Output 'Installer installation and removal passed.'
     }
 } finally {
