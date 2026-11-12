@@ -100,7 +100,7 @@ internal static class Smoke
             var app = Assembly.LoadFrom(args[0]);
             var flags = BindingFlags.Instance | BindingFlags.NonPublic;
             var type = app.GetType("RestTimer.RestTimerContext", true);
-            using (var context = (ApplicationContext)Activator.CreateInstance(type, new object[] { false }))
+            using (var context = (ApplicationContext)Activator.CreateInstance(type, new object[] { false, false }))
             {
                 var menu = (ContextMenuStrip)type.GetField("menu", flags).GetValue(context);
                 var tray = (NotifyIcon)type.GetField("trayIcon", flags).GetValue(context);
@@ -195,11 +195,54 @@ internal static class Smoke
                     }
                     type.GetField("settingsDialog", flags).SetValue(context, null);
                     type.GetField("editingSettings", flags).SetValue(context, false);
+                    ((CheckBox)dialog.GetType().GetField("showTaskbarCountdown", flags).GetValue(dialog)).Checked = false;
+                    dialog.GetType().GetMethod("SaveDurations", flags).Invoke(dialog, null);
+                    var selected = dialog.GetType().GetProperty("SelectedPreferences").GetValue(dialog);
+                    if ((bool)selected.GetType().GetProperty("ShowTaskbarCountdown").GetValue(selected))
+                        throw new Exception("Settings did not preserve the disabled taskbar countdown choice.");
                 }
             }
             // Application.Run also disposes its context; a surrounding using may dispose it again.
-            using (var context = (ApplicationContext)Activator.CreateInstance(type, new object[] { false }))
+            using (var context = (ApplicationContext)Activator.CreateInstance(type, new object[] { false, false }))
                 context.Dispose();
+            var badgeType = app.GetType("RestTimer.TaskbarCountdown", true);
+            var place = badgeType.GetMethod("Place", BindingFlags.Static | BindingFlags.NonPublic);
+            foreach (float scale in new float[] { 1f, 1.5f, 2f })
+            {
+                int height = (int)(48 * scale);
+                var screen = new Rectangle(-1920, 0, 1920, 1080);
+                var bar = new Rectangle(-1920, 1080 - height, 1920, height);
+                var trayBounds = new Rectangle(-400, bar.Top, 400, height);
+                var position = (Rectangle)place.Invoke(null, new object[] { bar, trayBounds, screen, scale });
+                if (position.IsEmpty || position.Right >= trayBounds.Left || !screen.Contains(position) || !bar.Contains(position))
+                    throw new Exception("Taskbar countdown placement failed for negative coordinates or display scaling.");
+                var hidden = new Rectangle(bar.X, 1078, bar.Width, bar.Height);
+                if (!((Rectangle)place.Invoke(null, new object[] { hidden, new Rectangle(-400, hidden.Top, 400, height), screen, scale })).IsEmpty)
+                    throw new Exception("The countdown must hide with an auto-hidden taskbar.");
+            }
+            using (var badge = (Form)Activator.CreateInstance(badgeType))
+            {
+                badge.Size = new Size(112, 36);
+                if (badge.ShowInTaskbar || badge.FormBorderStyle != FormBorderStyle.None)
+                    throw new Exception("Taskbar countdown must be a fixed borderless tool window.");
+                var parameters = (CreateParams)badgeType.GetProperty("CreateParams", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
+                if ((parameters.ExStyle & 0x08000020) != 0x08000020) throw new Exception("Countdown must not activate or intercept mouse dragging.");
+                var updateBadge = badgeType.GetMethod("UpdateDisplay");
+                foreach (string phase in new string[] { "work", "rest", "paused" })
+                {
+                    updateBadge.Invoke(badge, new object[] { "47:12", phase == "rest", phase != "paused", false });
+                    if (badge.Visible) throw new Exception("Countdown ignored its disabled setting.");
+                    using (var bitmap = new Bitmap(badge.Width, badge.Height))
+                    {
+                        badge.DrawToBitmap(bitmap, new Rectangle(Point.Empty, badge.Size));
+                        bitmap.Save("obj/smoke/windows-taskbar-" + phase + ".png", ImageFormat.Png);
+                    }
+                }
+                updateBadge.Invoke(badge, new object[] { "47:12", false, true, true });
+                Application.DoEvents();
+                Console.WriteLine("Live taskbar anchor: visible=" + badge.Visible + ", bounds=" + badge.Bounds);
+                updateBadge.Invoke(badge, new object[] { "47:12", false, true, false });
+            }
             var updaterType = app.GetType("RestTimer.UpdateService", true);
             var updateService = Activator.CreateInstance(updaterType, new object[] { System.IO.Path.GetFullPath("obj/smoke/update-ui") });
             var updateState = updaterType.GetProperty("State").GetValue(updateService);

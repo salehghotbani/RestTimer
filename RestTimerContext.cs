@@ -24,6 +24,7 @@ namespace RestTimer
         private readonly ToolStripMenuItem updates;
         private readonly Icon icon;
         private readonly Timer timer;
+        private readonly TaskbarCountdown taskbarCountdown;
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private readonly UpdateService updater = new UpdateService();
         private readonly bool enableAutomaticUpdates;
@@ -40,10 +41,13 @@ namespace RestTimer
 
         public RestTimerContext() : this(true) { }
 
-        public RestTimerContext(bool enableAutomaticUpdates)
+        public RestTimerContext(bool enableAutomaticUpdates) : this(enableAutomaticUpdates, true) { }
+
+        public RestTimerContext(bool enableAutomaticUpdates, bool enableTaskbarCountdown)
         {
             this.enableAutomaticUpdates = enableAutomaticUpdates;
             preferences = Preferences.Load();
+            if (enableTaskbarCountdown) taskbarCountdown = new TaskbarCountdown();
             status = new ToolStripMenuItem { Enabled = false };
             startTimer = new ToolStripMenuItem("شروع", null, (_, __) => StartTimer());
             stopTimer = new ToolStripMenuItem("توقف", null, (_, __) => StopTimer());
@@ -113,18 +117,16 @@ namespace RestTimer
             startTimer.Enabled = !running;
             stopTimer.Enabled = running;
             settingsDialog?.SetRunning(running);
-            if (editingSettings)
-                return;
 
             TimeSpan remaining = TimeSpan.FromSeconds(breaking ? preferences.BreakSeconds : preferences.WorkSeconds)
                 - clock.Elapsed;
-            if (running && breaking && remaining <= TimeSpan.Zero)
+            if (!editingSettings && running && breaking && remaining <= TimeSpan.Zero)
             {
                 BeginWork();
                 return;
             }
 
-            if (!breaking && (breakRequested || (running && remaining <= TimeSpan.Zero)))
+            if (!editingSettings && !breaking && (breakRequested || (running && remaining <= TimeSpan.Zero)))
             {
                 breakRequested = false;
                 menu.Close();
@@ -145,6 +147,9 @@ namespace RestTimer
             if (!running)
                 status.Text = "متوقف · " + status.Text;
             trayIcon.Text = (running ? "RestTimer  " : "RestTimer · متوقف  ") + countdown;
+            taskbarCountdown?.UpdateDisplay(countdown, breaking, running, preferences.ShowTaskbarCountdown);
+
+            if (editingSettings) return;
 
             if (!breaking)
                 return;
@@ -337,6 +342,7 @@ namespace RestTimer
                 trayIcon.Dispose();
                 menu.Dispose();
                 icon?.Dispose();
+                taskbarCountdown?.Dispose();
             }
             base.Dispose(disposing);
         }

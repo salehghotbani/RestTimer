@@ -18,8 +18,12 @@ namespace RestTimer
 
         public int WorkSeconds { get; }
         public int BreakSeconds { get; }
+        public bool ShowTaskbarCountdown { get; }
 
         public Preferences(int workSeconds = 3600, int breakSeconds = 900)
+            : this(workSeconds, breakSeconds, true) { }
+
+        public Preferences(int workSeconds, int breakSeconds, bool showTaskbarCountdown)
         {
             if (workSeconds < 1 || workSeconds > MaxWorkSeconds)
                 throw new ArgumentOutOfRangeException(nameof(workSeconds));
@@ -27,15 +31,18 @@ namespace RestTimer
                 throw new ArgumentOutOfRangeException(nameof(breakSeconds));
             WorkSeconds = workSeconds;
             BreakSeconds = breakSeconds;
+            ShowTaskbarCountdown = showTaskbarCountdown;
         }
 
         public static Preferences Load()
         {
             using (var key = Registry.CurrentUser.OpenSubKey(SettingsKey))
             {
-                return ReadDurations(key?.GetValue(DurationsSecondsName), 1)
+                var durations = ReadDurations(key?.GetValue(DurationsSecondsName), 1)
                     ?? ReadDurations(key?.GetValue(DurationsName), 60)
                     ?? new Preferences();
+                return new Preferences(durations.WorkSeconds, durations.BreakSeconds,
+                    !(key?.GetValue("ShowTaskbarCountdown") is int enabled) || enabled != 0);
             }
         }
 
@@ -55,6 +62,7 @@ namespace RestTimer
         {
             using (var key = Registry.CurrentUser.CreateSubKey(SettingsKey))
             {
+                key.SetValue("ShowTaskbarCountdown", ShowTaskbarCountdown ? 1 : 0, RegistryValueKind.DWord);
                 key.SetValue(DurationsSecondsName, new[]
                 {
                     WorkSeconds.ToString(CultureInfo.InvariantCulture),

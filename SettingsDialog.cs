@@ -12,6 +12,7 @@ namespace RestTimer
         private readonly Button startTimer;
         private readonly Button stopTimer;
         private readonly Label timerStatus;
+        private readonly CheckBox showTaskbarCountdown;
 
         public Preferences SelectedPreferences { get; private set; }
 
@@ -37,7 +38,7 @@ namespace RestTimer
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
-            ClientSize = new Size(536, 536);
+            ClientSize = new Size(536, 576);
 
             var title = new Label
             {
@@ -62,7 +63,7 @@ namespace RestTimer
             {
                 Text = "با تغییر زمان‌ها، شمارش کار از نو شروع می‌شود.",
                 Font = Theme.SmallFont, ForeColor = Theme.Muted,
-                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 434, 480, 30)
+                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 474, 480, 30)
             };
             startTimer = new RoundedButton(primary: true) { Text = "شروع", Bounds = new Rectangle(408, 388, 100, 34), TabIndex = 2 };
             stopTimer = new RoundedButton { Text = "توقف", Bounds = new Rectangle(296, 388, 100, 34), TabIndex = 3 };
@@ -75,14 +76,14 @@ namespace RestTimer
             };
             var save = new RoundedButton(primary: true)
             {
-                Text = "ذخیرهٔ زمان‌ها", Bounds = new Rectangle(366, 478, 142, 38), TabIndex = 4
+                Text = "ذخیرهٔ تنظیمات", Bounds = new Rectangle(366, 518, 142, 38), TabIndex = 5
             };
             save.Click += (_, __) => SaveDurations();
             var updates = new RoundedButton
             {
                 Text = "به‌روزرسانی و تغییرات",
-                Bounds = new Rectangle(144, 478, 206, 38),
-                TabIndex = 5
+                Bounds = new Rectangle(144, 518, 206, 38),
+                TabIndex = 6
             };
             updates.Click += (_, __) =>
             {
@@ -92,10 +93,12 @@ namespace RestTimer
             var cancel = new RoundedButton
             {
                 Text = "انصراف", DialogResult = DialogResult.Cancel,
-                Bounds = new Rectangle(28, 478, 100, 38), TabIndex = 6
+                Bounds = new Rectangle(28, 518, 100, 38), TabIndex = 7
             };
+            showTaskbarCountdown = new CheckBox { Text = "نمایش زمان کنار فلش آیکن‌های تسک‌بار", Checked = preferences.ShowTaskbarCountdown,
+                Bounds = new Rectangle(28, 434, 480, 30), TabIndex = 4 };
             Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration,
-                startTimer, stopTimer, timerStatus, note, save, updates, cancel });
+                startTimer, stopTimer, timerStatus, showTaskbarCountdown, note, save, updates, cancel });
             AcceptButton = save;
             CancelButton = cancel;
         }
@@ -120,7 +123,7 @@ namespace RestTimer
                 return;
             }
 
-            SelectedPreferences = new Preferences(work, rest);
+            SelectedPreferences = new Preferences(work, rest, showTaskbarCountdown.Checked);
             DialogResult = DialogResult.OK;
         }
 

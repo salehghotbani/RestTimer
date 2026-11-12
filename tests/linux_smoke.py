@@ -128,7 +128,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     dialog.show()
     app.processEvents()
     assert dialog.install.isEnabled() and "تغییرات" in dialog.latest_notes.toPlainText()
-    assert dialog.tabs.count() == 2 and "1.4.0" in dialog.history_notes.toPlainText()
+    assert dialog.tabs.count() == 2 and module.VERSION in dialog.history_notes.toPlainText()
     dialog.grab().save(str(output / "linux-updates.png"))
     dialog.tabs.setCurrentIndex(1)
     app.processEvents()
