@@ -1,6 +1,7 @@
 param(
     [switch]$SkipInstaller,
-    [ValidateSet('en', 'fa')][string]$Language = 'en'
+    [ValidateSet('en', 'fa')][string]$Language = 'en',
+    [string]$LegacyInstaller
 )
 $ErrorActionPreference = 'Stop'
 Push-Location (Split-Path $PSScriptRoot)
@@ -8,17 +9,72 @@ try {
     $version = (Get-Content VERSION -Raw).Trim()
     $targetExe = (Resolve-Path dist/Windows/RestTimer.exe).Path
     $installPath = Join-Path $env:TEMP "RestTimer-install-smoke-$PID"
+    New-Item -ItemType Directory -Path obj/smoke -Force | Out-Null
+    function Invoke-Setup([string]$File, [string]$Log) {
+        # Wait for Setup itself: -Wait also waits for the restarted application's process tree.
+        $process = Start-Process -FilePath $File -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/TASKS=""', "/LANG=$Language", "/DIR=`"$installPath`"", "/LOG=`"$Log`"") -WindowStyle Hidden -PassThru
+        if (!$process.WaitForExit(90000)) { throw 'Installer did not finish within 90 seconds.' }
+        if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode). See $Log" }
+    }
+    function Wait-App {
+        for ($attempt = 0; $attempt -lt 60; $attempt++) {
+            $instances = @(Get-Process -Name RestTimer -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $targetExe })
+            if ($instances.Count -gt 1) { throw 'Setup launched duplicate application instances.' }
+            if ($instances.Count -eq 1) {
+                try {
+                    $mutex = [System.Threading.Mutex]::OpenExisting('Local\RestTimer.Singleton')
+                    $mutex.Dispose()
+                    return $instances[0]
+                } catch [System.Threading.WaitHandleCannotBeOpenedException] { }
+            }
+            Start-Sleep -Milliseconds 250
+        }
+        throw 'The installed application did not start.'
+    }
+    function Test-Upgrade([string]$Label, [bool]$Graceful) {
+        $old = Start-Process -FilePath $targetExe -WindowStyle Hidden -PassThru
+        $ready = Wait-App
+        if ($ready.Id -ne $old.Id) { throw 'Unexpected running application before upgrade.' }
+        if (!$old.WaitForInputIdle(10000)) { throw 'Application did not become ready before upgrade.' }
+        $log = Join-Path (Get-Location).Path "obj/smoke/upgrade-$Label-$Language.log"
+        Invoke-Setup $setup $log
+        if (!$old.WaitForExit(10000)) { throw 'Setup did not close the running application.' }
+        if ($Graceful -and $old.ExitCode -ne 0) { throw 'The current version was forcibly terminated instead of closing gracefully.' }
+        $restarted = Wait-App
+        if ($restarted.Id -eq $old.Id) { throw 'Setup did not restart the application.' }
+        if ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($targetExe).ProductVersion -notlike "$version*") {
+            throw 'Upgrade did not install the new version.'
+        }
+        $notice = if ($Language -eq 'fa') { 'برنامه باز است.' } else { 'RestTimer is running.' }
+        if (!(Select-String -LiteralPath $log -SimpleMatch $notice -Quiet)) { throw 'The translated automatic close/reopen notice was not logged.' }
+        $state = Join-Path (Get-Location).Path "obj/smoke/closed-$Label-$Language.ini"
+        $helper = Start-Process -FilePath $targetExe -ArgumentList "--close-for-install `"$state`"" -WindowStyle Hidden -PassThru
+        if (!$helper.WaitForExit(15000) -or $helper.ExitCode -ne 10 -or !$restarted.WaitForExit(10000)) {
+            throw 'Shutdown helper did not close the restarted application.'
+        }
+        if (!(Select-String -LiteralPath $state -SimpleMatch "Executable=$targetExe" -Quiet)) {
+            throw 'Shutdown helper did not save the original executable path.'
+        }
+        Write-Output "Automatic close and restart passed: $Label, $Language."
+    }
+    function Test-Uninstall {
+        # Exercise enabling startup after installation, when the setup task was unchecked.
+        $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+        New-Item -Path $runKey -Force | Out-Null
+        New-ItemProperty -LiteralPath $runKey -Name RestTimer -Value ('"' + $targetExe + '"') -PropertyType String -Force | Out-Null
+        $uninstall = Start-Process -FilePath (Join-Path $installPath 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -PassThru
+        if (!$uninstall.WaitForExit(60000) -or $uninstall.ExitCode -ne 0 -or (Test-Path -LiteralPath $targetExe)) { throw 'Uninstall smoke test failed.' }
+        if ((Get-ItemProperty -LiteralPath $runKey -ErrorAction SilentlyContinue).RestTimer) { throw 'Uninstaller left its startup command behind.' }
+    }
     if (!$SkipInstaller) {
         $setup = (Resolve-Path "dist/release/RestTimer-v$version-windows-x64-setup.exe").Path
-        $install = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/TASKS=""', "/LANG=$Language", "/DIR=`"$installPath`"") -WindowStyle Hidden -Wait -PassThru
-        if ($install.ExitCode -ne 0) { throw "Installer failed: $($install.ExitCode)" }
+        Invoke-Setup $setup (Join-Path (Get-Location).Path "obj/smoke/install-$Language.log")
         $targetExe = Join-Path $installPath 'RestTimer.exe'
         if (!(Test-Path -LiteralPath $targetExe)) { throw 'Installer did not install the application.' }
         $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{77527277-48F0-4BDF-B74C-99A026A3B8C5}_is1'
         $installedLanguage = Get-ItemPropertyValue -LiteralPath $uninstallKey -Name 'Inno Setup: Language'
         if ($installedLanguage -ne $Language) { throw "Installer did not use the requested language $Language." }
     }
-    New-Item -ItemType Directory -Path obj/smoke -Force | Out-Null
     @'
 using System;
 using System.Drawing;
@@ -150,13 +206,14 @@ internal static class Smoke
     & ./obj/smoke/Smoke.exe $targetExe
     if ($LASTEXITCODE -ne 0) { throw 'Windows smoke tests failed.' }
     if (!$SkipInstaller) {
-        # Exercise enabling startup after installation, when the setup task was unchecked.
-        $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-        New-Item -Path $runKey -Force | Out-Null
-        New-ItemProperty -LiteralPath $runKey -Name RestTimer -Value ('"' + $targetExe + '"') -PropertyType String -Force | Out-Null
-        $uninstall = Start-Process -FilePath (Join-Path $installPath 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -Wait -PassThru
-        if ($uninstall.ExitCode -ne 0 -or (Test-Path -LiteralPath $targetExe)) { throw 'Uninstall smoke test failed.' }
-        if ((Get-ItemProperty -LiteralPath $runKey -ErrorAction SilentlyContinue).RestTimer) { throw 'Uninstaller left its startup command behind.' }
+        Test-Upgrade 'current' $true
+        Test-Uninstall
+        if ($LegacyInstaller) {
+            Invoke-Setup (Resolve-Path $LegacyInstaller).Path (Join-Path (Get-Location).Path "obj/smoke/legacy-install-$Language.log")
+            if ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($targetExe).ProductVersion -notlike '1.3.1*') { throw 'Expected the actual v1.3.1 application for the legacy upgrade test.' }
+            Test-Upgrade 'v1.3.1' $false
+            Test-Uninstall
+        }
         Write-Output "Installer installation and removal passed in language $Language."
     }
 } finally {

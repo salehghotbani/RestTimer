@@ -25,6 +25,8 @@ namespace RestTimer
         private readonly Icon icon;
         private readonly Timer timer;
         private readonly Stopwatch clock = Stopwatch.StartNew();
+        private readonly System.Threading.EventWaitHandle shutdownRequest = new System.Threading.EventWaitHandle(
+            false, System.Threading.EventResetMode.AutoReset, Program.ShutdownEventName);
         private Preferences preferences;
         private BreakOverlay[] overlays = Array.Empty<BreakOverlay>();
         private bool breaking;
@@ -68,7 +70,13 @@ namespace RestTimer
             trayIcon.MouseUp += TrayMouseUp;
 
             timer = new Timer { Interval = 250 };
-            timer.Tick += (_, __) => UpdateTimer();
+            timer.Tick += (_, __) =>
+            {
+                if (shutdownRequest.WaitOne(0))
+                    ExitThread();
+                else
+                    UpdateTimer();
+            };
             UpdateTimer();
             timer.Start();
         }
@@ -287,6 +295,7 @@ namespace RestTimer
             if (disposing)
             {
                 timer.Dispose();
+                shutdownRequest.Dispose();
                 CloseOverlays();
                 trayIcon.Visible = false;
                 trayIcon.Dispose();

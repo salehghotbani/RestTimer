@@ -6,20 +6,27 @@ namespace RestTimer
 {
     internal static class Program
     {
+        internal const string InstanceMutexName = @"Local\RestTimer.Singleton";
+        internal const string ShutdownEventName = @"Local\RestTimer.ShutdownForInstall";
+
         [STAThread]
-        private static void Main()
+        private static int Main(string[] args)
         {
+            if (args.Length == 2 && args[0] == "--close-for-install")
+                return InstallationShutdown.CloseRunning(args[1]);
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            using (var instance = new Mutex(false, @"Local\RestTimer.Singleton", out bool firstInstance))
+            using (var instance = new Mutex(false, InstanceMutexName, out bool firstInstance))
             {
                 if (!firstInstance)
-                    return;
+                    return 0;
 
                 using (var context = new RestTimerContext())
                     Application.Run(context);
             }
+            return 0;
         }
     }
 }

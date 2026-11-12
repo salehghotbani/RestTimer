@@ -23,19 +23,28 @@ jobs:
       - name: Build application and installer
         shell: pwsh
         run: ./tools/build_windows.ps1
-      - name: Test installed application and uninstaller
+      - name: Download previous installer for upgrade compatibility
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download v1.3.1 --repo salehghotbani/RestTimer --pattern '*windows-x64-setup.exe' --dir obj/legacy
+      - name: Test installation, automatic close/restart, upgrade and removal in both languages
         shell: pwsh
         run: |
-          ./tests/windows_smoke.ps1 -Language en
-          ./tests/windows_smoke.ps1 -Language fa
+          $legacy = (Get-ChildItem obj/legacy/*.exe).FullName
+          ./tests/windows_smoke.ps1 -Language en -LegacyInstaller $legacy
+          ./tests/windows_smoke.ps1 -Language fa -LegacyInstaller $legacy
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           path: dist/release/*.exe
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: windows-preview
-          path: obj/smoke/*.png
+          path: |
+            obj/smoke/*.png
+            obj/smoke/*.log
 
   linux:
     runs-on: ubuntu-22.04
