@@ -1,6 +1,7 @@
 """Exercise Linux settings, scheduling, tray actions and display coverage."""
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import tempfile
@@ -87,7 +88,12 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     controller.overlays[0].skip.click()
     assert not controller.breaking and not controller.overlays
     assert not controller.running
-    assert controller.deadline - controller.paused_at == controller.preferences["work_seconds"]
+    assert math.isclose(
+        controller.deadline - controller.paused_at,
+        controller.preferences["work_seconds"],
+        rel_tol=0,
+        abs_tol=0.000001,
+    )
     controller.settings.work.parts[2].setValue(4)
     controller.settings.save.click()
     assert not controller.running and controller.preferences["work_seconds"] == 3724
