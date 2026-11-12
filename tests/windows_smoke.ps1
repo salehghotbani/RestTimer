@@ -211,18 +211,33 @@ internal static class Smoke
                 context.Dispose();
             var badgeType = app.GetType("RestTimer.TaskbarCountdown", true);
             var place = badgeType.GetMethod("Place", BindingFlags.Static | BindingFlags.NonPublic);
-            foreach (float scale in new float[] { 1f, 1.5f, 2f })
+            var stripEdge = badgeType.GetMethod("StripEdge", BindingFlags.Static | BindingFlags.NonPublic);
+            foreach (float scale in new float[] { 1f, 1.25f, 1.5f, 2f })
+            foreach (var screen in new[] { new Rectangle(0, 0, 1920, 1080), new Rectangle(-1920, -1080, 1920, 1080) })
+            foreach (string edge in new[] { "bottom", "left", "right", "top" })
             {
-                int height = (int)(48 * scale);
-                var screen = new Rectangle(-1920, 0, 1920, 1080);
-                var bar = new Rectangle(-1920, 1080 - height, 1920, height);
-                var trayBounds = new Rectangle(-400, bar.Top, 400, height);
-                var strip = new Rectangle(screen.Left, bar.Top - (int)(24 * scale), screen.Width, (int)(24 * scale));
-                var position = (Rectangle)place.Invoke(null, new object[] { strip, trayBounds, screen, scale });
-                if (position.IsEmpty || position.Right >= trayBounds.Left || !screen.Contains(position) || !strip.Contains(position) || bar.IntersectsWith(position))
-                    throw new Exception("Countdown must fit inside its reserved strip, above the taskbar, at all display scales.");
-                var hidden = new Rectangle(bar.X, 1078, bar.Width, bar.Height);
-                if (!((Rectangle)place.Invoke(null, new object[] { hidden, new Rectangle(-400, hidden.Top, 400, height), screen, scale })).IsEmpty)
+                int height = (int)(48 * scale), width = (int)(80 * scale), thickness = (int)Math.Ceiling(24 * scale);
+                bool vertical = edge == "left" || edge == "right";
+                var bar = vertical
+                    ? new Rectangle(edge == "left" ? screen.Left : screen.Right - width, screen.Top, width, screen.Height)
+                    : new Rectangle(screen.Left, edge == "top" ? screen.Top : screen.Bottom - height, screen.Width, height);
+                var trayBounds = vertical ? new Rectangle(bar.Left, bar.Bottom - 200, width, 200)
+                    : new Rectangle(screen.Right - 400, bar.Top, 400, height);
+                var strip = vertical
+                    ? new Rectangle(edge == "left" ? bar.Right : screen.Left, screen.Bottom - thickness, screen.Width - width, thickness)
+                    : new Rectangle(screen.Left, edge == "top" ? bar.Bottom : bar.Top - thickness, screen.Width, thickness);
+                var position = (Rectangle)place.Invoke(null, new object[] { strip, trayBounds, bar, screen, scale });
+                uint expectedEdge = edge == "top" ? 1u : 3u;
+                if ((uint)stripEdge.Invoke(null, new object[] { bar, screen }) != expectedEdge
+                    || position.IsEmpty || !screen.Contains(position) || !strip.Contains(position) || bar.IntersectsWith(position))
+                    throw new Exception("Countdown placement failed for " + edge + " taskbar at scale " + scale + ".");
+                if (vertical && (edge == "left" ? position.Left < bar.Right || position.Left > bar.Right + 10 * scale
+                    : position.Right > bar.Left || position.Right < bar.Left - 10 * scale))
+                    throw new Exception("A vertical taskbar's countdown must stay near the same side of the screen.");
+                if (!vertical && position.Right >= trayBounds.Left)
+                    throw new Exception("A horizontal taskbar's countdown must stay near the notification area.");
+                var hidden = new Rectangle(screen.Left, screen.Bottom - 1, screen.Width, thickness);
+                if (!((Rectangle)place.Invoke(null, new object[] { hidden, trayBounds, bar, screen, scale })).IsEmpty)
                     throw new Exception("An out-of-bounds reservation must not display a countdown.");
             }
             using (var badge = (Form)Activator.CreateInstance(badgeType))
@@ -277,7 +292,7 @@ internal static class Smoke
                 if (reserved)
                 {
                     var during = (Rectangle)workArea.Invoke(null, new object[] { primary });
-                    if (during.Bottom > before.Bottom - reservedBounds.Height || !reservedBounds.Contains(badge.Bounds))
+                    if (during.Height > before.Height - reservedBounds.Height || during.IntersectsWith(reservedBounds) || !reservedBounds.Contains(badge.Bounds))
                         throw new Exception("The Shell did not reserve real workspace for the countdown.");
                     Console.WriteLine("Reserved work area: before=" + before + ", during=" + during + ", strip=" + reservedBounds);
                     for (int attempt = 0; attempt < 3; attempt++)
@@ -309,6 +324,39 @@ internal static class Smoke
                     if ((Rectangle)workArea.Invoke(null, new object[] { primary }) != before)
                         throw new Exception("Closing the countdown did not restore the previous work area.");
                     Console.WriteLine("Repeated refresh, disable/re-enable and disposal restored the original workspace.");
+                    // Real Shell appbars simulate side taskbars without moving Explorer or changing user preferences.
+                    var reserve = reservationType.GetMethod("Reserve");
+                    var boundsProperty = reservationType.GetProperty("Bounds");
+                    foreach (uint side in new uint[] { 0, 2 })
+                    {
+                        using (var sideBar = (IDisposable)Activator.CreateInstance(reservationType, true))
+                        using (var stripBar = (IDisposable)Activator.CreateInstance(reservationType, true))
+                        {
+                            if (!(bool)reserve.Invoke(sideBar, new object[] { primary, 96, side }))
+                                throw new Exception("Could not register the simulated side taskbar.");
+                            foreach (uint horizontal in new uint[] { 3, 1, 3 })
+                            {
+                                if (!(bool)reserve.Invoke(stripBar, new object[] { primary, 24, horizontal }))
+                                    throw new Exception("Could not reserve a countdown strip alongside a side taskbar.");
+                                Application.DoEvents();
+                                reserve.Invoke(sideBar, new object[] { primary, 96, side });
+                                reserve.Invoke(stripBar, new object[] { primary, 24, horizontal });
+                                var sideBounds = (Rectangle)boundsProperty.GetValue(sideBar);
+                                var stripBounds = (Rectangle)boundsProperty.GetValue(stripBar);
+                                var sideTray = new Rectangle(sideBounds.Left, sideBounds.Bottom - 120, sideBounds.Width, 120);
+                                var position = (Rectangle)place.Invoke(null, new object[] { stripBounds, sideTray, sideBounds, primary, 1f });
+                                var during = (Rectangle)workArea.Invoke(null, new object[] { primary });
+                                if (position.IsEmpty || !stripBounds.Contains(position) || sideBounds.IntersectsWith(position)
+                                    || during.IntersectsWith(stripBounds) || during.IntersectsWith(sideBounds)
+                                    || during.Height > before.Height - 24 || during.Width > before.Width - 96)
+                                    throw new Exception("Side taskbar and countdown must have separate Shell-reserved workspace.");
+                                Console.WriteLine("Native side layout: edge=" + side + ", strip edge=" + horizontal + ", countdown=" + position);
+                            }
+                        }
+                        Application.DoEvents();
+                        if ((Rectangle)workArea.Invoke(null, new object[] { primary }) != before)
+                            throw new Exception("Side taskbar layout test did not restore the original workspace.");
+                    }
                 }
             }
             var updaterType = app.GetType("RestTimer.UpdateService", true);

@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace RestTimer
 {
-    // A Shell-managed desktop appbar. It reserves a separate horizontal strip;
+    // A Shell-managed desktop appbar. It reserves a separate strip;
     // it never changes Explorer's task button layout or the taskbar window.
     internal sealed class AppbarReservation : NativeWindow, IDisposable
     {
@@ -38,23 +38,27 @@ namespace RestTimer
         private readonly uint taskbarCreated = RegisterWindowMessage("TaskbarCreated");
         private bool registered, dirty = true, positioning, disposed;
         private Rectangle lastScreen;
-        private int lastHeight;
+        private int lastThickness;
+        private uint edge = 3; // ABE_LEFT=0, ABE_TOP=1, ABE_RIGHT=2, ABE_BOTTOM=3.
         public Rectangle Bounds { get; private set; }
         public bool Registered => registered;
         public event Action LayoutChanged;
 
-        private Data MessageData() => new Data { Size = (uint)Marshal.SizeOf(typeof(Data)), Window = Handle, Callback = CallbackMessage, Edge = 3 };
+        private Data MessageData() => new Data { Size = (uint)Marshal.SizeOf(typeof(Data)), Window = Handle, Callback = CallbackMessage, Edge = edge };
 
-        public bool Reserve(Rectangle screen, int height)
+        public bool Reserve(Rectangle screen, int thickness, uint requestedEdge = 3)
         {
-            if (disposed || height < 1 || screen.Width < 1 || height >= screen.Height) return false;
+            bool vertical = requestedEdge == 0 || requestedEdge == 2;
+            if (disposed || requestedEdge > 3 || thickness < 1 || screen.Width < 1 || screen.Height < 1
+                || thickness >= (vertical ? screen.Width : screen.Height)) return false;
             if (Handle == IntPtr.Zero)
             {
                 CreateHandle(new CreateParams { Caption = "RestTimer reserved countdown strip", Style = unchecked((int)0x80000000),
                     ExStyle = 0x08000000 | 0x00000080 | 0x00080000 | 0x00000020, Width = 1, Height = 1 });
                 if (!SetLayeredWindowAttributes(Handle, 0, 0, 2)) { DestroyHandle(); return false; }
             }
-            if (lastScreen != screen && registered) Release();
+            if ((lastScreen != screen || edge != requestedEdge) && registered) Release();
+            edge = requestedEdge;
             var data = MessageData();
             if (!registered)
             {
@@ -62,25 +66,33 @@ namespace RestTimer
                 if (!registered) return false;
                 dirty = true;
             }
-            if (!dirty && lastScreen == screen && lastHeight == height) return !Bounds.IsEmpty;
+            if (!dirty && lastScreen == screen && lastThickness == thickness) return !Bounds.IsEmpty;
             positioning = true;
             dirty = false;
             try
             {
-                data.Bounds = new Rect(new Rectangle(screen.Left, screen.Bottom - height, screen.Width, height));
+                var proposed = screen;
+                if (edge == 0) proposed.Width = thickness;
+                else if (edge == 1) proposed.Height = thickness;
+                else if (edge == 2) proposed = new Rectangle(screen.Right - thickness, screen.Top, thickness, screen.Height);
+                else proposed = new Rectangle(screen.Left, screen.Bottom - thickness, screen.Width, thickness);
+                data.Bounds = new Rect(proposed);
                 SHAppBarMessage(2, ref data); // ABM_QUERYPOS: Shell excludes this HWND's own reservation.
-                data.Bounds.Top = data.Bounds.Bottom - height;
+                if (edge == 0) data.Bounds.Right = data.Bounds.Left + thickness;
+                else if (edge == 1) data.Bounds.Bottom = data.Bounds.Top + thickness;
+                else if (edge == 2) data.Bounds.Left = data.Bounds.Right - thickness;
+                else data.Bounds.Top = data.Bounds.Bottom - thickness;
                 var candidate = data.Bounds.Rectangle;
-                if (!screen.Contains(candidate) || candidate.Width < 1) { Release(); return false; }
+                if (!screen.Contains(candidate) || candidate.Width < 1 || candidate.Height < 1) { Release(); return false; }
                 if (candidate != Bounds)
                 {
                     SHAppBarMessage(3, ref data); // ABM_SETPOS
                     candidate = data.Bounds.Rectangle;
                 }
-                if (candidate.Height < height || !screen.Contains(candidate)) { Release(); return false; }
+                if ((vertical ? candidate.Width : candidate.Height) < thickness || !screen.Contains(candidate)) { Release(); return false; }
                 Bounds = candidate;
                 lastScreen = screen;
-                lastHeight = height;
+                lastThickness = thickness;
                 if (!SetWindowPos(Handle, new IntPtr(-1), Bounds.X, Bounds.Y, Bounds.Width, Bounds.Height, 0x0010 | 0x0040))
                 { Release(); return false; }
                 return true;

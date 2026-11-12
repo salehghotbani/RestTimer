@@ -69,15 +69,22 @@ namespace RestTimer
             base.WndProc(ref message);
         }
 
-        internal static Rectangle Place(Rectangle reservedStrip, Rectangle tray, Rectangle screen, float scale)
+        internal static uint StripEdge(Rectangle taskbar, Rectangle screen) => taskbar.Width > taskbar.Height
+            && taskbar.Top + taskbar.Height / 2 < screen.Top + screen.Height / 2 ? 1u : 3u;
+
+        internal static Rectangle Place(Rectangle reservedStrip, Rectangle tray, Rectangle taskbar, Rectangle screen, float scale)
         {
             int width = (int)Math.Round(100 * scale), height = (int)Math.Round(20 * scale);
             int gap = Math.Max(3, (int)Math.Round(5 * scale));
             if (reservedStrip.Width <= reservedStrip.Height || reservedStrip.Height < height || tray.Width <= 0
                 || tray.Height <= 0 || !screen.Contains(reservedStrip)) return Rectangle.Empty;
-            int x = Math.Max(reservedStrip.Left, Math.Min(tray.Left - gap - width, reservedStrip.Right - width));
+            int anchor = tray.Left - gap - width;
+            if (taskbar.Width < taskbar.Height)
+                anchor = taskbar.Left + taskbar.Width / 2 < screen.Left + screen.Width / 2
+                    ? taskbar.Right + gap : taskbar.Left - gap - width;
+            int x = Math.Max(reservedStrip.Left, Math.Min(anchor, reservedStrip.Right - width));
             var result = new Rectangle(x, reservedStrip.Top + (reservedStrip.Height - height) / 2, width, height);
-            return screen.Contains(result) && reservedStrip.Contains(result) ? result : Rectangle.Empty;
+            return screen.Contains(result) && reservedStrip.Contains(result) && !taskbar.IntersectsWith(result) ? result : Rectangle.Empty;
         }
 
         private bool CoveredByFullscreen(Rectangle screen, IntPtr taskbar)
@@ -115,10 +122,9 @@ namespace RestTimer
                 || !GetWindowRect(taskbar, out NativeRect bar) || !GetWindowRect(tray, out NativeRect icons)) { Hide(); reservation.Release(); return; }
             var monitor = Screen.FromRectangle(bar.Rectangle);
             float scale = monitor.Bounds.Height > 0 ? GetScale(taskbar) : 1;
-            if (bar.Rectangle.Width <= bar.Rectangle.Height || bar.Rectangle.Top < monitor.Bounds.Top + monitor.Bounds.Height / 2
-                || !reservation.Reserve(monitor.Bounds, (int)Math.Ceiling(24 * scale)))
+            if (!reservation.Reserve(monitor.Bounds, (int)Math.Ceiling(24 * scale), StripEdge(bar.Rectangle, monitor.Bounds)))
             { Hide(); reservation.Release(); return; }
-            var target = Place(reservation.Bounds, icons.Rectangle, monitor.Bounds, scale);
+            var target = Place(reservation.Bounds, icons.Rectangle, bar.Rectangle, monitor.Bounds, scale);
             if (target.IsEmpty) { Hide(); reservation.Release(); return; }
             if (CoveredByFullscreen(monitor.Bounds, taskbar)) { Hide(); return; }
             bool paint = dirty || !Visible || Size != target.Size;
