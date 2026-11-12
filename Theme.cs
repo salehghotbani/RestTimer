@@ -1,5 +1,7 @@
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace RestTimer
@@ -17,6 +19,23 @@ namespace RestTimer
         public static readonly Font TitleFont = new Font("Segoe UI", 12, FontStyle.Bold);
         public static readonly Font BodyFont = new Font("Segoe UI", 10);
         public static readonly Font SmallFont = new Font("Segoe UI", 9);
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, ref int value, int size);
+
+        public static void ApplyWindowFrame(IntPtr window)
+        {
+            const int UseImmersiveDarkMode = 20;
+            const int CaptionColor = 35;
+            const int TextColor = 36;
+            int dark = 1;
+            int background = ColorTranslator.ToWin32(Background);
+            int foreground = ColorTranslator.ToWin32(Text);
+            // Older Windows versions ignore unsupported frame attributes.
+            DwmSetWindowAttribute(window, UseImmersiveDarkMode, ref dark, sizeof(int));
+            DwmSetWindowAttribute(window, CaptionColor, ref background, sizeof(int));
+            DwmSetWindowAttribute(window, TextColor, ref foreground, sizeof(int));
+        }
 
         public static GraphicsPath RoundedRectangle(RectangleF bounds, float radius)
         {

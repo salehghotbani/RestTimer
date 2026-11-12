@@ -1,6 +1,5 @@
 using System;
 using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace RestTimer
@@ -13,22 +12,10 @@ namespace RestTimer
 
         public Preferences SelectedPreferences { get; private set; }
 
-        [DllImport("dwmapi.dll")]
-        private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, ref int value, int size);
-
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            const int UseImmersiveDarkMode = 20;
-            const int CaptionColor = 35;
-            const int TextColor = 36;
-            int dark = 1;
-            int background = ColorTranslator.ToWin32(Theme.Background);
-            int foreground = ColorTranslator.ToWin32(Theme.Text);
-            // Older Windows versions ignore unsupported frame attributes.
-            DwmSetWindowAttribute(Handle, UseImmersiveDarkMode, ref dark, sizeof(int));
-            DwmSetWindowAttribute(Handle, CaptionColor, ref background, sizeof(int));
-            DwmSetWindowAttribute(Handle, TextColor, ref foreground, sizeof(int));
+            Theme.ApplyWindowFrame(Handle);
         }
 
         public SettingsDialog(Preferences preferences, Icon icon)
@@ -76,12 +63,23 @@ namespace RestTimer
                 Text = "ذخیرهٔ زمان‌ها", Bounds = new Rectangle(366, 432, 142, 38), TabIndex = 2
             };
             save.Click += (_, __) => SaveDurations();
+            var updates = new RoundedButton
+            {
+                Text = "بررسی به‌روزرسانی",
+                Bounds = new Rectangle(144, 432, 206, 38),
+                TabIndex = 3
+            };
+            updates.Click += (_, __) =>
+            {
+                using (var dialog = new UpdateDialog(icon))
+                    dialog.ShowDialog(this);
+            };
             var cancel = new RoundedButton
             {
                 Text = "انصراف", DialogResult = DialogResult.Cancel,
-                Bounds = new Rectangle(28, 432, 100, 38), TabIndex = 3
+                Bounds = new Rectangle(28, 432, 100, 38), TabIndex = 4
             };
-            Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration, note, save, cancel });
+            Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration, note, save, updates, cancel });
             AcceptButton = save;
             CancelButton = cancel;
         }

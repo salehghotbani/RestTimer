@@ -18,6 +18,7 @@ namespace RestTimer
         private readonly ToolStripMenuItem startBreak;
         private readonly ToolStripMenuItem settings;
         private readonly ToolStripMenuItem startup;
+        private readonly ToolStripMenuItem updates;
         private readonly Icon icon;
         private readonly Timer timer;
         private readonly Stopwatch clock = Stopwatch.StartNew();
@@ -34,11 +35,12 @@ namespace RestTimer
             startBreak = new ToolStripMenuItem("شروع استراحت همین حالا", null, (_, __) => breakRequested = true);
             settings = new ToolStripMenuItem("تنظیم زمان‌ها…", null, (_, __) => EditSettings());
             startup = new ToolStripMenuItem("اجرا با ورود به ویندوز", null, (_, __) => ToggleStartup());
+            updates = new ToolStripMenuItem("بررسی به‌روزرسانی…", null, (_, __) => ShowUpdates());
             var exit = new ToolStripMenuItem("خروج", null, (_, __) => ExitThread());
             menu = new ContextMenuStrip { RightToLeft = RightToLeft.Yes };
             menu.Items.AddRange(new ToolStripItem[]
             {
-                status, new ToolStripSeparator(), startBreak, settings, startup, new ToolStripSeparator(), exit
+                status, new ToolStripSeparator(), startBreak, settings, startup, updates, new ToolStripSeparator(), exit
             });
             menu.Opening += (_, __) => UpdateStartupItem();
 
@@ -70,7 +72,7 @@ namespace RestTimer
                 breakRequested = false;
                 menu.Close();
                 breaking = true;
-                startBreak.Enabled = settings.Enabled = false;
+                startBreak.Enabled = settings.Enabled = updates.Enabled = false;
                 clock.Restart();
                 remaining = TimeSpan.FromSeconds(preferences.BreakSeconds);
             }
@@ -114,7 +116,7 @@ namespace RestTimer
         private void BeginWork()
         {
             breaking = false;
-            startBreak.Enabled = settings.Enabled = true;
+            startBreak.Enabled = settings.Enabled = updates.Enabled = true;
             CloseOverlays();
             clock.Restart();
             UpdateTimer();
@@ -154,6 +156,23 @@ namespace RestTimer
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is SecurityException)
             {
                 ShowSettingsError(ex);
+            }
+            finally
+            {
+                editingSettings = false;
+            }
+        }
+
+        private void ShowUpdates()
+        {
+            if (breaking || editingSettings)
+                return;
+
+            editingSettings = true;
+            try
+            {
+                using (var dialog = new UpdateDialog(icon))
+                    dialog.ShowDialog();
             }
             finally
             {
