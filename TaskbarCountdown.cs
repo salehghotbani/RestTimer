@@ -52,6 +52,10 @@ namespace RestTimer
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
             AutoScaleMode = AutoScaleMode.None;
+            // WinForms may select a form again when it is shown after Hide(),
+            // even with SW_SHOWNOACTIVATE. This display never accepts input.
+            SetStyle(ControlStyles.Selectable, false);
+            Enabled = false;
             TopMost = true;
             DoubleBuffered = true;
             AccessibleName = I18n.T("countdown_accessible");

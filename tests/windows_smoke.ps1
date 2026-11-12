@@ -310,6 +310,7 @@ internal static class Smoke
             {
                 if (badge.ShowInTaskbar || badge.FormBorderStyle != FormBorderStyle.None || !badge.TopMost)
                     throw new Exception("The countdown must be a topmost borderless tool window.");
+                if(badge.Enabled) throw new Exception("The display-only countdown must never accept focus.");
                 var parameters = (CreateParams)badgeType.GetProperty("CreateParams", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
                 if ((parameters.ExStyle & 0x08000020) != 0x08000020) throw new Exception("Countdown must not activate or intercept mouse dragging.");
                 var updateBadge = badgeType.GetMethod("UpdateDisplay");
