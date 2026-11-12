@@ -1,13 +1,14 @@
 Name:           resttimer
 Version:        %{app_version}
 Release:        1
-Summary:        Persian desktop work and break timer
+Summary:        Multilingual desktop work and break timer
 License:        MIT
 URL:            https://github.com/salehghotbani/RestTimer
 Packager:       Seyed Mohammad Saleh Ghotbani
 ExclusiveArch:  x86_64
 AutoReqProv:    no
 Requires:       ca-certificates, polkit, dejavu-sans-fonts, dbus-libs, fontconfig, glib2, openssl-libs
+Requires:       google-noto-sans-cjk-fonts, google-noto-sans-devanagari-fonts
 Requires:       libglvnd-egl, libglvnd-glx, libX11, libXext, libXrender, libICE, libSM, libxcb
 Requires:       xcb-util-cursor, xcb-util-image, xcb-util-keysyms, xcb-util-renderutil, xcb-util-wm
 Requires:       libxkbcommon, libxkbcommon-x11, xkeyboard-config
@@ -19,7 +20,7 @@ Requires:       libwayland-client.so.0()(64bit), libwayland-cursor.so.0()(64bit)
 
 %description
 Schedule synchronized breaks on all displays with configurable work and
-rest durations. Includes a Persian desktop frontend for X11 and Wayland.
+rest durations. Includes a multilingual desktop frontend for X11 and Wayland.
 
 %install
 mkdir -p "%{buildroot}"

@@ -15,6 +15,7 @@ import i18n
 
 app = QApplication([])
 app.setQuitOnLastWindowClosed(False)
+module.verify_language_fonts(app)
 (ROOT / "build").mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     os.environ["XDG_CONFIG_HOME"] = directory

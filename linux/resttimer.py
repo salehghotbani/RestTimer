@@ -9,7 +9,7 @@ import time
 import subprocess
 
 from PySide6.QtCore import QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer
-from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter
+from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QTextLayout
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QAbstractSpinBox, QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLabel,
@@ -73,6 +73,19 @@ def apply_color_scheme(app, scheme):
         style = re.sub(r"#[a-fA-F0-9]{6}", lambda match: colors.get(match.group(), match.group()), style)
         style += "\nQPushButton#primary { color: white; } QProgressBar { color: #11705b; } QProgressBar::chunk { background: #dbeee8; }"
     app.setStyleSheet(style)
+
+
+def verify_language_fonts(app):
+    """Smoke checks use shaped glyphs, including fallback fonts, to catch tofu."""
+    for sample in ("استراحت", "استراحة", "工作", "休憩", "휴식", "विराम", "Работа"):
+        layout = QTextLayout(sample, app.font())
+        layout.beginLayout()
+        line = layout.createLine()
+        line.setLineWidth(2000)
+        layout.endLayout()
+        runs = layout.glyphRuns()
+        if not runs or any(glyph == 0 for run in runs for glyph in run.glyphIndexes()):
+            raise RuntimeError("Missing system font coverage for a supported interface script.")
 
 
 def config_root():
@@ -714,6 +727,7 @@ def main():
     app.styleHints().colorSchemeChanged.connect(lambda scheme: apply_color_scheme(app, scheme))
     controller = Controller(app)
     if "--smoke-test" in sys.argv:
+        verify_language_fonts(app)
         if update_core.tls_context().cert_store_stats()["x509_ca"] == 0:
             raise RuntimeError("No system certificate authorities available for updates.")
         controller.begin_break()
