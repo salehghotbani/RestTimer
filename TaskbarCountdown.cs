@@ -1,8 +1,12 @@
 using System;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace RestTimer
 {
@@ -11,6 +15,17 @@ namespace RestTimer
     {
         [StructLayout(LayoutKind.Sequential)]
         private struct NativeRect { public int Left, Top, Right, Bottom; public Rectangle Rectangle => Rectangle.FromLTRB(Left, Top, Right, Bottom); }
+        [StructLayout(LayoutKind.Sequential)] private struct NativePoint { public int X, Y; public NativePoint(int x, int y) { X = x; Y = y; } }
+        [StructLayout(LayoutKind.Sequential)] private struct NativeSize { public int Width, Height; public NativeSize(int width, int height) { Width = width; Height = height; } }
+        [StructLayout(LayoutKind.Sequential, Pack = 1)] private struct Blend { public byte Operation, Flags, Alpha, Format; }
+        [DllImport("user32.dll")] private static extern IntPtr GetDC(IntPtr window);
+        [DllImport("user32.dll")] private static extern int ReleaseDC(IntPtr window, IntPtr dc);
+        [DllImport("gdi32.dll")] private static extern IntPtr CreateCompatibleDC(IntPtr dc);
+        [DllImport("gdi32.dll")] private static extern bool DeleteDC(IntPtr dc);
+        [DllImport("gdi32.dll")] private static extern IntPtr SelectObject(IntPtr dc, IntPtr value);
+        [DllImport("gdi32.dll")] private static extern bool DeleteObject(IntPtr value);
+        [DllImport("user32.dll", SetLastError = true)] private static extern bool UpdateLayeredWindow(IntPtr window, IntPtr destinationDC,
+            ref NativePoint destination, ref NativeSize size, IntPtr sourceDC, ref NativePoint source, uint colorKey, ref Blend blend, uint flags);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string name, string title);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string name, string title);
         [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr window, out NativeRect bounds);
@@ -23,6 +38,9 @@ namespace RestTimer
         private string countdown = "1:00:00";
         private bool resting, running = true;
         private DateTime nextPosition;
+        private Color textColor = Color.White;
+        private bool dirty = true;
+        internal bool FrameUploaded { get; private set; }
 
         public TaskbarCountdown()
         {
@@ -30,38 +48,26 @@ namespace RestTimer
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
             AutoScaleMode = AutoScaleMode.None;
-            BackColor = Theme.Surface;
-            Opacity = 0.99; // Layered + WS_EX_TRANSPARENT passes clicks to windows in other processes.
             TopMost = true;
             DoubleBuffered = true;
             AccessibleName = "شمارش معکوس RestTimer";
         }
         protected override bool ShowWithoutActivation => true;
-        protected override void OnSizeChanged(EventArgs e)
-        {
-            base.OnSizeChanged(e);
-            if (Width < 2 || Height < 2) return;
-            using (var path = Theme.RoundedRectangle(new RectangleF(0, 0, Width, Height), 7 * Height / 36f))
-            {
-                var previous = Region;
-                Region = new Region(path);
-                previous?.Dispose();
-            }
-        }
         protected override CreateParams CreateParams
         {
-            get { var value = base.CreateParams; value.ExStyle |= 0x08000000 | 0x00000080 | 0x00000020; return value; }
+            get { var value = base.CreateParams; value.ExStyle |= 0x08000000 | 0x00000080 | 0x00000020 | 0x00080000; return value; }
         }
         protected override void WndProc(ref Message message)
         {
             if (message.Msg == 0x0084) { message.Result = new IntPtr(-1); return; } // Click-through, including dragging.
             if (message.Msg == 0x0021) { message.Result = new IntPtr(3); return; } // MA_NOACTIVATE
+            if (message.Msg == 0x001A || message.Msg == 0x031A) { dirty = true; nextPosition = DateTime.MinValue; }
             base.WndProc(ref message);
         }
 
         internal static Rectangle Place(Rectangle taskbar, Rectangle tray, Rectangle screen, float scale)
         {
-            int width = (int)Math.Round(112 * scale), height = (int)Math.Round(36 * scale);
+            int width = (int)Math.Round(100 * scale), height = (int)Math.Round(20 * scale);
             int gap = Math.Max(3, (int)Math.Round(5 * scale));
             // No guessed location for hidden, vertical, or unusually narrow taskbars.
             if (taskbar.Width <= taskbar.Height || taskbar.Height < height
@@ -89,11 +95,17 @@ namespace RestTimer
             {
                 countdown = text; resting = isResting; running = isRunning;
                 AccessibleDescription = (resting ? "استراحت " : "کار ") + countdown + (running ? "" : "، متوقف");
-                Invalidate();
+                dirty = true;
             }
             if (!enabled) { Hide(); nextPosition = DateTime.MinValue; return; }
-            if (DateTime.UtcNow < nextPosition) return;
+            if (DateTime.UtcNow < nextPosition)
+            {
+                if (Visible && dirty && !PaintLayered(Bounds)) Hide();
+                return;
+            }
             nextPosition = DateTime.UtcNow.AddSeconds(1);
+            var foreground = ForegroundColor(ReadLightMode(), SystemInformation.HighContrast);
+            if (textColor != foreground) { textColor = foreground; dirty = true; }
             var taskbar = FindWindow("Shell_TrayWnd", null);
             var tray = FindWindowEx(taskbar, IntPtr.Zero, "TrayNotifyWnd", null);
             if (taskbar == IntPtr.Zero || tray == IntPtr.Zero || !IsWindowVisible(taskbar)
@@ -102,34 +114,81 @@ namespace RestTimer
             float scale = monitor.Bounds.Height > 0 ? GetScale(taskbar) : 1;
             var target = Place(bar.Rectangle, icons.Rectangle, monitor.Bounds, scale);
             if (target.IsEmpty || CoveredByFullscreen(monitor.Bounds, taskbar)) { Hide(); return; }
+            bool paint = dirty || !Visible || Size != target.Size;
             Bounds = target;
+            if (paint && !PaintLayered(target)) { Hide(); return; }
             if (!Visible) Show();
             SetWindowPos(Handle, new IntPtr(-1), target.X, target.Y, target.Width, target.Height, 0x0010 | 0x0040);
         }
         [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr window);
         private static float GetScale(IntPtr taskbar) { uint dpi = GetDpiForWindow(taskbar); return dpi == 0 ? 1 : dpi / 96f; }
 
-        protected override void OnPaint(PaintEventArgs e)
+        private static bool ReadLightMode()
         {
-            base.OnPaint(e);
-            float scale = Height / 36f;
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            var accent = !running ? Theme.Muted : resting ? Color.FromArgb(255, 204, 132) : Theme.Mint;
-            using (var path = Theme.RoundedRectangle(new RectangleF(0.5f, 0.5f, Width - 1, Height - 1), 7 * scale))
-            using (var background = new SolidBrush(Theme.Surface))
-            using (var border = new Pen(Theme.Border))
+            try
             {
-                e.Graphics.FillPath(background, path);
-                e.Graphics.DrawPath(border, path);
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                    return key?.GetValue("SystemUsesLightTheme") is int light && light != 0;
             }
-            using (var captionFont = new Font("Segoe UI", 11 * scale, FontStyle.Regular, GraphicsUnit.Pixel))
-            using (var timeFont = new Font("Segoe UI", 14 * scale, FontStyle.Bold, GraphicsUnit.Pixel))
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is SecurityException) { return false; }
+        }
+        internal static Color ForegroundColor(bool lightMode, bool highContrast) => highContrast
+            ? SystemColors.WindowText : lightMode ? Color.FromArgb(24, 24, 24) : Color.FromArgb(245, 245, 245);
+
+        internal static Bitmap RenderFrame(Size size, string time, bool isResting, bool isRunning, Color foreground)
+        {
+            var bitmap = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppPArgb);
+            float scale = size.Height / 20f;
+            using (var graphics = Graphics.FromImage(bitmap))
+            using (var font = new Font("Segoe UI", 11 * scale, FontStyle.Regular, GraphicsUnit.Pixel))
+            using (var brush = new SolidBrush(foreground))
+            using (var timeFormat = new StringFormat(StringFormat.GenericTypographic) { Alignment = StringAlignment.Near,
+                LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap })
+            using (var captionFormat = new StringFormat(StringFormat.GenericTypographic) { Alignment = StringAlignment.Near,
+                LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap | StringFormatFlags.DirectionRightToLeft })
             {
-                TextRenderer.DrawText(e.Graphics, (resting ? "استراحت" : "کار") + (running ? "" : " · مکث"), captionFont,
-                    new Rectangle(0, 0, Width, Height / 2), accent,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.RightToLeft | TextFormatFlags.SingleLine);
-                TextRenderer.DrawText(e.Graphics, countdown, timeFont, new Rectangle(0, Height / 2 - 1, Width, Height / 2), Theme.Text,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
+                graphics.Clear(Color.Transparent);
+                // Grayscale anti-aliasing preserves alpha without a colored background fringe.
+                graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+                graphics.DrawString(time, font, brush, new RectangleF(2 * scale, 0, 53 * scale, size.Height), timeFormat);
+                graphics.DrawString(isResting ? "استراحت" : "کار", font, brush,
+                    new RectangleF(57 * scale, 0, size.Width - 59 * scale, size.Height), captionFormat);
+                if (!isRunning)
+                {
+                    graphics.FillRectangle(brush, 53 * scale, 7 * scale, scale, 6 * scale);
+                    graphics.FillRectangle(brush, 56 * scale, 7 * scale, scale, 6 * scale);
+                }
+            }
+            return bitmap;
+        }
+
+        private bool PaintLayered(Rectangle target)
+        {
+            using (var bitmap = RenderFrame(target.Size, countdown, resting, running, textColor))
+            {
+                IntPtr screenDC = GetDC(IntPtr.Zero), memoryDC = IntPtr.Zero, nativeBitmap = IntPtr.Zero, previous = IntPtr.Zero;
+                try
+                {
+                    if (screenDC == IntPtr.Zero) return false;
+                    memoryDC = CreateCompatibleDC(screenDC);
+                    if (memoryDC == IntPtr.Zero) return false;
+                    nativeBitmap = bitmap.GetHbitmap(Color.FromArgb(0));
+                    previous = SelectObject(memoryDC, nativeBitmap);
+                    var destination = new NativePoint(target.X, target.Y);
+                    var size = new NativeSize(target.Width, target.Height);
+                    var source = new NativePoint(0, 0);
+                    var blend = new Blend { Alpha = 255, Format = 1 };
+                    FrameUploaded = UpdateLayeredWindow(Handle, screenDC, ref destination, ref size, memoryDC, ref source, 0, ref blend, 2);
+                    if (FrameUploaded) dirty = false;
+                    return FrameUploaded;
+                }
+                finally
+                {
+                    if (previous != IntPtr.Zero && previous != new IntPtr(-1)) SelectObject(memoryDC, previous);
+                    if (nativeBitmap != IntPtr.Zero) DeleteObject(nativeBitmap);
+                    if (memoryDC != IntPtr.Zero) DeleteDC(memoryDC);
+                    if (screenDC != IntPtr.Zero) ReleaseDC(IntPtr.Zero, screenDC);
+                }
             }
         }
     }

@@ -222,25 +222,49 @@ internal static class Smoke
             }
             using (var badge = (Form)Activator.CreateInstance(badgeType))
             {
-                badge.Size = new Size(112, 36);
+                badge.Size = new Size(100, 20);
                 if (badge.ShowInTaskbar || badge.FormBorderStyle != FormBorderStyle.None)
                     throw new Exception("Taskbar countdown must be a fixed borderless tool window.");
                 var parameters = (CreateParams)badgeType.GetProperty("CreateParams", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
                 if ((parameters.ExStyle & 0x08000020) != 0x08000020) throw new Exception("Countdown must not activate or intercept mouse dragging.");
                 var updateBadge = badgeType.GetMethod("UpdateDisplay");
+                var renderFrame = badgeType.GetMethod("RenderFrame", BindingFlags.Static | BindingFlags.NonPublic);
+                var foregroundColor = badgeType.GetMethod("ForegroundColor", BindingFlags.Static | BindingFlags.NonPublic);
                 foreach (string phase in new string[] { "work", "rest", "paused" })
                 {
                     updateBadge.Invoke(badge, new object[] { "47:12", phase == "rest", phase != "paused", false });
                     if (badge.Visible) throw new Exception("Countdown ignored its disabled setting.");
-                    using (var bitmap = new Bitmap(badge.Width, badge.Height))
+                    foreach (bool light in new bool[] { true, false })
                     {
-                        badge.DrawToBitmap(bitmap, new Rectangle(Point.Empty, badge.Size));
-                        bitmap.Save("obj/smoke/windows-taskbar-" + phase + ".png", ImageFormat.Png);
+                        var color = (Color)foregroundColor.Invoke(null, new object[] { light, false });
+                        if ((color.GetBrightness() > 0.5f) == light) throw new Exception("Taskbar text does not contrast with the Windows color mode.");
+                        using (var bitmap = (Bitmap)renderFrame.Invoke(null, new object[] { badge.Size, "23:59:59", phase != "work", phase != "paused", color }))
+                        {
+                            int transparent = 0, left = 0, right = 0;
+                            for (int y = 0; y < bitmap.Height; y++)
+                                for (int x = 0; x < bitmap.Width; x++)
+                                {
+                                    if (bitmap.GetPixel(x, y).A == 0) transparent++;
+                                    else if (x < 55) left++; else right++;
+                                }
+                            if (transparent < bitmap.Width * bitmap.Height * 0.6 || bitmap.GetPixel(0, 0).A != 0 || left == 0 || right == 0)
+                                throw new Exception("Taskbar text must have a transparent background with a side-by-side label and time.");
+                            bitmap.Save("obj/smoke/windows-taskbar-" + (light ? "light-" : "dark-") + phase + ".png", ImageFormat.Png);
+                            using (var preview = new Bitmap(140, 36))
+                            using (var graphics = Graphics.FromImage(preview))
+                            {
+                                graphics.Clear(light ? Color.FromArgb(245, 239, 232) : Color.FromArgb(30, 30, 30));
+                                graphics.DrawImageUnscaled(bitmap, 20, 8);
+                                preview.Save("obj/smoke/windows-taskbar-preview-" + (light ? "light-" : "dark-") + phase + ".png", ImageFormat.Png);
+                            }
+                        }
                     }
                 }
                 updateBadge.Invoke(badge, new object[] { "47:12", false, true, true });
                 Application.DoEvents();
                 Console.WriteLine("Live taskbar anchor: visible=" + badge.Visible + ", bounds=" + badge.Bounds);
+                if (badge.Visible && !(bool)badgeType.GetProperty("FrameUploaded", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge))
+                    throw new Exception("The per-pixel transparent taskbar frame was not uploaded to Windows.");
                 updateBadge.Invoke(badge, new object[] { "47:12", false, true, false });
             }
             var updaterType = app.GetType("RestTimer.UpdateService", true);
