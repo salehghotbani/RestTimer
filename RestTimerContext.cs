@@ -35,6 +35,7 @@ namespace RestTimer
         private bool breaking;
         private bool editingSettings;
         private bool breakRequested;
+        private bool disposed;
         private SettingsDialog settingsDialog;
 
         public RestTimerContext() : this(true) { }
@@ -324,8 +325,9 @@ namespace RestTimer
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && !disposed)
             {
+                disposed = true;
                 timer.Dispose();
                 updateCancellation.Cancel();
                 updateCancellation.Dispose();

@@ -197,6 +197,9 @@ internal static class Smoke
                     type.GetField("editingSettings", flags).SetValue(context, false);
                 }
             }
+            // Application.Run also disposes its context; a surrounding using may dispose it again.
+            using (var context = (ApplicationContext)Activator.CreateInstance(type, new object[] { false }))
+                context.Dispose();
             var updaterType = app.GetType("RestTimer.UpdateService", true);
             var updateService = Activator.CreateInstance(updaterType, new object[] { System.IO.Path.GetFullPath("obj/smoke/update-ui") });
             var updateState = updaterType.GetProperty("State").GetValue(updateService);
