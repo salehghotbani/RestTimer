@@ -62,8 +62,10 @@ try {
         $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
         New-Item -Path $runKey -Force | Out-Null
         New-ItemProperty -LiteralPath $runKey -Name RestTimer -Value ('"' + $targetExe + '"') -PropertyType String -Force | Out-Null
-        $uninstall = Start-Process -FilePath (Join-Path $installPath 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -PassThru
-        if (!$uninstall.WaitForExit(60000) -or $uninstall.ExitCode -ne 0 -or (Test-Path -LiteralPath $targetExe)) { throw 'Uninstall smoke test failed.' }
+        # Inno may replace/rename its uninstaller when upgrading an older setup script.
+        $uninstaller = (Get-ItemPropertyValue -LiteralPath $uninstallKey -Name UninstallString).Trim('"')
+        $uninstall = Start-Process -FilePath $uninstaller -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -Wait -PassThru
+        if ($uninstall.ExitCode -ne 0 -or (Test-Path -LiteralPath $targetExe)) { throw 'Uninstall smoke test failed.' }
         if ((Get-ItemProperty -LiteralPath $runKey -ErrorAction SilentlyContinue).RestTimer) { throw 'Uninstaller left its startup command behind.' }
     }
     if (!$SkipInstaller) {
