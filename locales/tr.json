@@ -96,6 +96,10 @@
     "author": "Geliştirici",
     "license": "Lisans",
     "project_site": "GitHub projesi",
-    "open_link_error": "Bağlantı açılamadı."
+    "open_link_error": "Bağlantı açılamadı.",
+    "unsaved_title": "Kaydedilmemiş değişiklikler",
+    "unsaved_message": "Kapatmadan önce değişiklikler kaydedilsin mi? Düzenlemeye devam etmek için bu iletişim kutusunu kapatın.",
+    "save_changes": "Değişiklikleri kaydet",
+    "discard_changes": "Değişiklikleri at"
   }
 }

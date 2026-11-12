@@ -220,6 +220,34 @@ class DurationEditor(QFrame):
         return h * 3600 + m * 60 + s
 
 
+class UnsavedChangesDialog(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setObjectName("UnsavedChangesDialog")
+        self.setWindowTitle(tr("unsaved_title"))
+        self.setWindowIcon(parent.controller.icon)
+        self.setMinimumWidth(480)
+        self.resize(520, 220)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        heading = label(tr("unsaved_title"), "title")
+        heading.setWordWrap(True)
+        layout.addWidget(heading)
+        message = label(tr("unsaved_message"), "muted")
+        message.setWordWrap(True)
+        layout.addWidget(message, 1)
+        actions = QHBoxLayout()
+        self.save = QPushButton(tr("save_changes"))
+        self.save.setObjectName("primary")
+        self.save.clicked.connect(self.accept)
+        self.save.setDefault(True)
+        self.discard = QPushButton(tr("discard_changes"))
+        self.discard.clicked.connect(lambda: self.done(2))
+        actions.addWidget(self.save)
+        actions.addWidget(self.discard)
+        layout.addLayout(actions)
+
+
 class SettingsDialog(QDialog):
     def __init__(self, controller, update_panel=None):
         super().__init__()
@@ -247,9 +275,6 @@ class SettingsDialog(QDialog):
             self.navigation.addItem(tr(key))
         side.addWidget(self.navigation, 1)
         side.addWidget(label("v" + controller.version, "muted", center=True))
-        close = QPushButton(tr("close_cancel"))
-        close.clicked.connect(self.close)
-        side.addWidget(close)
         outer.addWidget(sidebar)
         self.pages = QStackedWidget()
         outer.addWidget(self.pages, 1)
@@ -270,7 +295,6 @@ class SettingsDialog(QDialog):
         layout.addWidget(self.rest)
         self.startup = QCheckBox(tr("startup"))
         self.startup.setChecked(startup_path().exists())
-        self.startup.clicked.connect(controller.toggle_startup)
         layout.addWidget(self.startup)
         self.daily = QCheckBox(tr("daily_check"))
         self.daily.setChecked(controller.updater.state["daily_enabled"])
@@ -314,9 +338,6 @@ class SettingsDialog(QDialog):
         self.save.setObjectName("primary")
         self.save.clicked.connect(self.save_durations)
         buttons.addWidget(self.save)
-        self.updates = QPushButton(tr("updates_title"))
-        self.updates.clicked.connect(controller.check_updates)
-        buttons.addWidget(self.updates)
         start = QPushButton(tr("break_short"))
         start.clicked.connect(controller.begin_break)
         buttons.addWidget(start)
@@ -331,6 +352,7 @@ class SettingsDialog(QDialog):
         self.pages.addWidget(self.about_page())
         self.navigation.currentRowChanged.connect(self.select_index)
         self.navigation.setCurrentRow(0)
+        self.remember_saved_settings()
         screen = controller.app.primaryScreen()
         self.resize(min(1020, screen.availableGeometry().width() - 40), min(800, screen.availableGeometry().height() - 48))
 
@@ -361,9 +383,6 @@ class SettingsDialog(QDialog):
             QMessageBox.information(self, "RestTimer", tr("open_link_error"))
 
     def toggle_daily(self, enabled):
-        if self.controller.updater.state["daily_enabled"] != enabled:
-            self.controller.updater.state["daily_enabled"] = enabled
-            self.controller.updater.save()
         panel = getattr(self, "update_panel", None)
         if panel:
             panel.daily.setChecked(enabled)
@@ -395,47 +414,98 @@ class SettingsDialog(QDialog):
 
     def showEvent(self, event):
         self.ensure_update_panel()
-        self.daily.setChecked(self.controller.updater.state["daily_enabled"])
         self.select_index(self.navigation.currentRow())
         super().showEvent(event)
 
-    def save_durations(self):
+    def remember_saved_settings(self):
+        self.saved_preferences = self.controller.preferences.copy()
+        self.saved_daily = self.controller.updater.state["daily_enabled"]
+        self.saved_startup = self.startup.isChecked()
+
+    def has_pending_changes(self):
+        # Include uncommitted text in spin boxes, even when its value is unchanged.
+        for editor in (self.work, self.rest):
+            for part in editor.parts:
+                if not part.hasAcceptableInput():
+                    return True
+        return (self.work.seconds() != self.saved_preferences["work_seconds"]
+                or self.rest.seconds() != self.saved_preferences["break_seconds"]
+                or self.language.currentData() != self.saved_preferences.get("language", "auto")
+                or self.daily.isChecked() != self.saved_daily
+                or self.startup.isChecked() != self.saved_startup)
+
+    def restore_saved_settings(self):
+        for editor, key in ((self.work, "work_seconds"), (self.rest, "break_seconds")):
+            seconds = self.saved_preferences[key]
+            for part, value in zip(editor.parts, (seconds // 3600, seconds // 60 % 60, seconds % 60)):
+                part.setValue(value)
+                part.lineEdit().setText(part.textFromValue(value))
+        self.language.setCurrentIndex(self.language.findData(self.saved_preferences.get("language", "auto")))
+        self.daily.setChecked(self.saved_daily)
+        self.startup.setChecked(self.saved_startup)
+
+    def confirm_pending_changes(self):
+        if not self.has_pending_changes():
+            return True
+        choice = UnsavedChangesDialog(self).exec()
+        if choice == QDialog.Accepted:
+            if self.save_durations(closing=True):
+                return True
+            self.select_page("general")
+            return False
+        if choice == 2:
+            self.restore_saved_settings()
+            return True
+        return False
+
+    def save_durations(self, checked=False, closing=False):
         work, rest = self.work.seconds(), self.rest.seconds()
         if not 1 <= work <= 86400 or not 1 <= rest <= 7200:
             self.note.setText(tr("combined_validation"))
-            return
+            return False
         if self.controller.breaking:
             self.note.setText(tr("save_during_break"))
-            return
+            return False
         updated = {"work_seconds": work, "break_seconds": rest, "language": self.language.currentData()}
         try:
+            if self.startup.isChecked() != self.saved_startup:
+                set_startup(self.startup.isChecked())
             atomic_write(config_root() / "resttimer/settings.json", json.dumps(updated))
         except OSError:
             self.note.setText(tr("config_error"))
-            return
+            try:
+                set_startup(self.saved_startup)
+            except OSError:
+                pass
+            return False
         durations_changed = any(updated[key] != self.controller.preferences[key] for key in ("work_seconds", "break_seconds"))
         self.controller.preferences = updated
+        self.controller.updater.state["daily_enabled"] = self.daily.isChecked()
+        self.controller.updater.save()
+        self.controller.startup_action.setChecked(self.startup.isChecked())
+        self.remember_saved_settings()
         if durations_changed:
             self.controller.begin_work()
-        self.controller.apply_language()
+        self.controller.apply_language(keep_visible=not closing)
         self.controller.settings.note.setText(tr("settings_saved"))
+        return True
 
     def closeEvent(self, event):
-        if not self.update_panel.request_close():
+        if self.update_panel.process is not None:
+            self.update_panel.status.setText(tr("install_busy"))
             self.select_page("updates")
             event.ignore()
             return
+        if not self.confirm_pending_changes():
+            event.ignore()
+            return
+        self.update_panel.request_close()
         if not self.controller.tray.isSystemTrayAvailable():
             self.controller.quit()
         event.accept()
 
     def reject(self):
-        if not self.update_panel.request_close():
-            self.select_page("updates")
-            return
-        if not self.controller.tray.isSystemTrayAvailable():
-            self.controller.quit()
-        super().reject()
+        self.close()
 
 
 class BreakOverlay(QWidget):
@@ -589,7 +659,7 @@ class Controller:
         if reason == QSystemTrayIcon.Trigger:
             self.menu.popup(QCursor.pos())
 
-    def apply_language(self):
+    def apply_language(self, keep_visible=True):
         previous = i18n.code
         i18n.use(self.preferences.get("language", "auto"), QLocale.system().uiLanguages())
         if previous == i18n.code:
@@ -608,7 +678,7 @@ class Controller:
         panel.setParent(None)
         self.settings = SettingsDialog(self, update_panel=panel)
         self.settings.select_page(current_page)
-        if visible:
+        if visible and keep_visible:
             self.settings.show()
         previous_settings.hide()
         previous_settings.deleteLater()
@@ -631,6 +701,7 @@ class Controller:
         actual = startup_path().exists()
         self.startup_action.setChecked(actual)
         self.settings.startup.setChecked(actual)
+        self.settings.saved_startup = actual
 
     def clear_overlays(self):
         for overlay in self.overlays:

@@ -96,6 +96,10 @@
     "author": "Desarrollador",
     "license": "Licencia",
     "project_site": "Proyecto en GitHub",
-    "open_link_error": "No se pudo abrir el enlace."
+    "open_link_error": "No se pudo abrir el enlace.",
+    "unsaved_title": "Cambios sin guardar",
+    "unsaved_message": "¿Guardar los cambios antes de cerrar? Cierra este diálogo para seguir editando.",
+    "save_changes": "Guardar cambios",
+    "discard_changes": "Descartar cambios"
   }
 }

@@ -96,6 +96,10 @@
     "author": "開発者",
     "license": "ライセンス",
     "project_site": "GitHub のプロジェクト",
-    "open_link_error": "リンクを開けませんでした。"
+    "open_link_error": "リンクを開けませんでした。",
+    "unsaved_title": "未保存の変更",
+    "unsaved_message": "閉じる前に変更を保存しますか？編集を続けるには、このダイアログを閉じてください。",
+    "save_changes": "変更を保存",
+    "discard_changes": "変更を破棄"
   }
 }

@@ -96,6 +96,10 @@
     "author": "डेवलपर",
     "license": "लाइसेंस",
     "project_site": "GitHub पर परियोजना",
-    "open_link_error": "लिंक नहीं खोला जा सका।"
+    "open_link_error": "लिंक नहीं खोला जा सका।",
+    "unsaved_title": "बिना सहेजे बदलाव",
+    "unsaved_message": "बंद करने से पहले बदलाव सहेजें? संपादन जारी रखने के लिए यह संवाद बंद करें।",
+    "save_changes": "बदलाव सहेजें",
+    "discard_changes": "बदलाव छोड़ें"
   }
 }

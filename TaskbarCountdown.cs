@@ -141,11 +141,12 @@ namespace RestTimer
             var name = new StringBuilder(128);
             GetClassName(foreground, name, name.Capacity);
             if (name.ToString() == "Progman" || name.ToString() == "WorkerW" || name.ToString() == "Shell_TrayWnd") return false;
+            // DWM frame bounds can lag behind a resize. Check the current window
+            // rectangle first so leaving fullscreen restores the timer immediately.
+            if (!GetWindowRect(foreground, out NativeRect current) || !CoversDisplay(current.Rectangle, display)) return false;
             if (DwmGetWindowAttribute(foreground, 9, out NativeRect frame, Marshal.SizeOf(typeof(NativeRect))) != 0
                 || frame.Rectangle.IsEmpty)
-            {
-                if (!GetWindowRect(foreground, out frame)) return false;
-            }
+                frame = current;
             return CoversDisplay(frame.Rectangle, display);
         }
         [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr window);

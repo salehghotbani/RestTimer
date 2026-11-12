@@ -96,6 +96,10 @@
     "author": "开发者",
     "license": "许可证",
     "project_site": "GitHub 项目",
-    "open_link_error": "无法打开链接。"
+    "open_link_error": "无法打开链接。",
+    "unsaved_title": "未保存的更改",
+    "unsaved_message": "关闭前保存更改吗？关闭此对话框可继续编辑。",
+    "save_changes": "保存更改",
+    "discard_changes": "放弃更改"
   }
 }

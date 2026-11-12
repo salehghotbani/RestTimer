@@ -99,6 +99,26 @@ internal static class Smoke
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr MonitorFromRect(ref NativeRect rect, uint flags);
     [System.Runtime.InteropServices.DllImport("user32.dll", CharSet=System.Runtime.InteropServices.CharSet.Unicode)]
     private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+    private static System.Collections.Generic.IEnumerable<Control> Descendants(Control parent)
+    {
+        foreach(Control child in parent.Controls) { yield return child; foreach(var nested in Descendants(child)) yield return nested; }
+    }
+    private static int CloseChoosing(Form dialog, DialogResult choice)
+    {
+        int prompts=0;
+        using(var timer=new System.Windows.Forms.Timer{Interval=20})
+        {
+            timer.Tick+=delegate {
+                var prompt=Application.OpenForms.Cast<Form>().FirstOrDefault(form=>form.Name=="UnsavedChangesDialog");
+                if(prompt==null) return;
+                timer.Stop();prompts++;
+                if(choice==DialogResult.Cancel) prompt.Close();
+                else Descendants(prompt).OfType<Button>().Single(button=>button.DialogResult==choice).PerformClick();
+            };
+            timer.Start();dialog.Close();
+        }
+        return prompts;
+    }
     [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint="GetWindowLongW")]
     private static extern int GetWindowLong(IntPtr window, int index);
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr window, uint relation);
@@ -367,7 +387,9 @@ internal static class Smoke
                         Application.DoEvents();
                         if ((bool)isFullscreen.Invoke(null, new object[]{cover.Handle, primary})
                             || !badge.Visible || GetForegroundWindow()!=foreground || WorkArea(primary)!=before)
-                            throw new Exception("The timer did not return after leaving fullscreen, or it took focus.");
+                            throw new Exception("The timer did not return after leaving fullscreen, or it took focus. Visible=" + badge.Visible
+                                + ", foreground before=" + foreground + ", after=" + GetForegroundWindow() + ", cover bounds=" + cover.Bounds
+                                + ", fullscreen=" + isFullscreen.Invoke(null,new object[]{cover.Handle,primary}));
                         Console.WriteLine(foreground == cover.Handle ? "Fullscreen suppression and automatic restoration passed without taking focus."
                             : "Native fullscreen geometry passed; desktop foreground lock prevented activation of the simulated game.");
                     }
@@ -403,13 +425,16 @@ internal static class Smoke
                 var versions = (ListBox)panelType.GetField("versions", fields).GetValue(panel);
                 var generalDaily = (CheckBox)dialog.GetType().GetField("daily", fields).GetValue(dialog);
                 var updateDaily = (CheckBox)panelType.GetField("daily", fields).GetValue(panel);
-                generalDaily.Checked = false;
+                bool savedDaily=(bool)updateState.GetType().GetProperty("DailyEnabled").GetValue(updateState);
+                generalDaily.Checked = !savedDaily;
                 var restored = Activator.CreateInstance(updaterType, new object[] { System.IO.Path.GetFullPath("obj/smoke/update-ui") });
                 var restoredState = updaterType.GetProperty("State").GetValue(restored);
-                if (updateDaily.Checked || (bool)restoredState.GetType().GetProperty("DailyEnabled").GetValue(restoredState))
-                    throw new Exception("General daily-check preference was not synchronized and persisted.");
-                updateDaily.Checked = true;
-                if (!generalDaily.Checked) throw new Exception("Update daily-check preference did not sync back to General.");
+                if (updateDaily.Checked != !savedDaily || (bool)restoredState.GetType().GetProperty("DailyEnabled").GetValue(restoredState)!=savedDaily)
+                    throw new Exception("Daily-check drafts must synchronize without persisting before Save.");
+                updateDaily.Checked = savedDaily;
+                if (generalDaily.Checked!=savedDaily) throw new Exception("Update daily-check preference did not sync back to General.");
+                if(dialog.CancelButton!=null || Descendants(dialog).OfType<Button>().Any(button=>button.Text=="Close / cancel" || button.Text=="Cancel"))
+                    throw new Exception("Removed close/cancel buttons remain in the settings panel.");
                 versions.Items.Add(release);
                 versions.SelectedIndex = 1;
                 if (!notes.Text.Contains("تغییرات") || notes.Text.Contains("RestTimer 9.0.0") || !install.Enabled)
@@ -504,7 +529,7 @@ internal static class Smoke
                     Application.DoEvents();
                     var viewport = dialog.RectangleToScreen(dialog.ClientRectangle);
                     var check = (Button)panelType.GetField("check", fields).GetValue(panel);
-                    foreach (Control button in new Control[] { install, check, (Control)dialog.CancelButton })
+                    foreach (Control button in new Control[] { install, check })
                         if (!viewport.Contains(button.RectangleToScreen(button.ClientRectangle)))
                             throw new Exception("An update action was clipped in the compact window.");
                     var highContrast = themeType.GetField("highContrast", BindingFlags.Static | BindingFlags.NonPublic);
@@ -515,6 +540,59 @@ internal static class Smoke
                     highContrast.SetValue(null, originalContrast);
                 }
                 finally { mode.SetValue(null, null); themeType.GetMethod("Refresh").Invoke(null, null); }
+            }
+            var settingsType=app.GetType("RestTimer.SettingsDialog",true);
+            var closePrefs=Activator.CreateInstance(app.GetType("RestTimer.Preferences",true),60,900);
+            foreach(var choice in new[]{DialogResult.Cancel,DialogResult.No,DialogResult.Yes})
+            using(var dialog=(Form)Activator.CreateInstance(settingsType,closePrefs,SystemIcons.Application,(Action)(()=>{}),(Action)(()=>{}),updateService,"general",false))
+            {
+                dialog.Show();Application.DoEvents();
+                var duration=settingsType.GetField("workDuration",flags).GetValue(dialog);
+                var seconds=(TextBox)duration.GetType().GetField("seconds",flags).GetValue(duration);
+                var daily=(CheckBox)settingsType.GetField("daily",flags).GetValue(dialog);
+                bool savedDaily=daily.Checked;
+                seconds.Text="05";daily.Checked=!savedDaily;
+                var startup=(CheckBox)settingsType.GetField("startupPreference",flags).GetValue(dialog);
+                startup.Checked=!startup.Checked;
+                settingsType.GetMethod("SelectPage").Invoke(dialog,new object[]{"about"});
+                if(CloseChoosing(dialog,choice)!=1) throw new Exception("Closing from another tab did not prompt for pending settings.");
+                if((bool)updateState.GetType().GetProperty("DailyEnabled").GetValue(updateState)!=savedDaily)
+                    throw new Exception("Discarding or preparing settings changed the live update state before application.");
+                if(choice==DialogResult.Cancel)
+                {
+                    if(!dialog.Visible || !(bool)settingsType.GetProperty("HasPendingChanges").GetValue(dialog)) throw new Exception("Closing the prompt must keep edits open.");
+                    seconds.Text="";
+                    if(CloseChoosing(dialog,DialogResult.Yes)!=1 || !dialog.Visible || (string)settingsType.GetProperty("CurrentPage").GetValue(dialog)!="general")
+                        throw new Exception("Invalid settings must keep the window open on General.");
+                }
+                else if(choice==DialogResult.Yes)
+                {
+                    var selected=settingsType.GetProperty("SelectedPreferences").GetValue(dialog);
+                    if(selected==null || (int)selected.GetType().GetProperty("WorkSeconds").GetValue(selected)!=65 || dialog.DialogResult!=DialogResult.OK)
+                        throw new Exception("Save on close lost pending duration settings.");
+                    if((bool)settingsType.GetProperty("SelectedDailyEnabled").GetValue(dialog)==savedDaily)
+                        throw new Exception("Save on close lost the pending daily preference.");
+                }
+                else if(settingsType.GetProperty("SelectedPreferences").GetValue(dialog)!=null || dialog.Visible)
+                    throw new Exception("Discard must close without returning settings to apply.");
+            }
+            using(var dialog=(Form)Activator.CreateInstance(settingsType,closePrefs,SystemIcons.Application,(Action)(()=>{}),(Action)(()=>{}),updateService,"general",false))
+            {
+                dialog.Show();Application.DoEvents();
+                if(CloseChoosing(dialog,DialogResult.No)!=0) throw new Exception("Unchanged settings should close without a prompt.");
+            }
+            using(var dialog=(Form)Activator.CreateInstance(settingsType,closePrefs,SystemIcons.Application,(Action)(()=>{}),(Action)(()=>{}),updateService,"general",false))
+            using(var timer=new System.Windows.Forms.Timer{Interval=30})
+            {
+                timer.Tick+=delegate {
+                    timer.Stop();
+                    var duration=settingsType.GetField("workDuration",flags).GetValue(dialog);
+                    ((TextBox)duration.GetType().GetField("seconds",flags).GetValue(duration)).Text="07";
+                    CloseChoosing(dialog,DialogResult.Yes);
+                };
+                timer.Start();
+                if(dialog.ShowDialog()!=DialogResult.OK || settingsType.GetProperty("SelectedPreferences").GetValue(dialog)==null)
+                    throw new Exception("The modal settings window lost the Save result on close.");
             }
             Console.WriteLine("Windows tray, settings, overlay, update consent and offline history passed.");
             return 0;

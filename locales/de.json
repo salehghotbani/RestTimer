@@ -96,6 +96,10 @@
     "author": "Entwickler",
     "license": "Lizenz",
     "project_site": "Projekt auf GitHub",
-    "open_link_error": "Der Link konnte nicht geöffnet werden."
+    "open_link_error": "Der Link konnte nicht geöffnet werden.",
+    "unsaved_title": "Ungespeicherte Änderungen",
+    "unsaved_message": "Änderungen vor dem Schließen speichern? Schließen Sie diesen Dialog, um weiter zu bearbeiten.",
+    "save_changes": "Speichern",
+    "discard_changes": "Verwerfen"
   }
 }

@@ -84,7 +84,9 @@ Only this small box floats above application windows, hiding automatically while
 
 Settings opens one window with vertical tabs for **General**, **Updates**, **Version history**, and **About**. Browse releases and application details without opening extra windows. Version history is available here instead of in the tray menu.
 
-In **General**, toggle **Check daily for updates** to save the preference immediately. The same switch on the Updates page stays synchronized. Switching tabs preserves a running update download; closing the window cancels the download. The window stays open while an installer is running.
+In **General**, change durations, language, launch at sign-in, the floating timer, or daily update checks, then select **Save settings**. The daily-check switch on Updates stays synchronized with General. Changes remain pending until saved. If you close the window with unsaved changes, choose **Save changes** or **Discard changes**; close that dialog to continue editing. Unchanged settings close without a prompt.
+
+Switching tabs preserves pending settings and running update downloads. A confirmed close cancels the download. The window stays open while an installer is running. Navigation uses the sidebar; General has no duplicate update or cancel buttons, and sections have no Close / cancel buttons.
 
 Minute and second fields accept **0–59**, including Persian and Arabic digits on Windows. Settings, release notes and version lists use slim, rounded scrollbars that follow the system color mode.
 

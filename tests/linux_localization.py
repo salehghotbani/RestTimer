@@ -23,6 +23,9 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     module.atomic_write(module.config_root() / "resttimer/settings.json", json.dumps({"work_seconds": 3723, "break_seconds": 901}))
     controller = module.Controller(app)
     controller.updater.state["daily_enabled"] = False
+    controller.updater.save()
+    controller.settings.daily.setChecked(False)
+    controller.settings.remember_saved_settings()
     controller.stop_timer()
     controller.settings.show()
     old_deadline, old_pause = controller.deadline, controller.paused_at
@@ -48,6 +51,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert not module.update_core.Updater(module.config_root() / "resttimer/updates").state["daily_enabled"]
     dialog.daily.setChecked(True)
     assert controller.settings.daily.isChecked()
+    assert not controller.updater.state["daily_enabled"], "Draft daily checks persisted before Save"
     controller.settings.daily.setChecked(False)
     for code in i18n.SUPPORTED:
         controller.settings.language.setCurrentIndex(controller.settings.language.findData(code))
@@ -73,6 +77,13 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
                 assert controller.settings.update_panel is dialog and not pending.cancelled.is_set()
                 controller.settings.grab().save(str(ROOT / f"build/linux-localization-{page}-{code}-{name}.png"))
             controller.settings.select_page("general")
+            prompt = module.UnsavedChangesDialog(controller.settings)
+            prompt.show()
+            app.processEvents()
+            assert prompt.layoutDirection() == app.layoutDirection()
+            prompt.grab().save(str(ROOT / f"build/linux-localization-unsaved-{code}-{name}.png"))
+            prompt.close()
+            prompt.deleteLater()
         print("Localized settings, persistence, paused timer and active update passed:", code)
     controller.settings.language.setCurrentIndex(0)
     controller.settings.save.click()

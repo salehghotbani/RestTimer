@@ -87,6 +87,14 @@ internal static class LocalizationSmoke
                             using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
                             { dialog.DrawToBitmap(bitmap,new Rectangle(Point.Empty,dialog.Size)); bitmap.Save("obj/localization/"+page+"-"+code+"-"+(mode?"light":"dark")+".png",ImageFormat.Png); }
                         }
+                        using(var prompt=(Form)Activator.CreateInstance(app.GetType("RestTimer.UnsavedChangesDialog",true),SystemIcons.Application))
+                        {
+                            prompt.Show(dialog);Application.DoEvents();
+                            if(prompt.RightToLeft!=dialog.RightToLeft) throw new Exception("Unsaved changes prompt lost language direction.");
+                            using(var bitmap=new Bitmap(prompt.Width,prompt.Height))
+                            { prompt.DrawToBitmap(bitmap,new Rectangle(Point.Empty,prompt.Size));bitmap.Save("obj/localization/unsaved-"+code+"-"+(mode?"light":"dark")+".png",ImageFormat.Png); }
+                            prompt.Close();
+                        }
                     }
                 }
                 Console.WriteLine("Localized settings, selector, direction and updates passed: " + code);

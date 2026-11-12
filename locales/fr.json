@@ -96,6 +96,10 @@
     "author": "Développeur",
     "license": "Licence",
     "project_site": "Projet sur GitHub",
-    "open_link_error": "Impossible d’ouvrir le lien."
+    "open_link_error": "Impossible d’ouvrir le lien.",
+    "unsaved_title": "Modifications non enregistrées",
+    "unsaved_message": "Enregistrer les modifications avant de fermer ? Fermez cette boîte de dialogue pour continuer à modifier.",
+    "save_changes": "Enregistrer",
+    "discard_changes": "Ignorer les modifications"
   }
 }

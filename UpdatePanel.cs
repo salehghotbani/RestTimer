@@ -33,6 +33,7 @@ namespace RestTimer
         private bool initiallyChecked;
         private readonly CheckBox daily;
         public bool Installing => installing;
+        public bool DailyEnabled => daily.Checked;
         public event Action DailyPreferenceChanged;
 
         public UpdatePanel(UpdateService service, bool checkOnShow = true)
@@ -68,7 +69,6 @@ namespace RestTimer
                 Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 6) };
             daily.CheckedChanged += (_, __) =>
             {
-                if (this.service.State.DailyEnabled != daily.Checked) { this.service.State.DailyEnabled = daily.Checked; this.service.Save(); }
                 DailyPreferenceChanged?.Invoke();
             };
             layout.Controls.Add(daily, 0, 1);
@@ -119,28 +119,23 @@ namespace RestTimer
             progressText = new Label { Tag = "muted", Font = Theme.SmallFont, TextAlign = ContentAlignment.MiddleLeft,
                 Dock = DockStyle.Fill, Margin = new Padding(0, 2, 0, 4) };
             layout.Controls.Add(progressText, 0, 6);
-            actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
-            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
-            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 29));
-            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 29));
+            actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
+            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
+            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
             install = new RoundedButton(primary: true) { Text = I18n.T("install"), Enabled = false, Dock = DockStyle.Fill, Margin = new Padding(6, 0, 0, 0) };
             install.Click += async (_, __) => await InstallAsync();
             check = new RoundedButton { Text = I18n.T("check_again"), Dock = DockStyle.Fill, Margin = new Padding(6, 0, 6, 0) };
             check.Click += async (_, __) => await RefreshAsync();
-            var close = new RoundedButton { Text = I18n.T("close_cancel"), DialogResult = DialogResult.Cancel, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 6, 0) };
             actions.Controls.Add(install, 0, 0);
             actions.Controls.Add(check, 1, 0);
-            actions.Controls.Add(close, 2, 0);
             layout.Controls.Add(actions, 0, 7);
             Controls.Add(layout);
-            close.DialogResult = DialogResult.None;
-            close.Click += (_, __) => FindForm()?.Close();
             SelectPage(false);
             ShowLatest();
             ApplyTheme();
         }
         private void ApplyTheme() { Theme.Apply(this); }
-        public void SyncDailyPreference() => daily.Checked = service.State.DailyEnabled;
+        public void SyncDailyPreference(bool enabled) => daily.Checked = enabled;
         public void SelectPage(bool history)
         {
             latestPanel.Visible = !history;
@@ -149,8 +144,8 @@ namespace RestTimer
             consent.Visible = install.Visible = !history;
             layout.RowStyles[4].Height = history ? 0 : 58;
             actions.ColumnStyles[0].SizeType = history ? SizeType.Absolute : SizeType.Percent;
-            actions.ColumnStyles[0].Width = history ? 0 : 42;
-            actions.ColumnStyles[1].Width = actions.ColumnStyles[2].Width = history ? 50 : 29;
+            actions.ColumnStyles[0].Width = history ? 0 : 60;
+            actions.ColumnStyles[1].Width = history ? 100 : 40;
             ShowLatest();
         }
         public void EnsureLoaded()

@@ -9,7 +9,7 @@ import time
 import sys
 import threading
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
 
@@ -38,6 +38,9 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert controller.settings.navigation.count() == 4
     assert controller.menu.actions()[:3] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
     controller.updater.state["daily_enabled"] = False
+    controller.updater.save()
+    controller.settings.daily.setChecked(False)
+    controller.settings.remember_saved_settings()
     controller.settings.show()
     app.processEvents()
     for editor in (controller.settings.work, controller.settings.rest):
@@ -52,6 +55,67 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
             part.interpretText()
             assert 0 <= part.value() <= 59
             part.setValue(previous)
+    original_tray_check = controller.tray.isSystemTrayAvailable
+    controller.tray.isSystemTrayAvailable = lambda: True
+    settings = controller.settings
+    baseline = controller.preferences.copy()
+    def choose_prompt(choice):
+        def choose():
+            prompt = app.activeModalWidget()
+            assert isinstance(prompt, module.UnsavedChangesDialog)
+            if choice == "save": prompt.save.click()
+            elif choice == "discard": prompt.discard.click()
+            else: prompt.reject()
+        QTimer.singleShot(0, choose)
+    assert not settings.has_pending_changes()
+    assert not hasattr(settings, "updates") and not hasattr(settings.update_panel, "close_button")
+    settings.work.parts[2].setValue(17)
+    settings.daily.setChecked(True)
+    settings.startup.setChecked(True)
+    assert not module.startup_path().exists() and not controller.updater.state["daily_enabled"]
+    pending = type("Pending", (), {"cancelled": threading.Event()})()
+    settings.update_panel.worker = pending
+    settings.select_page("about")
+    choose_prompt("continue")
+    settings.close()
+    assert settings.isVisible() and settings.has_pending_changes() and not pending.cancelled.is_set()
+    choose_prompt("discard")
+    settings.close()
+    assert not settings.isVisible() and not settings.has_pending_changes() and pending.cancelled.is_set()
+    assert controller.preferences == baseline and not module.startup_path().exists()
+    assert not controller.updater.state["daily_enabled"]
+    controller.show_settings()
+    settings = controller.settings
+    settings.work.parts[2].setValue(17)
+    settings.daily.setChecked(True)
+    settings.startup.setChecked(True)
+    choose_prompt("save")
+    settings.close()
+    assert not settings.isVisible() and module.read_preferences()["work_seconds"] == baseline["work_seconds"] + 17
+    assert module.startup_path().exists() and controller.updater.state["daily_enabled"]
+    assert module.update_core.Updater(module.config_root() / "resttimer/updates").state["daily_enabled"]
+    controller.show_settings()
+    settings = controller.settings
+    language = "fa" if module.i18n.code != "fa" else "en"
+    settings.language.setCurrentIndex(settings.language.findData(language))
+    choose_prompt("save")
+    settings.close()
+    assert not controller.settings.isVisible() and module.read_preferences()["language"] == language
+    assert module.i18n.code == language
+    controller.show_settings()
+    settings = controller.settings
+    for part in settings.work.parts: part.setValue(0)
+    choose_prompt("save")
+    settings.close()
+    assert settings.isVisible() and settings.current_page == "general" and settings.has_pending_changes()
+    for part, value in zip(settings.work.parts, (1, 0, 0)): part.setValue(value)
+    settings.daily.setChecked(False)
+    settings.startup.setChecked(False)
+    settings.save.click()
+    assert not settings.has_pending_changes()
+    settings.close()  # No changes: no modal prompt.
+    controller.show_settings()
+    controller.tray.isSystemTrayAvailable = original_tray_check
     controller.settings.work.parts[0].setValue(1)
     controller.settings.work.parts[1].setValue(2)
     controller.settings.work.parts[2].setValue(3)

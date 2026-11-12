@@ -263,6 +263,9 @@ namespace RestTimer
 
                     var updated = dialog.SelectedPreferences;
                     updated.Save();
+                    if (dialog.StartupChanged) Preferences.SetStartup(dialog.SelectedStartupEnabled.Value);
+                    updater.State.DailyEnabled = dialog.SelectedDailyEnabled;
+                    updater.Save();
                     if (updated.WorkSeconds != preferences.WorkSeconds || updated.BreakSeconds != preferences.BreakSeconds)
                         ResetClock();
                     preferences = updated;

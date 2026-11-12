@@ -1,6 +1,8 @@
 # RestTimer changelog
 
 ## 1.9.1
+- Remove the duplicate Updates and changes and Cancel buttons from General, and all Close / cancel buttons from settings sections.
+- Prompt to save or discard pending settings when closing. Closing the prompt continues editing; invalid settings keep the window open. Daily checks and launch-at-sign-in changes now wait for Save.
 - Hide the Windows floating countdown while a foreground game or application fills its display; restore it automatically when leaving fullscreen.
 - Add slim, rounded, theme-aware scrollbars to settings, release notes and version lists on Windows and Linux.
 - Reject minute and second values outside 0–59 while editing on Windows, including pasted Persian and Arabic numerals; retain the same bounds on Linux.

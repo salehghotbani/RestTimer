@@ -96,6 +96,10 @@
     "author": "المطوّر",
     "license": "الترخيص",
     "project_site": "المشروع على GitHub",
-    "open_link_error": "تعذر فتح الرابط."
+    "open_link_error": "تعذر فتح الرابط.",
+    "unsaved_title": "تغييرات غير محفوظة",
+    "unsaved_message": "هل تريد حفظ التغييرات قبل الإغلاق؟ أغلق هذه الرسالة لمتابعة التحرير.",
+    "save_changes": "حفظ التغييرات",
+    "discard_changes": "تجاهل التغييرات"
   }
 }

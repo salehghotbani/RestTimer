@@ -148,9 +148,7 @@ class UpdatePanel(QWidget):
         self.install.clicked.connect(self.download)
         self.check = QPushButton(tr("check_again"))
         self.check.clicked.connect(self.refresh)
-        self.close_button = QPushButton(tr("close_cancel"))
-        self.close_button.clicked.connect(lambda: self.window().close())
-        for button in (self.install, self.check, self.close_button):
+        for button in (self.install, self.check):
             buttons.addWidget(button)
         layout.addLayout(buttons)
         self.show_latest()
@@ -178,7 +176,6 @@ class UpdatePanel(QWidget):
         self.versions.setItemText(0, tr("bundled_history"))
         self.consent.setText(tr("consent_linux"))
         self.check.setText(tr("check_again"))
-        self.close_button.setText(tr("close_cancel"))
         if previous:
             for key, value in i18n.catalog(previous)["strings"].items():
                 if self.status.text() == value:
@@ -191,9 +188,6 @@ class UpdatePanel(QWidget):
         return (self.controller.root / ("CHANGELOG.fa.md" if i18n.code == "fa" else "CHANGELOG.md")).read_text(encoding="utf-8")
 
     def toggle_daily(self, enabled):
-        if self.updater.state["daily_enabled"] != enabled:
-            self.updater.state["daily_enabled"] = enabled
-            self.updater.save()
         self.daily_changed.emit(enabled)
 
     def select_history(self):
@@ -282,7 +276,6 @@ class UpdatePanel(QWidget):
         self.process.readyReadStandardOutput.connect(lambda: self.process.readAllStandardOutput() if self.process else None)
         self.process.finished.connect(self.install_finished)
         self.process.errorOccurred.connect(self.install_error)
-        self.close_button.setEnabled(False)
         self.status.setText(tr("installing"))
         self.process.start(command[0], command[1:])
 
@@ -290,7 +283,6 @@ class UpdatePanel(QWidget):
         process, self.process = self.process, None
         if process:
             process.deleteLater()
-        self.close_button.setEnabled(True)
         if exit_code == 0 and exit_status == QProcess.NormalExit:
             self.status.setText(tr("install_complete"))
             self.controller.restart_after_update()

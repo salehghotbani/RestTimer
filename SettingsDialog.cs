@@ -21,8 +21,19 @@ namespace RestTimer
         private readonly Bitmap logo;
         private readonly Timer themeTimer;
         private string paletteKey;
+        private readonly Preferences originalPreferences;
+        private readonly bool originalDaily;
+        private bool originalStartup, saving;
         public Preferences SelectedPreferences { get; private set; }
         public string CurrentPage { get; private set; }
+        public bool SelectedDailyEnabled => daily.Checked;
+        public bool? SelectedStartupEnabled => startupPreference.Enabled ? (bool?)startupPreference.Checked : null;
+        public bool StartupChanged => startupPreference.Enabled && startupPreference.Checked != originalStartup;
+        public bool HasPendingChanges => !workDuration.TryGetSeconds(out int work) || !breakDuration.TryGetSeconds(out int rest)
+            || work != originalPreferences.WorkSeconds || rest != originalPreferences.BreakSeconds
+            || showTaskbarCountdown.Checked != originalPreferences.ShowTaskbarCountdown
+            || ((LanguageItem)language.SelectedItem).Code != originalPreferences.Language
+            || daily.Checked != originalDaily || StartupChanged;
 
         private sealed class LanguageItem
         {
@@ -41,6 +52,8 @@ namespace RestTimer
             string initialPage, bool checkOnShow)
         {
             service = updater ?? new UpdateService();
+            originalPreferences = preferences;
+            originalDaily = service.State.DailyEnabled;
             Theme.Refresh();
             Text = "RestTimer — " + I18n.T("preferences_title");
             Icon = icon;
@@ -59,13 +72,12 @@ namespace RestTimer
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             var sidebar = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(10),
                 Margin = I18n.IsRtl ? new Padding(16, 0, 0, 0) : new Padding(0, 0, 16, 0) };
-            var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8, AccessibleName = I18n.T("settings_navigation") };
+            var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, AccessibleName = I18n.T("settings_navigation") };
             tabs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
             for (int i = 0; i < 4; i++) tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
             tabs.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-            tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
             var brand = new Panel { Dock = DockStyle.Fill };
             brand.Controls.Add(new PictureBox { Image = logo, SizeMode = PictureBoxSizeMode.Zoom, Bounds = new Rectangle(56, 0, 36, 36) });
             brand.Controls.Add(new Label { Text = "RestTimer", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleCenter,
@@ -83,16 +95,12 @@ namespace RestTimer
             }
             tabs.Controls.Add(new Label { Text = "v" + UpdateClient.CurrentVersion.ToString(3), Font = Theme.SmallFont,
                 Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, RightToLeft = RightToLeft.No }, 0, 6);
-            var close = new RoundedButton { Text = I18n.T("close_cancel"), Dock = DockStyle.Fill, TabIndex = 4 };
-            close.Click += (_, __) => Close();
-            tabs.Controls.Add(close, 0, 7);
-            CancelButton = close;
             sidebar.Controls.Add(tabs);
             content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
             generalPage = CreateGeneralPage(preferences, start, stop);
             aboutPage = CreateAboutPage();
             updatePanel = new UpdatePanel(service, checkOnShow) { Dock = DockStyle.Fill };
-            updatePanel.DailyPreferenceChanged += () => daily.Checked = service.State.DailyEnabled;
+            updatePanel.DailyPreferenceChanged += () => daily.Checked = updatePanel.DailyEnabled;
             content.Controls.AddRange(new Control[] { generalPage, updatePanel, aboutPage });
             layout.Controls.Add(sidebar, 0, 0);
             layout.Controls.Add(content, 1, 0);
@@ -155,21 +163,6 @@ namespace RestTimer
                 Text = I18n.T("save"), Bounds = new Rectangle(366, 678, 142, 38), TabIndex = 6
             };
             save.Click += (_, __) => SaveDurations();
-            var updates = new RoundedButton
-            {
-                Text = I18n.T("updates_title"),
-                Bounds = new Rectangle(144, 678, 206, 38),
-                TabIndex = 7
-            };
-            updates.Click += (_, __) =>
-            {
-                SelectPage("updates");
-            };
-            var cancel = new RoundedButton
-            {
-                Text = I18n.T("cancel"), DialogResult = DialogResult.Cancel,
-                Bounds = new Rectangle(28, 678, 100, 38), TabIndex = 8
-            };
             showTaskbarCountdown = new CheckBox { Text = I18n.T("show_countdown"), Checked = preferences.ShowTaskbarCountdown,
                 Bounds = new Rectangle(28, 584, 480, 30), TabIndex = 5 };
             var languageTitle = new Label { Text = I18n.T("language"), TextAlign = ContentAlignment.MiddleLeft,
@@ -199,21 +192,15 @@ namespace RestTimer
                 Bounds = new Rectangle(28, 510, 480, 34) };
             daily.CheckedChanged += (_, __) =>
             {
-                if (service.State.DailyEnabled != daily.Checked) { service.State.DailyEnabled = daily.Checked; service.Save(); }
-                updatePanel?.SyncDailyPreference();
+                updatePanel?.SyncDailyPreference(daily.Checked);
             };
             startupPreference = new ThemedCheckBox { Text = I18n.T("startup"), Bounds = new Rectangle(28, 548, 480, 30) };
             try { startupPreference.Checked = Preferences.StartsWithWindows(); }
             catch (Exception ex) when (ex is System.IO.IOException || ex is UnauthorizedAccessException || ex is System.Security.SecurityException)
             { startupPreference.Enabled = false; }
-            startupPreference.Click += (_, __) =>
-            {
-                try { Preferences.SetStartup(startupPreference.Checked); }
-                catch (Exception ex) when (ex is System.IO.IOException || ex is UnauthorizedAccessException || ex is System.Security.SecurityException)
-                { startupPreference.Checked = !startupPreference.Checked; ShowValidationError(I18n.T("save_error")); }
-            };
+            originalStartup = startupPreference.Checked;
             body.Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration,
-                startTimer, stopTimer, timerStatus, languageTitle, language, languageHint, daily, startupPreference, showTaskbarCountdown, note, save, updates, cancel });
+                startTimer, stopTimer, timerStatus, languageTitle, language, languageHint, daily, startupPreference, showTaskbarCountdown, note, save });
             savePreferences = save;
             return new ScrollFrame(viewport);
         }
@@ -277,8 +264,29 @@ namespace RestTimer
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            if (e.CloseReason == CloseReason.UserClosing && updatePanel.Installing) e.Cancel = true;
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                if (updatePanel.Installing) e.Cancel = true;
+                else if (!saving && HasPendingChanges)
+                {
+                    using (var prompt = new UnsavedChangesDialog(Icon))
+                    {
+                        var choice = prompt.ShowDialog(this);
+                        if (choice == DialogResult.Yes)
+                        {
+                            if (SelectPreferences()) { saving = true; DialogResult = DialogResult.OK; }
+                            else { SelectPage("general"); e.Cancel = true; }
+                        }
+                        else if (choice != DialogResult.No) e.Cancel = true;
+                    }
+                }
+            }
             base.OnFormClosing(e);
+        }
+        protected override bool ProcessDialogKey(Keys keyData)
+        {
+            if (keyData == Keys.Escape) { Close(); return true; }
+            return base.ProcessDialogKey(keyData);
         }
         protected override void Dispose(bool disposing)
         {
@@ -289,20 +297,27 @@ namespace RestTimer
 
         private void SaveDurations()
         {
+            if (updatePanel.Installing) { SelectPage("updates"); return; }
+            if (!SelectPreferences()) return;
+            saving = true;
+            DialogResult = DialogResult.OK;
+        }
+        private bool SelectPreferences()
+        {
             if (!workDuration.TryGetSeconds(out int work) || work < 1 || work > Preferences.MaxWorkSeconds)
             {
                 ShowValidationError(I18n.T("work_validation"));
-                return;
+                return false;
             }
             if (!breakDuration.TryGetSeconds(out int rest) || rest < 1 || rest > Preferences.MaxBreakSeconds)
             {
                 ShowValidationError(I18n.T("break_validation"));
-                return;
+                return false;
             }
 
             SelectedPreferences = new Preferences(work, rest, showTaskbarCountdown.Checked,
                 ((LanguageItem)language.SelectedItem).Code);
-            DialogResult = DialogResult.OK;
+            return true;
         }
 
         private void ShowValidationError(string message)
