@@ -81,7 +81,7 @@ jobs:
       - name: Install and remove RPM package on Fedora 43
         run: |
           docker run --rm -v "$PWD/dist/release:/packages:ro" fedora:43 bash -ec '
-            dnf install -y /packages/*.rpm
+            dnf install -y util-linux /packages/*.rpm
             useradd -m smoke
             runuser -u smoke -- env QT_QPA_PLATFORM=offscreen /opt/resttimer/resttimer --smoke-test
             dnf remove -y resttimer
