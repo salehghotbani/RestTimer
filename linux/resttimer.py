@@ -6,21 +6,28 @@ from pathlib import Path
 import re
 import sys
 import time
+import subprocess
 
-from PySide6.QtCore import QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QCursor, QDesktopServices, QFont, QIcon, QPainter
-from PySide6.QtNetwork import QLocalServer, QLocalSocket, QNetworkAccessManager, QNetworkReply, QNetworkRequest
+from PySide6.QtCore import QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer
+from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter
+from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QAbstractSpinBox, QApplication, QCheckBox, QDialog, QFrame, QHBoxLayout, QLabel,
     QMenu, QMessageBox, QPushButton, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
+import update_core
+from update_ui import UpdateDialog, Worker
 
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-RELEASES_URL = "https://github.com/salehghotbani/RestTimer/releases/latest"
 DEFAULTS = {"work_seconds": 3600, "break_seconds": 900}
 STYLE = """
 QDialog, QMenu { background: #0d1521; color: #edf4fa; }
+QTextEdit, QComboBox, QTabWidget::pane { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; border-radius: 6px; padding: 8px; }
+QTabBar::tab { background: #1e2e40; color: #edf4fa; padding: 10px 20px; }
+QTabBar::tab:selected { background: #223a48; color: #83e6c4; }
+QProgressBar { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; border-radius: 5px; text-align: center; }
+QProgressBar::chunk { background: #16836b; border-radius: 5px; }
 QLabel { color: #edf4fa; background: transparent; }
 QLabel#muted { color: #9bb0c3; }
 QLabel#title { font-size: 23px; font-weight: bold; }
@@ -202,12 +209,16 @@ class SettingsDialog(QDialog):
         self.note = label("با تغییر زمان‌ها، شمارش کار از نو شروع می‌شود.", "muted")
         self.note.setWordWrap(True)
         layout.addWidget(self.note)
+        self.update_notice = QPushButton()
+        self.update_notice.setVisible(False)
+        self.update_notice.clicked.connect(controller.check_updates)
+        layout.addWidget(self.update_notice)
         buttons = QHBoxLayout()
         self.save = QPushButton("ذخیرهٔ زمان‌ها")
         self.save.setObjectName("primary")
         self.save.clicked.connect(self.save_durations)
         buttons.addWidget(self.save)
-        self.updates = QPushButton("بررسی به‌روزرسانی")
+        self.updates = QPushButton("به‌روزرسانی و تغییرات")
         self.updates.clicked.connect(controller.check_updates)
         buttons.addWidget(self.updates)
         start = QPushButton("استراحت")
@@ -343,7 +354,12 @@ class Controller:
         self.quitting = False
         self.overlays = []
         self.display_signature = None
-        self.reply = None
+        self.root, self.version = ROOT, VERSION
+        self.updater = update_core.Updater(config_root() / "resttimer/updates")
+        self.workers = []
+        self.update_dialog = None
+        self.checking_updates = False
+        self.instance = None
         self.deadline = time.monotonic() + self.preferences["work_seconds"]
         self.menu = QMenu()
         self.status = self.menu.addAction("RestTimer")
@@ -359,14 +375,15 @@ class Controller:
         self.startup_action.triggered.connect(self.toggle_startup)
         self.menu.addAction(self.startup_action)
         self.update_action = self.menu.addAction("بررسی به‌روزرسانی…", self.check_updates)
+        self.menu.addAction("تاریخچهٔ تغییرات…", lambda: self.check_updates(history=True))
         self.menu.addSeparator()
         self.menu.addAction("خروج", self.quit)
         self.tray = QSystemTrayIcon(self.icon, app)
         self.tray.setContextMenu(self.menu)
         self.tray.activated.connect(self.tray_activated)
+        self.tray.messageClicked.connect(self.check_updates)
         self.tray.show()
         self.settings = SettingsDialog(self)
-        self.network = QNetworkAccessManager(app)
         self.timer = QTimer(app)
         self.timer.setInterval(250)
         self.timer.timeout.connect(self.tick)
@@ -374,6 +391,12 @@ class Controller:
         app.screenAdded.connect(lambda _: self.refresh_displays())
         app.screenRemoved.connect(lambda _: self.refresh_displays())
         self.tick()
+        self.update_timer = QTimer(app)
+        self.update_timer.setInterval(60000)
+        self.update_timer.timeout.connect(self.daily_updates)
+        if "--smoke-test" not in sys.argv:
+            self.update_timer.start()
+            QTimer.singleShot(5000, self.daily_updates)
 
     def tray_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
@@ -479,63 +502,92 @@ class Controller:
             self.status.setText("متوقف · " + self.status.text())
         self.settings.timer_status.setText(self.status.text())
         self.tray.setToolTip(("RestTimer  " if self.running else "RestTimer · متوقف  ") + text)
+        self.notify_update()
         if self.breaking:
             self.refresh_displays()
             for overlay in self.overlays:
                 overlay.countdown.setText(text)
                 overlay.set_running(self.running)
 
-    def check_updates(self):
-        if self.reply is not None or self.breaking:
-            return
-        self.show_settings()
-        self.update_action.setEnabled(False)
-        self.settings.updates.setEnabled(False)
-        self.settings.note.setText("در حال بررسی آخرین نسخه…")
-        request = QNetworkRequest(QUrl("https://api.github.com/repos/salehghotbani/RestTimer/releases/latest"))
-        request.setRawHeader(b"User-Agent", f"RestTimer/{VERSION}".encode())
-        request.setRawHeader(b"Accept", b"application/vnd.github+json")
-        request.setTransferTimeout(15000)
-        self.reply = self.network.get(request)
-        self.reply.finished.connect(self.update_finished)
+    def run_update_job(self, job, success, failure, progress=None, finished=None):
+        worker = Worker(job, self.app)
+        self.workers.append(worker)
+        worker.completed.connect(lambda result: success(result) if not self.quitting else None)
+        worker.failed.connect(lambda error: failure(error) if not self.quitting else None)
+        if progress:
+            worker.progress.connect(progress)
+        def done():
+            if finished:
+                finished()
+            self.workers.remove(worker)
+            worker.deleteLater()
+        worker.finished.connect(done)
+        worker.start()
+        return worker
 
-    def update_finished(self):
-        reply, self.reply = self.reply, None
-        if reply is None:
+    def daily_updates(self):
+        if self.quitting or self.checking_updates or not self.updater.due():
             return
+        self.checking_updates = True
+        self.updater.attempt()
+        def received(release):
+            self.updater.accept_latest(release)
+            self.notify_update()
+        def done():
+            self.checking_updates = False
+        self.run_update_job(lambda worker: self.updater.latest(), received, lambda _: None, finished=done)
+
+    def notify_update(self):
+        release = self.updater.state["latest"]
+        if self.breaking or not update_core.stable(release) or version_tuple(release["tag_name"]) <= version_tuple(VERSION):
+            return
+        text = "نسخهٔ " + release["tag_name"] + " آماده است؛ تغییرات و نصب…"
+        self.update_action.setText(text)
+        self.settings.update_notice.setText(text)
+        self.settings.update_notice.setVisible(True)
+        if not self.updater.state["daily_enabled"]:
+            return
+        if self.updater.state["notified_tag"] == release["tag_name"]:
+            return
+        if QSystemTrayIcon.isSystemTrayAvailable():
+            self.tray.showMessage("به‌روزرسانی RestTimer", text, QSystemTrayIcon.Information, 10000)
+        else:
+            self.settings.show()
+            self.app.alert(self.settings)
+        self.updater.state["notified_tag"] = release["tag_name"]
+        self.updater.save()
+
+    def check_updates(self, checked=False, history=False):
+        if self.breaking:
+            return
+        if self.update_dialog is None or self.update_dialog.closed:
+            self.update_dialog = UpdateDialog(self, history)
+        elif history:
+            self.update_dialog.tabs.setCurrentIndex(1)
+        self.update_dialog.show()
+        self.update_dialog.raise_()
+        self.update_dialog.activateWindow()
+
+    def restart_after_update(self):
         try:
-            if self.quitting:
-                return
-            if reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) == 404:
-                self.settings.note.setText("هنوز نسخه‌ای برای دریافت منتشر نشده است.")
-                return
-            if reply.error() != QNetworkReply.NoError or reply.bytesAvailable() > 2 * 1024 * 1024:
-                raise ValueError("Release request failed")
-            data = json.loads(bytes(reply.readAll()))
-            if data.get("draft") or data.get("prerelease"):
-                raise ValueError("No stable release")
-            if version_tuple(data.get("tag_name")) <= version_tuple(VERSION):
-                self.settings.note.setText("برنامهٔ شما به‌روز است.")
-                return
-            self.settings.note.setText("نسخهٔ جدید آمادهٔ دریافت است.")
-            choice = QMessageBox.question(
-                self.settings, "RestTimer",
-                "نسخهٔ جدید منتشر شده است. صفحهٔ دریافت بستهٔ DEB یا RPM باز شود؟",
-            )
-            if choice == QMessageBox.Yes:
-                QDesktopServices.openUrl(QUrl(RELEASES_URL))
-        except (ValueError, TypeError, AttributeError):
-            self.settings.note.setText("بررسی نسخه ممکن نشد. اتصال اینترنت را بررسی کن و دوباره تلاش کن.")
-        finally:
-            reply.deleteLater()
-            self.update_action.setEnabled(True)
-            self.settings.updates.setEnabled(True)
+            if self.instance:
+                lock, server = self.instance
+                server.close()
+                lock.close()
+                self.instance = None
+            subprocess.Popen(["/opt/resttimer/resttimer", "--background"], env=update_core.system_environment(), close_fds=True)
+        except OSError:
+            self.update_dialog.status.setText("نصب کامل شد؛ برنامه را ببندید و از منوی برنامه‌ها دوباره اجرا کنید.")
+            self.instance = acquire_instance(self)
+            return
+        self.quit()
 
     def quit(self):
         self.quitting = True
         self.timer.stop()
-        if self.reply is not None:
-            self.reply.abort()
+        self.update_timer.stop()
+        for worker in self.workers:
+            worker.cancelled.set()
         self.clear_overlays()
         self.tray.hide()
         self.app.quit()
@@ -594,6 +646,7 @@ def main():
         if instance is None:
             controller.quit()
             return 0
+        controller.instance = instance
         if "--background" not in sys.argv or not QSystemTrayIcon.isSystemTrayAvailable():
             controller.show_settings()
     return app.exec()

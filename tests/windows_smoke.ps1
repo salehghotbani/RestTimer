@@ -96,7 +96,7 @@ internal static class Smoke
             var app = Assembly.LoadFrom(args[0]);
             var flags = BindingFlags.Instance | BindingFlags.NonPublic;
             var type = app.GetType("RestTimer.RestTimerContext", true);
-            using (var context = (ApplicationContext)Activator.CreateInstance(type))
+            using (var context = (ApplicationContext)Activator.CreateInstance(type, new object[] { false }))
             {
                 var menu = (ContextMenuStrip)type.GetField("menu", flags).GetValue(context);
                 var tray = (NotifyIcon)type.GetField("trayIcon", flags).GetValue(context);
@@ -193,7 +193,34 @@ internal static class Smoke
                     type.GetField("editingSettings", flags).SetValue(context, false);
                 }
             }
-            Console.WriteLine("Windows tray, settings and overlay start/stop, exact resume, display coverage and skip passed.");
+            var updaterType = app.GetType("RestTimer.UpdateService", true);
+            var updateService = Activator.CreateInstance(updaterType, new object[] { System.IO.Path.GetFullPath("obj/smoke/update-ui") });
+            var updateState = updaterType.GetProperty("State").GetValue(updateService);
+            var release = app.GetType("RestTimer.UpdateClient", true).GetMethod("ParseRelease", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, new object[] { "{\"tag_name\":\"v9.0.0\",\"body\":\"تغییرات آزمایشی نسخهٔ جدید\",\"assets\":[]}" });
+            updateState.GetType().GetProperty("Latest").SetValue(updateState, release);
+            using (var dialog = (Form)Activator.CreateInstance(app.GetType("RestTimer.UpdateDialog", true),
+                SystemIcons.Application, updateService, false, false))
+            {
+                dialog.Show();
+                Application.DoEvents();
+                var fields = BindingFlags.Instance | BindingFlags.NonPublic;
+                var notes = (RichTextBox)dialog.GetType().GetField("latestNotes", fields).GetValue(dialog);
+                var tabs = (TabControl)dialog.GetType().GetField("tabs", fields).GetValue(dialog);
+                var install = (Button)dialog.GetType().GetField("install", fields).GetValue(dialog);
+                if (!notes.Text.Contains("تغییرات") || tabs.TabCount != 2 || !install.Enabled)
+                    throw new Exception("Update consent or history UI missing.");
+                using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
+                {
+                    dialog.DrawToBitmap(bitmap, new Rectangle(Point.Empty, dialog.Size));
+                    bitmap.Save("obj/smoke/windows-updates.png", ImageFormat.Png);
+                    tabs.SelectedIndex = 1;
+                    Application.DoEvents();
+                    dialog.DrawToBitmap(bitmap, new Rectangle(Point.Empty, dialog.Size));
+                    bitmap.Save("obj/smoke/windows-history.png", ImageFormat.Png);
+                }
+            }
+            Console.WriteLine("Windows tray, settings, overlay, update consent and offline history passed.");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }

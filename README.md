@@ -43,7 +43,7 @@
 بستهٔ DEB را در مدیر نرم‌افزار باز کنید یا در پوشهٔ دانلودشده اجرا کنید.
 
 ```bash
-sudo apt install ./RestTimer-v1.3.2-linux-amd64.deb
+sudo apt install ./RestTimer-v1.4.0-linux-amd64.deb
 ```
 
 ### Fedora
@@ -51,7 +51,7 @@ sudo apt install ./RestTimer-v1.3.2-linux-amd64.deb
 بستهٔ RPM را در مدیر نرم‌افزار باز کنید یا اجرا کنید.
 
 ```bash
-sudo dnf install ./RestTimer-v1.3.2-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.4.0-linux-x86_64.rpm
 ```
 
 سپس RestTimer را از منوی برنامه‌ها یا فرمان `resttimer` اجرا کنید. Python و Qt مورد نیاز در بسته‌های لینوکس قرار دارند. حذف برنامه با `sudo apt remove resttimer` یا `sudo dnf remove resttimer` انجام می‌شود.
@@ -72,7 +72,11 @@ sudo dnf install ./RestTimer-v1.3.2-linux-x86_64.rpm
 
 ## به‌روزرسانی
 
-دکمهٔ «بررسی به‌روزرسانی» در تنظیمات و منوی آیکن، نسخه را با آخرین انتشار پایدار GitHub مقایسه می‌کند و صفحهٔ دریافت نسخهٔ جدید را باز می‌کند.
+برنامه هنگام اجرا و سپس هر ۲۴ ساعت، آخرین نسخهٔ پایدار را بررسی می‌کند. اگر اینترنت در دسترس نباشد، ۶ ساعت بعد دوباره تلاش می‌کند. نتیجه بین اجراها ذخیره می‌شود و برای هر نسخه یک اعلان نمایش داده می‌شود. با کلیک روی اعلان یا گزینهٔ «به‌روزرسانی و تغییرات»، تغییرات نسخهٔ جدید را بخوانید و با «دانلود و نصب» تأیید کنید. دانلود دارای نوار پیشرفت و امکان لغو است؛ اندازه و SHA-256 فایل پیش از نصب بررسی می‌شوند. بررسی روزانه را می‌توان در همین پنجره غیرفعال کرد.
+
+در ویندوز، نصب با زبان و مسیر فعلی انجام می‌شود و برنامه خودکار بسته و دوباره اجرا می‌شود. در Ubuntu و Fedora، نصب از طریق apt یا dnf با درخواست مجوز مدیر سیستم انجام می‌شود. رد کردن مجوز یا خطای دانلود، نسخهٔ در حال اجرا را نمی‌بندد.
+
+تب «تاریخچهٔ نسخه‌ها» تغییرات هر انتشار را از GitHub نمایش می‌دهد. [فهرست تغییرات](CHANGELOG.md) نیز همراه برنامه برای مشاهدهٔ آفلاین قرار دارد. برای دیدن اعلان‌ها، اعلان‌های RestTimer باید در تنظیمات سیستم مجاز باشند.
 
 در ویندوز **نصاب EXE جدید** را اجرا کنید. اگر RestTimer باز باشد، نصاب پیش از بستن برنامه اطلاع می‌دهد، آن را خودکار می‌بندد و پس از پایان نصب دوباره اجرا می‌کند. پیام‌ها با زبان انتخاب‌شدهٔ فارسی یا انگلیسی نمایش داده می‌شوند. در Ubuntu یا Fedora، بستهٔ جدید را با همان دستور نصب کنید. تنظیمات زمان‌ها در ارتقا حفظ می‌شوند.
 
@@ -102,9 +106,9 @@ sudo dnf install ./RestTimer-v1.3.2-linux-x86_64.rpm
 </div>
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.3.2/RestTimer-v1.3.2-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.3.2/RestTimer-v1.3.2-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.3.2/RestTimer-v1.3.2-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.4.0/RestTimer-v1.4.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.4.0/RestTimer-v1.4.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.4.0/RestTimer-v1.4.0-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

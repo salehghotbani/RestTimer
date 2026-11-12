@@ -22,6 +22,9 @@ namespace RestTimer
         }
 
         public SettingsDialog(Preferences preferences, Icon icon, Action start, Action stop)
+            : this(preferences, icon, start, stop, null) { }
+
+        public SettingsDialog(Preferences preferences, Icon icon, Action start, Action stop, UpdateService updater)
         {
             Text = "زمان‌بندی استراحت — RestTimer";
             Icon = icon;
@@ -77,13 +80,13 @@ namespace RestTimer
             save.Click += (_, __) => SaveDurations();
             var updates = new RoundedButton
             {
-                Text = "بررسی به‌روزرسانی",
+                Text = "به‌روزرسانی و تغییرات",
                 Bounds = new Rectangle(144, 478, 206, 38),
                 TabIndex = 5
             };
             updates.Click += (_, __) =>
             {
-                using (var dialog = new UpdateDialog(icon))
+                using (var dialog = new UpdateDialog(icon, updater))
                     dialog.ShowDialog(this);
             };
             var cancel = new RoundedButton

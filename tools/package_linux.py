@@ -13,7 +13,7 @@ VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 PROJECT_URL = "https://github.com/salehghotbani/RestTimer"
 DESKTOP_ID = "resttimer"
 DEPENDENCIES = (
-    "ca-certificates", "fonts-dejavu-core", "libdbus-1-3", "libegl1", "libfontconfig1",
+    "ca-certificates", "pkexec", "fonts-dejavu-core", "libdbus-1-3", "libegl1", "libfontconfig1",
     "libgl1", "libglib2.0-0t64 | libglib2.0-0", "libice6", "libsm6", "libssl3t64 | libssl3",
     "libwayland-client0", "libwayland-cursor0", "libwayland-egl1", "libx11-6", "libx11-xcb1",
     "libxcb-cursor0", "libxcb-icccm4", "libxcb-image0", "libxcb-keysyms1", "libxcb-randr0",
@@ -46,6 +46,7 @@ def main():
             (ROOT / "LICENSE", "usr/share/doc/resttimer/copyright"),
             (ROOT / "THIRD_PARTY_NOTICES.md", "usr/share/doc/resttimer/THIRD_PARTY_NOTICES.md"),
             (ROOT / "README.md", "usr/share/doc/resttimer/README.md"),
+            (ROOT / "CHANGELOG.md", "usr/share/doc/resttimer/CHANGELOG.md"),
         ):
             target = package / destination
             target.parent.mkdir(parents=True, exist_ok=True)

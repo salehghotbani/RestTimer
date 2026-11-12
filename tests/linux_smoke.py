@@ -6,12 +6,15 @@ import os
 from pathlib import Path
 import tempfile
 import time
+import sys
+import threading
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "linux"))
 spec = importlib.util.spec_from_file_location("resttimer_linux", ROOT / "linux/resttimer.py")
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
@@ -30,6 +33,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     module.atomic_write(settings_path, '{"work_seconds":true,"break_seconds":0}')
     assert module.read_preferences() == module.DEFAULTS
     controller = module.Controller(app)
+    controller.updater.state["daily_enabled"] = False
     controller.settings.show()
     app.processEvents()
     for editor in (controller.settings.work, controller.settings.rest):
@@ -119,5 +123,26 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert controller.menu.isVisible()
     controller.menu.grab().save(str(output / "linux-menu.png"))
     controller.menu.close()
+    controller.updater.state["latest"] = {"tag_name": "v9.0.0", "body": "تغییرات آزمایشی نسخهٔ جدید", "assets": []}
+    dialog = module.UpdateDialog(controller, check_on_show=False)
+    dialog.show()
+    app.processEvents()
+    assert dialog.install.isEnabled() and "تغییرات" in dialog.latest_notes.toPlainText()
+    assert dialog.tabs.count() == 2 and "1.4.0" in dialog.history_notes.toPlainText()
+    dialog.grab().save(str(output / "linux-updates.png"))
+    dialog.tabs.setCurrentIndex(1)
+    app.processEvents()
+    dialog.grab().save(str(output / "linux-history.png"))
+    dialog.reject()
+    assert dialog.closed
+    results = []
+    main_thread = threading.get_ident()
+    controller.run_update_job(lambda worker: "done", lambda value: results.append((value, threading.get_ident())), lambda error: results.append(error))
+    for _ in range(200):
+        app.processEvents()
+        if results and not controller.workers:
+            break
+        time.sleep(0.01)
+    assert results == [("done", main_thread)], "Background updater did not return to the UI thread"
     controller.quit()
 print("Linux settings, second-precision transitions, skip, tray actions, autostart and display coverage passed.")

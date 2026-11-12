@@ -23,6 +23,13 @@ jobs:
       - name: Build application and installer
         shell: pwsh
         run: ./tools/build_windows.ps1
+      - name: Test update scheduling and verified downloads
+        shell: pwsh
+        run: |
+          dotnet build tests/updates/WindowsUpdateTests.csproj -c Release -o obj/update-tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./obj/update-tests/WindowsUpdateTests.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Download previous installer for upgrade compatibility
         shell: pwsh
         env:
@@ -61,7 +68,9 @@ jobs:
             libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
           python -m pip install -r requirements-build-linux.txt
       - name: Test Linux frontend
-        run: QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+        run: |
+          python tests/test_update_core.py
+          QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
       - name: Build Debian and RPM installers
         run: bash tools/build_linux.sh
       - name: Test frozen desktop on X11

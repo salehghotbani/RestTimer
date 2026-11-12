@@ -25,6 +25,9 @@ namespace RestTimer
         private readonly Icon icon;
         private readonly Timer timer;
         private readonly Stopwatch clock = Stopwatch.StartNew();
+        private readonly UpdateService updater = new UpdateService();
+        private readonly bool enableAutomaticUpdates;
+        private readonly System.Threading.CancellationTokenSource updateCancellation = new System.Threading.CancellationTokenSource();
         private readonly System.Threading.EventWaitHandle shutdownRequest = new System.Threading.EventWaitHandle(
             false, System.Threading.EventResetMode.AutoReset, Program.ShutdownEventName);
         private Preferences preferences;
@@ -34,8 +37,11 @@ namespace RestTimer
         private bool breakRequested;
         private SettingsDialog settingsDialog;
 
-        public RestTimerContext()
+        public RestTimerContext() : this(true) { }
+
+        public RestTimerContext(bool enableAutomaticUpdates)
         {
+            this.enableAutomaticUpdates = enableAutomaticUpdates;
             preferences = Preferences.Load();
             status = new ToolStripMenuItem { Enabled = false };
             startTimer = new ToolStripMenuItem("شروع", null, (_, __) => StartTimer());
@@ -44,6 +50,7 @@ namespace RestTimer
             settings = new ToolStripMenuItem("تنظیم زمان‌ها…", null, (_, __) => EditSettings());
             startup = new ToolStripMenuItem("اجرا با ورود به ویندوز", null, (_, __) => ToggleStartup());
             updates = new ToolStripMenuItem("بررسی به‌روزرسانی…", null, (_, __) => ShowUpdates());
+            var history = new ToolStripMenuItem("تاریخچهٔ تغییرات…", null, (_, __) => ShowUpdates(true));
             var exit = new ToolStripMenuItem("خروج", null, (_, __) => ExitThread());
             menu = new ContextMenuStrip
             {
@@ -59,7 +66,7 @@ namespace RestTimer
             menu.Items.AddRange(new ToolStripItem[]
             {
                 status, new ToolStripSeparator(), startTimer, stopTimer, startBreak,
-                settings, startup, updates, new ToolStripSeparator(), exit
+                settings, startup, updates, history, new ToolStripSeparator(), exit
             });
             foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
                 item.Padding = new Padding(12, 7, 12, 7);
@@ -68,6 +75,7 @@ namespace RestTimer
             icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
             trayIcon = new NotifyIcon { Icon = icon, ContextMenuStrip = menu, Visible = true };
             trayIcon.MouseUp += TrayMouseUp;
+            trayIcon.BalloonTipClicked += (_, __) => ShowUpdates();
 
             timer = new Timer { Interval = 250 };
             timer.Tick += (_, __) =>
@@ -75,7 +83,11 @@ namespace RestTimer
                 if (shutdownRequest.WaitOne(0))
                     ExitThread();
                 else
+                {
                     UpdateTimer();
+                    _ = CheckDailyUpdatesAsync();
+                    NotifyUpdate();
+                }
             };
             UpdateTimer();
             timer.Start();
@@ -217,7 +229,7 @@ namespace RestTimer
             editingSettings = true;
             try
             {
-                using (var dialog = new SettingsDialog(preferences, icon, StartTimer, StopTimer))
+                using (var dialog = new SettingsDialog(preferences, icon, StartTimer, StopTimer, updater))
                 {
                     settingsDialog = dialog;
                     dialog.SetRunning(clock.IsRunning);
@@ -242,7 +254,27 @@ namespace RestTimer
             }
         }
 
-        private void ShowUpdates()
+        private async System.Threading.Tasks.Task CheckDailyUpdatesAsync()
+        {
+            if (!enableAutomaticUpdates || updater.Checking || !updater.State.IsDue(DateTime.UtcNow)) return;
+            try { await updater.CheckAsync(updateCancellation.Token); }
+            catch (Exception ex) when (UpdateDialog.ExpectedFailure(ex)) { }
+        }
+
+        private void NotifyUpdate()
+        {
+            var release = updater.State.Latest;
+            if (breaking || editingSettings || !UpdateClient.IsStable(release) || release.Version <= UpdateClient.CurrentVersion) return;
+            updates.Text = "نسخهٔ " + release.Version.ToString(3) + " آماده است…";
+            if (!updater.State.DailyEnabled) return;
+            if (updater.State.NotifiedTag == release.Tag) return;
+            trayIcon.ShowBalloonTip(10000, "به‌روزرسانی RestTimer", "نسخهٔ " + release.Version.ToString(3)
+                + " منتشر شد. برای دیدن تغییرات و تأیید نصب کلیک کنید.", ToolTipIcon.Info);
+            updater.State.NotifiedTag = release.Tag;
+            updater.Save();
+        }
+
+        private void ShowUpdates(bool history = false)
         {
             if (breaking || editingSettings)
                 return;
@@ -250,7 +282,7 @@ namespace RestTimer
             editingSettings = true;
             try
             {
-                using (var dialog = new UpdateDialog(icon))
+                using (var dialog = new UpdateDialog(icon, updater, history))
                     dialog.ShowDialog();
             }
             finally
@@ -295,6 +327,8 @@ namespace RestTimer
             if (disposing)
             {
                 timer.Dispose();
+                updateCancellation.Cancel();
+                updateCancellation.Dispose();
                 shutdownRequest.Dispose();
                 CloseOverlays();
                 trayIcon.Visible = false;

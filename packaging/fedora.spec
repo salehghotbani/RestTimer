@@ -7,7 +7,7 @@ URL:            https://github.com/salehghotbani/RestTimer
 Packager:       Seyed Mohammad Saleh Ghotbani
 ExclusiveArch:  x86_64
 AutoReqProv:    no
-Requires:       ca-certificates, dejavu-sans-fonts, dbus-libs, fontconfig, glib2, openssl-libs
+Requires:       ca-certificates, polkit, dejavu-sans-fonts, dbus-libs, fontconfig, glib2, openssl-libs
 Requires:       libglvnd-egl, libglvnd-glx, libX11, libXext, libXrender, libICE, libSM, libxcb
 Requires:       xcb-util-cursor, xcb-util-image, xcb-util-keysyms, xcb-util-renderutil, xcb-util-wm
 Requires:       libxkbcommon, libxkbcommon-x11, xkeyboard-config
@@ -33,4 +33,5 @@ cp -a "%{app_payload}/." "%{buildroot}/"
 %license /usr/share/doc/resttimer/copyright
 %doc /usr/share/doc/resttimer/THIRD_PARTY_NOTICES.md
 %doc /usr/share/doc/resttimer/README.md
+%doc /usr/share/doc/resttimer/CHANGELOG.md
 %doc /usr/share/doc/resttimer/licenses

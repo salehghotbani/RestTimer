@@ -59,6 +59,7 @@ Name: "desktopicon"; Description: "{cm:DesktopIcon}"; Flags: unchecked
 Source: "..\dist\Windows\RestTimer.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\Windows\RestTimer.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
