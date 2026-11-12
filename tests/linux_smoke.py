@@ -133,6 +133,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     while block.isValid():
         if any("\u0600" <= character <= "\u06ff" for character in block.text()):
             assert block.blockFormat().alignment() & Qt.AlignRight
+            assert block.blockFormat().alignment() & Qt.AlignAbsolute
             assert block.blockFormat().layoutDirection() == Qt.RightToLeft
         block = block.next()
     from update_ui import notes_html

@@ -41,7 +41,7 @@ def set_notes(widget, markdown):
     while block.isValid():
         rtl = bool(re.search(r"[\u0600-\u06ff]", block.text()))
         formatting = block.blockFormat()
-        formatting.setAlignment(Qt.AlignRight if rtl else Qt.AlignLeft)
+        formatting.setAlignment(Qt.AlignAbsolute | (Qt.AlignRight if rtl else Qt.AlignLeft))
         formatting.setLayoutDirection(Qt.RightToLeft if rtl else Qt.LeftToRight)
         QTextCursor(block).setBlockFormat(formatting)
         block = block.next()
