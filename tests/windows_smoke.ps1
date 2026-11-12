@@ -306,13 +306,14 @@ internal static class Smoke
                 if (!((Rectangle)place.Invoke(null, new object[] { bar, trayBounds, new Rectangle(0, 0, 20, 20), size, scale })).IsEmpty)
                     throw new Exception("An oversized floating box must not be placed outside the screen.");
             }
-            using (var badge = (Form)Activator.CreateInstance(badgeType))
+            using (var badgeLifetime = (IDisposable)Activator.CreateInstance(badgeType))
             {
-                if (badge.ShowInTaskbar || badge.FormBorderStyle != FormBorderStyle.None || !badge.TopMost)
-                    throw new Exception("The countdown must be a topmost borderless tool window.");
-                if(badge.Enabled) throw new Exception("The display-only countdown must never accept focus.");
-                var parameters = (CreateParams)badgeType.GetProperty("CreateParams", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
-                if ((parameters.ExStyle & 0x08000020) != 0x08000020) throw new Exception("Countdown must not activate or intercept mouse dragging.");
+                var badge = (NativeWindow)badgeLifetime;
+                Func<bool> visible = () => (bool)badgeType.GetProperty("Visible").GetValue(badge);
+                Func<Rectangle> bounds = () => (Rectangle)badgeType.GetProperty("Bounds").GetValue(badge);
+                int styles = GetWindowLong(badge.Handle, -16), extended = GetWindowLong(badge.Handle, -20);
+                if ((extended & 0x080000A8) != 0x080000A8 || (styles & unchecked((int)0x88000000)) != unchecked((int)0x88000000))
+                    throw new Exception("The countdown must be a disabled, non-activating, click-through, topmost native popup.");
                 var updateBadge = badgeType.GetMethod("UpdateDisplay");
                 var renderFrame = badgeType.GetMethod("RenderFrame", BindingFlags.Static | BindingFlags.NonPublic);
                 var foregroundColor = badgeType.GetMethod("ForegroundColor", BindingFlags.Static | BindingFlags.NonPublic);
@@ -362,12 +363,12 @@ internal static class Smoke
                 var before = WorkArea(primary);
                 updateBadge.Invoke(badge, new object[] { "47:12", false, true, true });
                 Application.DoEvents();
-                Console.WriteLine("Live floating countdown: visible=" + badge.Visible + ", bounds=" + badge.Bounds);
+                Console.WriteLine("Live floating countdown: visible=" + visible() + ", bounds=" + bounds());
                 if (WorkArea(primary) != before) throw new Exception("The floating timer must never reserve a desktop row.");
-                if (badge.Visible && (!(bool)badgeType.GetProperty("FrameUploaded", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge)
+                if (visible() && (!(bool)badgeType.GetProperty("FrameUploaded", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge)
                     || (GetWindowLong(badge.Handle, -20) & 8) == 0))
                     throw new Exception("The opaque floating frame must be uploaded and remain native topmost.");
-                if (badge.Visible)
+                if (visible())
                 {
                     using (var cover = new Form { FormBorderStyle=FormBorderStyle.None, StartPosition=FormStartPosition.Manual,
                         Bounds=primary, ShowInTaskbar=false, BackColor=Color.DimGray })
@@ -380,16 +381,16 @@ internal static class Smoke
                         Application.DoEvents();
                         var isFullscreen = badgeType.GetMethod("IsFullscreenWindow", BindingFlags.Static | BindingFlags.NonPublic);
                         if (!(bool)isFullscreen.Invoke(null, new object[]{cover.Handle, primary})
-                            || foreground == cover.Handle && badge.Visible || GetForegroundWindow()!=foreground || WorkArea(primary)!=before)
-                            throw new Exception("The floating timer must hide over a foreground fullscreen window without taking focus or workspace changes. Visible=" + badge.Visible + ", foreground=" + foreground + ", cover=" + cover.Handle + ", bounds=" + cover.Bounds);
+                            || foreground == cover.Handle && visible() || GetForegroundWindow()!=foreground || WorkArea(primary)!=before)
+                            throw new Exception("The floating timer must hide over a foreground fullscreen window without taking focus or workspace changes. Visible=" + visible() + ", foreground=" + foreground + ", cover=" + cover.Handle + ", bounds=" + cover.Bounds);
                         cover.Bounds = Rectangle.Inflate(primary, -160, -120);
                         Application.DoEvents();
                         var restoredForeground = GetForegroundWindow();
                         updateBadge.Invoke(badge, new object[] { "47:10", false, true, true });
                         Application.DoEvents();
                         if ((bool)isFullscreen.Invoke(null, new object[]{cover.Handle, primary})
-                            || !badge.Visible || GetForegroundWindow()!=restoredForeground || WorkArea(primary)!=before)
-                            throw new Exception("The timer did not return after leaving fullscreen, or it took focus. Visible=" + badge.Visible
+                            || !visible() || GetForegroundWindow()!=restoredForeground || WorkArea(primary)!=before)
+                            throw new Exception("The timer did not return after leaving fullscreen, or it took focus. Visible=" + visible()
                                 + ", foreground before=" + restoredForeground + ", after=" + GetForegroundWindow() + ", cover=" + cover.Handle + ", badge=" + badge.Handle + ", cover bounds=" + cover.Bounds
                                 + ", fullscreen=" + isFullscreen.Invoke(null,new object[]{cover.Handle,primary}));
                         Console.WriteLine(foreground == cover.Handle ? "Fullscreen suppression and automatic restoration passed without taking focus."
@@ -400,9 +401,9 @@ internal static class Smoke
                 Application.DoEvents();
                 if (WorkArea(primary) != before) throw new Exception("Changing timer phase or pause state changed the desktop workspace.");
                 updateBadge.Invoke(badge, new object[] { "15:00", true, false, false });
-                if (badge.Visible || WorkArea(primary) != before) throw new Exception("Disabling the floating box changed the desktop workspace.");
+                if (visible() || WorkArea(primary) != before) throw new Exception("Disabling the floating box changed the desktop workspace.");
                 updateBadge.Invoke(badge, new object[] { "15:00", true, false, true });
-                badge.Dispose(); Application.DoEvents();
+                badgeLifetime.Dispose(); Application.DoEvents();
                 if (WorkArea(primary) != before) throw new Exception("Closing the floating box changed the desktop workspace.");
                 Console.WriteLine("Topmost floating box, localized backgrounds and unchanged desktop workspace passed.");
             }

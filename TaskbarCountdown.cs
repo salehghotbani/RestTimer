@@ -12,7 +12,7 @@ using Microsoft.Win32;
 namespace RestTimer
 {
     // A separate, non-activating window: Explorer's taskbar is never modified.
-    internal sealed class TaskbarCountdown : Form
+    internal sealed class TaskbarCountdown : NativeWindow, IDisposable
     {
         [StructLayout(LayoutKind.Sequential)]
         private struct NativeRect { public int Left, Top, Right, Bottom; public Rectangle Rectangle => Rectangle.FromLTRB(Left, Top, Right, Bottom); }
@@ -33,6 +33,7 @@ namespace RestTimer
         [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int width, int height, uint flags);
         [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
+        [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr window, int command);
         [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr window);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder name, int maximum);
         [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr window, int attribute, out NativeRect bounds, int size);
@@ -45,26 +46,24 @@ namespace RestTimer
         private bool dirty = true;
         private string languageCode;
         internal bool FrameUploaded { get; private set; }
+        public Rectangle Bounds { get; private set; }
+        public Size Size => Bounds.Size;
+        public bool Visible => Handle != IntPtr.Zero && IsWindowVisible(Handle);
+        public string AccessibleName { get; private set; }
+        public string AccessibleDescription { get; private set; }
 
         public TaskbarCountdown()
         {
-            FormBorderStyle = FormBorderStyle.None;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.Manual;
-            AutoScaleMode = AutoScaleMode.None;
-            // WinForms may select a form again when it is shown after Hide(),
-            // even with SW_SHOWNOACTIVATE. This display never accepts input.
-            SetStyle(ControlStyles.Selectable, false);
-            Enabled = false;
-            TopMost = true;
-            DoubleBuffered = true;
             AccessibleName = I18n.T("countdown_accessible");
+            // A display-only native popup avoids Form.Show() selecting the form
+            // when it returns after fullscreen. It is revealed only by a native
+            // SetWindowPos call with SWP_NOACTIVATE.
+            CreateHandle(new CreateParams { Caption = "RestTimer countdown", Width = 1, Height = 1,
+                Style = unchecked((int)0x88000000), // WS_POPUP | WS_DISABLED
+                ExStyle = 0x08000000 | 0x00000080 | 0x00000020 | 0x00080000 | 0x00000008 });
         }
-        protected override bool ShowWithoutActivation => true;
-        protected override CreateParams CreateParams
-        {
-            get { var value = base.CreateParams; value.ExStyle |= 0x08000000 | 0x00000080 | 0x00000020 | 0x00080000; return value; }
-        }
+        public void Hide() { if (Handle != IntPtr.Zero) ShowWindow(Handle, 0); }
+        public void Dispose() { if (Handle != IntPtr.Zero) DestroyHandle(); }
         protected override void WndProc(ref Message message)
         {
             if (message.Msg == 0x0084) { message.Result = new IntPtr(-1); return; } // Click-through, including dragging.
@@ -128,7 +127,6 @@ namespace RestTimer
             bool paint = dirty || !Visible || Size != target.Size;
             Bounds = target;
             if (paint && !PaintLayered(target)) { Hide(); return; }
-            if (!Visible) Show();
             // Stay above ordinary windows without covering a foreground fullscreen application.
             SetWindowPos(Handle, new IntPtr(-1), target.X, target.Y, target.Width, target.Height, 0x0010 | 0x0040);
         }
@@ -141,7 +139,7 @@ namespace RestTimer
             if (foreground == IntPtr.Zero || !IsWindowVisible(foreground) || IsIconic(foreground)) return false;
             // The desktop and our own break reminders are not fullscreen games.
             var managed = Control.FromHandle(foreground);
-            if (managed is BreakOverlay || managed is TaskbarCountdown) return false;
+            if (managed is BreakOverlay || NativeWindow.FromHandle(foreground) is TaskbarCountdown) return false;
             var name = new StringBuilder(128);
             GetClassName(foreground, name, name.Capacity);
             if (name.ToString() == "Progman" || name.ToString() == "WorkerW" || name.ToString() == "Shell_TrayWnd") return false;
