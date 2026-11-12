@@ -38,10 +38,12 @@ QPushButton#primary { background: #83e6c4; color: #0d1521; }
 QPushButton#primary:hover { background: #a4f2d8; }
 QPushButton:disabled { color: #9bb0c3; }
 QSpinBox {
-    background: #0c1623; color: #edf4fa; border: 1px solid #2c3e52;
-    border-radius: 10px; font-size: 26px; padding: 7px; min-width: 70px;
+    background: #0c1623; color: #edf4fa; font-size: 26px;
 }
-QSpinBox:focus { border-color: #83e6c4; }
+QSpinBox:focus { background: #102c30; color: #83e6c4; }
+QFrame#timeField {
+    background: #0c1623; border: 1px solid #2c3e52; border-radius: 10px;
+}
 QCheckBox { color: #9bb0c3; spacing: 10px; }
 QMenu { border: 1px solid #2c3e52; padding: 7px; }
 QMenu::item { padding: 11px 30px; border-radius: 7px; }
@@ -114,7 +116,7 @@ def version_tuple(tag):
 def label(text, name="", center=False):
     widget = QLabel(text)
     widget.setObjectName(name)
-    widget.setAlignment(Qt.AlignCenter if center else Qt.AlignRight | Qt.AlignVCenter)
+    widget.setAlignment(Qt.AlignCenter if center else Qt.AlignAbsolute | Qt.AlignRight | Qt.AlignVCenter)
     return widget
 
 
@@ -141,10 +143,17 @@ class DurationEditor(QFrame):
             spin.setAccessibleName(title + "، " + caption)
             spin.setRange(0, maximum)
             spin.setValue(value)
+            spin.setFrame(False)
+            spin.setMinimumSize(70, 34)
             spin.setAlignment(Qt.AlignCenter)
             spin.setLayoutDirection(Qt.LeftToRight)
             spin.setButtonSymbols(QAbstractSpinBox.NoButtons)
-            column.addWidget(spin)
+            field = QFrame()
+            field.setObjectName("timeField")
+            field_layout = QVBoxLayout(field)
+            field_layout.setContentsMargins(10, 7, 10, 7)
+            field_layout.addWidget(spin)
+            column.addWidget(field)
             column.addWidget(label(caption, "muted", center=True))
             fields.addLayout(column)
             self.parts.append(spin)

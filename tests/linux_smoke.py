@@ -7,6 +7,7 @@ import tempfile
 import time
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,6 +18,7 @@ spec.loader.exec_module(module)
 app = QApplication([])
 app.setLayoutDirection(Qt.RightToLeft)
 app.setStyleSheet(module.STYLE)
+app.setFont(QFont("DejaVu Sans", 10))
 (ROOT / "build").mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     os.environ["XDG_CONFIG_HOME"] = directory
@@ -28,6 +30,11 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert module.read_preferences() == module.DEFAULTS
     controller = module.Controller(app)
     controller.settings.show()
+    app.processEvents()
+    for editor in (controller.settings.work, controller.settings.rest):
+        for part in editor.parts:
+            assert part.lineEdit().width() > 30
+            assert part.lineEdit().text()
     controller.settings.work.parts[0].setValue(1)
     controller.settings.work.parts[1].setValue(2)
     controller.settings.work.parts[2].setValue(3)
