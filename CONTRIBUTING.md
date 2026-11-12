@@ -48,6 +48,7 @@ Building packages requires Linux x86-64, `dpkg-deb`, `rpmbuild`, and `desktop-fi
 - Treat `VERSION` as the shared Windows and Linux version source. Each application release should include an EXE installer, a DEB package, and an RPM package.
 - Add release changes to `CHANGELOG.md` and the GitHub release notes. The application uses release notes to explain new versions.
 - Check updates with a disconnected network, cancelled downloads, incomplete files, declined installation authorization, and restarting after an upgrade. Download checks must not launch a real installer.
+- Check all four settings sections in both layout directions and color modes. Daily update switches must stay synchronized and persist. Navigating between sections must preserve active downloads; closing must cancel downloads and wait for active installers.
 
 ## Documentation languages
 

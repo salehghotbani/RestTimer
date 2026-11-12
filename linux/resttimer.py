@@ -8,17 +8,17 @@ import sys
 import time
 import subprocess
 
-from PySide6.QtCore import QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer
-from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QTextLayout
+from PySide6.QtCore import QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QTextLayout, QDesktopServices
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QAbstractSpinBox, QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLabel,
-    QMenu, QMessageBox, QPushButton, QScrollArea, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
+    QMenu, QMessageBox, QPushButton, QListWidget, QStackedWidget, QScrollArea, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 import update_core
 import i18n
 from i18n import tr
-from update_ui import UpdateDialog, Worker
+from update_ui import UpdatePanel, Worker
 
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
@@ -61,6 +61,10 @@ QMenu::item { padding: 4px 12px; border-radius: 4px; }
 QMenu::item:selected { background: #223a48; color: #83e6c4; }
 QMenu::item:disabled { color: #9bb0c3; }
 QMenu::separator { height: 1px; background: #2c3e52; margin: 2px 6px; }
+QFrame#settingsSidebar { background: #141f2e; border: 1px solid #2c3e52; border-radius: 14px; }
+QListWidget#settingsNav { background: transparent; color: #edf4fa; border: none; outline: 0; }
+QListWidget#settingsNav::item { padding: 12px 8px; margin: 3px 0; border-radius: 8px; }
+QListWidget#settingsNav::item:selected { background: #223a48; color: #83e6c4; }
 """
 
 
@@ -207,21 +211,45 @@ class DurationEditor(QFrame):
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, controller):
+    def __init__(self, controller, update_panel=None):
         super().__init__()
         self.controller = controller
-        self.setWindowTitle("RestTimer — " + tr("settings_title"))
+        self.setWindowTitle("RestTimer — " + tr("preferences_title"))
         self.setWindowIcon(controller.icon)
-        self.setMinimumWidth(520)
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
+        self.setMinimumSize(780, 440)
+        self.current_page = "general"
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(16, 16, 16, 16)
+        outer.setSpacing(16)
+        sidebar = QFrame()
+        sidebar.setObjectName("settingsSidebar")
+        sidebar.setFixedWidth(180)
+        side = QVBoxLayout(sidebar)
+        side.setContentsMargins(10, 18, 10, 12)
+        icon = label("", center=True)
+        icon.setPixmap(controller.icon.pixmap(36, 36))
+        side.addWidget(icon)
+        side.addWidget(label("RestTimer", center=True))
+        self.navigation = QListWidget()
+        self.navigation.setObjectName("settingsNav")
+        self.navigation.setAccessibleName(tr("settings_navigation"))
+        for key in ("general", "updates_tab", "version_history", "about"):
+            self.navigation.addItem(tr(key))
+        side.addWidget(self.navigation, 1)
+        side.addWidget(label("v" + controller.version, "muted", center=True))
+        close = QPushButton(tr("close_cancel"))
+        close.clicked.connect(self.close)
+        side.addWidget(close)
+        outer.addWidget(sidebar)
+        self.pages = QStackedWidget()
+        outer.addWidget(self.pages, 1)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
         body = QWidget()
         layout = QVBoxLayout(body)
         scroll.setWidget(body)
-        outer.addWidget(scroll)
+        self.pages.addWidget(scroll)
         layout.setContentsMargins(26, 24, 26, 24)
         layout.setSpacing(16)
         layout.addWidget(label(tr("settings_title"), "title"))
@@ -234,6 +262,10 @@ class SettingsDialog(QDialog):
         self.startup.setChecked(startup_path().exists())
         self.startup.clicked.connect(controller.toggle_startup)
         layout.addWidget(self.startup)
+        self.daily = QCheckBox(tr("daily_check"))
+        self.daily.setChecked(controller.updater.state["daily_enabled"])
+        self.daily.toggled.connect(self.toggle_daily)
+        layout.addWidget(self.daily)
         timer_controls = QHBoxLayout()
         self.start_timer = QPushButton(tr("start"))
         self.start_timer.setObjectName("primary")
@@ -282,9 +314,80 @@ class SettingsDialog(QDialog):
         exit_button = QPushButton(tr("quit_app"))
         exit_button.clicked.connect(controller.quit)
         layout.addWidget(exit_button)
+        self.update_panel = update_panel or UpdatePanel(controller)
+        controller.update_dialog = self.update_panel
+        self.pages.addWidget(self.update_panel)
+        self.update_panel.daily_changed.connect(self.daily.setChecked)
+        self.pages.addWidget(self.about_page())
+        self.navigation.currentRowChanged.connect(self.select_index)
+        self.navigation.setCurrentRow(0)
         screen = controller.app.primaryScreen()
-        self.resize(580, min(820, screen.availableGeometry().height() - 48))
-        self.setMinimumHeight(360)
+        self.resize(min(1020, screen.availableGeometry().width() - 40), min(800, screen.availableGeometry().height() - 48))
+
+    def about_page(self):
+        page = QFrame()
+        page.setObjectName("section")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(18)
+        logo = label("", center=True)
+        logo.setPixmap(self.controller.icon.pixmap(72, 72))
+        layout.addWidget(logo)
+        layout.addWidget(label("RestTimer", "title", center=True))
+        layout.addWidget(label(tr("installed", self.controller.version), "muted", center=True))
+        description = label(tr("about_description"), center=True)
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        layout.addWidget(label(tr("author") + ": Saleh Ghotbani", center=True))
+        layout.addWidget(label(tr("license") + ": MIT", center=True))
+        project = QPushButton(tr("project_site"))
+        project.clicked.connect(self.open_project)
+        layout.addWidget(project)
+        layout.addStretch(1)
+        return page
+
+    def open_project(self):
+        if not QDesktopServices.openUrl(QUrl("https://github.com/salehghotbani/RestTimer")):
+            QMessageBox.information(self, "RestTimer", tr("open_link_error"))
+
+    def toggle_daily(self, enabled):
+        if self.controller.updater.state["daily_enabled"] != enabled:
+            self.controller.updater.state["daily_enabled"] = enabled
+            self.controller.updater.save()
+        panel = getattr(self, "update_panel", None)
+        if panel:
+            panel.daily.setChecked(enabled)
+
+    def ensure_update_panel(self):
+        if not self.update_panel.closed:
+            return
+        previous = self.update_panel
+        self.pages.removeWidget(previous)
+        previous.setParent(None)
+        previous.deleteLater()
+        self.update_panel = UpdatePanel(self.controller, check_on_show=previous.check_on_show)
+        self.controller.update_dialog = self.update_panel
+        self.update_panel.daily_changed.connect(self.daily.setChecked)
+        self.pages.insertWidget(1, self.update_panel)
+
+    def select_index(self, index):
+        self.current_page = ("general", "updates", "history", "about")[index]
+        self.pages.setCurrentIndex(0 if index == 0 else 2 if index == 3 else 1)
+        if index in (1, 2):
+            self.update_panel.set_page(index == 2)
+            if self.isVisible():
+                self.update_panel.ensure_loaded()
+
+    def select_page(self, page):
+        self.ensure_update_panel()
+        self.navigation.setCurrentRow(("general", "updates", "history", "about").index(page))
+        self.select_index(self.navigation.currentRow())
+
+    def showEvent(self, event):
+        self.ensure_update_panel()
+        self.daily.setChecked(self.controller.updater.state["daily_enabled"])
+        self.select_index(self.navigation.currentRow())
+        super().showEvent(event)
 
     def save_durations(self):
         work, rest = self.work.seconds(), self.rest.seconds()
@@ -308,9 +411,21 @@ class SettingsDialog(QDialog):
         self.controller.settings.note.setText(tr("settings_saved"))
 
     def closeEvent(self, event):
+        if not self.update_panel.request_close():
+            self.select_page("updates")
+            event.ignore()
+            return
         if not self.controller.tray.isSystemTrayAvailable():
             self.controller.quit()
         event.accept()
+
+    def reject(self):
+        if not self.update_panel.request_close():
+            self.select_page("updates")
+            return
+        if not self.controller.tray.isSystemTrayAvailable():
+            self.controller.quit()
+        super().reject()
 
 
 class BreakOverlay(QWidget):
@@ -438,7 +553,6 @@ class Controller:
         self.startup_action.triggered.connect(self.toggle_startup)
         self.menu.addAction(self.startup_action)
         self.update_action = self.menu.addAction(tr("updates_menu"), self.check_updates)
-        self.history_action = self.menu.addAction(tr("history"), lambda: self.check_updates(history=True))
         self.menu.addSeparator()
         self.quit_action = self.menu.addAction(tr("quit"), self.quit)
         self.tray = QSystemTrayIcon(self.icon, app)
@@ -474,11 +588,16 @@ class Controller:
         for action, key in ((self.start_timer_action, "start"), (self.stop_timer_action, "stop"),
                             (self.start_action, "start_break"), (self.settings_action, "settings_menu"),
                             (self.startup_action, "startup"), (self.update_action, "updates_menu"),
-                            (self.history_action, "history"), (self.quit_action, "quit")):
+                            (self.quit_action, "quit")):
             action.setText(tr(key))
         previous_settings = self.settings
         visible = previous_settings.isVisible()
-        self.settings = SettingsDialog(self)
+        current_page = previous_settings.current_page
+        panel = previous_settings.update_panel
+        previous_settings.pages.removeWidget(panel)
+        panel.setParent(None)
+        self.settings = SettingsDialog(self, update_panel=panel)
+        self.settings.select_page(current_page)
         if visible:
             self.settings.show()
         previous_settings.hide()
@@ -489,6 +608,7 @@ class Controller:
 
     def show_settings(self):
         if not self.breaking:
+            self.settings.select_page("general")
             self.settings.show()
             self.settings.raise_()
             self.settings.activateWindow()
@@ -645,13 +765,10 @@ class Controller:
     def check_updates(self, checked=False, history=False):
         if self.breaking:
             return
-        if self.update_dialog is None or self.update_dialog.closed:
-            self.update_dialog = UpdateDialog(self, history)
-        elif history:
-            self.update_dialog.tabs.setCurrentIndex(1)
-        self.update_dialog.show()
-        self.update_dialog.raise_()
-        self.update_dialog.activateWindow()
+        self.settings.select_page("history" if history else "updates")
+        self.settings.show()
+        self.settings.raise_()
+        self.settings.activateWindow()
 
     def restart_after_update(self):
         try:
@@ -670,8 +787,9 @@ class Controller:
     def quit(self):
         if self.update_dialog is not None and self.update_dialog.process is not None:
             self.update_dialog.status.setText(tr("install_busy"))
-            self.update_dialog.show()
-            self.update_dialog.raise_()
+            self.settings.select_page("updates")
+            self.settings.show()
+            self.settings.raise_()
             return
         self.quitting = True
         self.timer.stop()

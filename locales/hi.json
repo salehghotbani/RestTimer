@@ -86,6 +86,16 @@
     "language": "भाषा",
     "system_language": "सिस्टम की भाषा",
     "language_hint": "लागू करने के लिए सहेजें। भाषा बदलने से बचा समय नहीं बदलता।",
-    "countdown_accessible": "RestTimer की उलटी गिनती"
+    "countdown_accessible": "RestTimer की उलटी गिनती",
+    "general": "सामान्य",
+    "updates_tab": "अपडेट",
+    "about": "परिचय",
+    "preferences_title": "सेटिंग",
+    "settings_navigation": "सेटिंग के अनुभाग",
+    "about_description": "आपके सभी मॉनिटर पर काम और विराम के रिमाइंडर।",
+    "author": "डेवलपर",
+    "license": "लाइसेंस",
+    "project_site": "GitHub पर परियोजना",
+    "open_link_error": "लिंक नहीं खोला जा सका।"
   }
 }

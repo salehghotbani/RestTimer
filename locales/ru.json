@@ -86,6 +86,16 @@
     "language": "Язык",
     "system_language": "Язык системы",
     "language_hint": "Сохраните для применения. Смена языка сохраняет оставшееся время.",
-    "countdown_accessible": "Обратный отсчёт RestTimer"
+    "countdown_accessible": "Обратный отсчёт RestTimer",
+    "general": "Общие",
+    "updates_tab": "Обновления",
+    "about": "О программе",
+    "preferences_title": "Настройки",
+    "settings_navigation": "Разделы настроек",
+    "about_description": "Напоминания о работе и перерывах на всех мониторах.",
+    "author": "Разработчик",
+    "license": "Лицензия",
+    "project_site": "Проект на GitHub",
+    "open_link_error": "Не удалось открыть ссылку."
   }
 }

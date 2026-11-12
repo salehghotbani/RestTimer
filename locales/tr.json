@@ -86,6 +86,16 @@
     "language": "Dil",
     "system_language": "Sistem dili",
     "language_hint": "Uygulamak için kaydedin. Dil değişikliği kalan süreyi korur.",
-    "countdown_accessible": "RestTimer geri sayımı"
+    "countdown_accessible": "RestTimer geri sayımı",
+    "general": "Genel",
+    "updates_tab": "Güncellemeler",
+    "about": "Hakkında",
+    "preferences_title": "Ayarlar",
+    "settings_navigation": "Ayar bölümleri",
+    "about_description": "Tüm monitörlerinizde çalışma ve mola hatırlatmaları.",
+    "author": "Geliştirici",
+    "license": "Lisans",
+    "project_site": "GitHub projesi",
+    "open_link_error": "Bağlantı açılamadı."
   }
 }

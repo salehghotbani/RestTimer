@@ -86,6 +86,16 @@
     "language": "语言",
     "system_language": "系统语言",
     "language_hint": "保存以应用语言。切换语言会保留剩余时间。",
-    "countdown_accessible": "RestTimer 倒计时"
+    "countdown_accessible": "RestTimer 倒计时",
+    "general": "常规",
+    "updates_tab": "更新",
+    "about": "关于",
+    "preferences_title": "设置",
+    "settings_navigation": "设置导航",
+    "about_description": "在所有显示器上提醒您工作和休息。",
+    "author": "开发者",
+    "license": "许可证",
+    "project_site": "GitHub 项目",
+    "open_link_error": "无法打开链接。"
   }
 }

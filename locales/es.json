@@ -86,6 +86,16 @@
     "language": "Idioma",
     "system_language": "Idioma del sistema",
     "language_hint": "Guarda para aplicar. Cambiar el idioma conserva el tiempo restante.",
-    "countdown_accessible": "Cuenta atrás de RestTimer"
+    "countdown_accessible": "Cuenta atrás de RestTimer",
+    "general": "General",
+    "updates_tab": "Actualizaciones",
+    "about": "Acerca de",
+    "preferences_title": "Ajustes",
+    "settings_navigation": "Secciones de ajustes",
+    "about_description": "Recordatorios de trabajo y descanso en todos tus monitores.",
+    "author": "Desarrollador",
+    "license": "Licencia",
+    "project_site": "Proyecto en GitHub",
+    "open_link_error": "No se pudo abrir el enlace."
   }
 }

@@ -11,7 +11,7 @@
     <Description>A Windows break timer with a synchronized overlay on every display.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="tests/**/*.cs" />
+    <Compile Remove="tests/**/*.cs;build/**/*.cs;dist/**/*.cs" />
     <EmbeddedResource Include="CHANGELOG.md" />
     <EmbeddedResource Include="CHANGELOG.fa.md" WithCulture="false" LogicalName="RestTimer.CHANGELOG.fa.md" />
     <EmbeddedResource Include="locales/*.json" WithCulture="false" LogicalName="RestTimer.Locales.%(Filename)%(Extension)" />

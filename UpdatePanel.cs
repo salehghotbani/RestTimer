@@ -10,10 +10,12 @@ using System.Windows.Forms;
 
 namespace RestTimer
 {
-    internal sealed class UpdateDialog : Form
+    internal sealed class UpdatePanel : UserControl
     {
         private readonly UpdateService service;
         private readonly Label description;
+        private readonly Label heading, consent;
+        private readonly TableLayoutPanel layout, actions;
         private readonly Label progressText;
         private readonly RoundedButton install;
         private readonly RoundedButton check;
@@ -21,63 +23,55 @@ namespace RestTimer
         private readonly ReleaseNotesBox historyNotes;
         private readonly ListBox versions;
         private readonly UpdateProgress progress;
-        private readonly RoundedButton latestTab, historyTab;
         private readonly Panel latestPanel, historyPanel;
         private readonly Label historyTitle;
-        private readonly System.Windows.Forms.Timer themeTimer;
-        private string paletteKey;
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private bool working;
         private bool installing;
         private ReleaseInfo displayedRelease;
         private readonly bool checkOnShow;
+        private bool initiallyChecked;
+        private readonly CheckBox daily;
+        public bool Installing => installing;
+        public event Action DailyPreferenceChanged;
 
-        public UpdateDialog(Icon icon, UpdateService service = null, bool history = false, bool checkOnShow = true)
+        public UpdatePanel(UpdateService service, bool checkOnShow = true)
         {
             this.service = service ?? new UpdateService();
             this.checkOnShow = checkOnShow;
             Theme.Refresh();
             Text = I18n.T("updates_title") + " — RestTimer";
-            Icon = icon;
             Font = Theme.BodyFont;
             RightToLeft = I18n.Flow;
             AutoScaleMode = AutoScaleMode.Dpi;
             AutoScaleDimensions = new SizeF(96, 96);
-            StartPosition = FormStartPosition.CenterParent;
-            MaximizeBox = false;
             ClientSize = new Size(760, 700);
-            MinimumSize = new Size(650, 550);
-            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 8 };
+            layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 8 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 86));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 10));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
             var header = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
-            header.Controls.Add(new Label { Text = I18n.T("updates_title"), Font = Theme.HeadingFont,
-                TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Top, Height = 40 });
+            heading = new Label { Text = I18n.T("updates_title"), Font = Theme.HeadingFont,
+                TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Top, Height = 40 };
+            header.Controls.Add(heading);
             description = new Label { Tag = "accent", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleLeft,
                 Dock = DockStyle.Bottom, Height = 38 };
             header.Controls.Add(description);
             layout.Controls.Add(header, 0, 0);
-            var daily = new ThemedCheckBox { Text = I18n.T("daily_check"), Checked = this.service.State.DailyEnabled,
+            daily = new ThemedCheckBox { Text = I18n.T("daily_check"), Checked = this.service.State.DailyEnabled,
                 Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 6) };
-            daily.CheckedChanged += (_, __) => { this.service.State.DailyEnabled = daily.Checked; this.service.Save(); };
+            daily.CheckedChanged += (_, __) =>
+            {
+                if (this.service.State.DailyEnabled != daily.Checked) { this.service.State.DailyEnabled = daily.Checked; this.service.Save(); }
+                DailyPreferenceChanged?.Invoke();
+            };
             layout.Controls.Add(daily, 0, 1);
-            var navigation = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0, 0, 0, 8) };
-            navigation.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            navigation.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            latestTab = new RoundedButton { Text = I18n.T("latest"), Dock = DockStyle.Fill, Margin = new Padding(4, 0, 0, 0) };
-            historyTab = new RoundedButton { Text = I18n.T("version_history"), Dock = DockStyle.Fill, Margin = new Padding(0, 0, 4, 0) };
-            latestTab.Click += (_, __) => SelectPage(false);
-            historyTab.Click += (_, __) => SelectPage(true);
-            navigation.Controls.Add(latestTab, 0, 0);
-            navigation.Controls.Add(historyTab, 1, 0);
-            layout.Controls.Add(navigation, 0, 2);
             var content = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(18), Margin = Padding.Empty };
             latestPanel = new Panel { Dock = DockStyle.Fill };
             latestNotes = new ReleaseNotesBox();
@@ -117,7 +111,7 @@ namespace RestTimer
             content.Controls.Add(historyPanel);
             layout.Controls.Add(content, 0, 3);
             versions.SelectedIndex = 0;
-            var consent = new Label { Tag = "muted", Text = I18n.T("consent_windows"),
+            consent = new Label { Tag = "muted", Text = I18n.T("consent_windows"),
                 Font = Theme.SmallFont, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 4) };
             layout.Controls.Add(consent, 0, 4);
             progress = new UpdateProgress { Dock = DockStyle.Fill, Visible = false, Margin = new Padding(0, 2, 0, 2) };
@@ -125,7 +119,7 @@ namespace RestTimer
             progressText = new Label { Tag = "muted", Font = Theme.SmallFont, TextAlign = ContentAlignment.MiddleLeft,
                 Dock = DockStyle.Fill, Margin = new Padding(0, 2, 0, 4) };
             layout.Controls.Add(progressText, 0, 6);
-            var actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
+            actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 29));
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 29));
@@ -139,32 +133,31 @@ namespace RestTimer
             actions.Controls.Add(close, 2, 0);
             layout.Controls.Add(actions, 0, 7);
             Controls.Add(layout);
-            CancelButton = close;
-            SelectPage(history);
+            close.DialogResult = DialogResult.None;
+            close.Click += (_, __) => FindForm()?.Close();
+            SelectPage(false);
             ShowLatest();
             ApplyTheme();
-            themeTimer = new System.Windows.Forms.Timer { Interval = 750 };
-            themeTimer.Tick += (_, __) => { Theme.Refresh(); if (paletteKey != Theme.PaletteKey) ApplyTheme(); };
-            themeTimer.Start();
         }
-        private void ApplyTheme() { Theme.Apply(this); paletteKey = Theme.PaletteKey; }
-        private void SelectPage(bool history)
+        private void ApplyTheme() { Theme.Apply(this); }
+        public void SyncDailyPreference() => daily.Checked = service.State.DailyEnabled;
+        public void SelectPage(bool history)
         {
             latestPanel.Visible = !history;
             historyPanel.Visible = history;
-            latestTab.Selected = !history;
-            historyTab.Selected = history;
-            latestTab.Invalidate(); historyTab.Invalidate();
+            heading.Text = I18n.T(history ? "version_history" : "updates_title");
+            consent.Visible = install.Visible = !history;
+            layout.RowStyles[4].Height = history ? 0 : 58;
+            actions.ColumnStyles[0].SizeType = history ? SizeType.Absolute : SizeType.Percent;
+            actions.ColumnStyles[0].Width = history ? 0 : 42;
+            actions.ColumnStyles[1].Width = actions.ColumnStyles[2].Width = history ? 50 : 29;
+            ShowLatest();
         }
-        protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); ApplyTheme(); }
-        protected override async void OnShown(EventArgs e)
+        public void EnsureLoaded()
         {
-            base.OnShown(e);
-            var area = Screen.FromControl(this).WorkingArea;
-            if (Height > area.Height - 24) Height = area.Height - 24;
-            if (Width > area.Width - 24) Width = area.Width - 24;
-            ApplyTheme();
-            if (checkOnShow) await RefreshAsync();
+            if (!checkOnShow || initiallyChecked) return;
+            initiallyChecked = true;
+            _ = RefreshAsync();
         }
         private void ShowLatest()
         {
@@ -240,7 +233,7 @@ namespace RestTimer
             || ex is IOException || ex is UnauthorizedAccessException || ex is SerializationException;
         protected override void Dispose(bool disposing)
         {
-            if (disposing && !IsDisposed) { themeTimer?.Dispose(); cancellation.Cancel(); cancellation.Dispose(); }
+            if (disposing && !IsDisposed) { cancellation.Cancel(); cancellation.Dispose(); }
             base.Dispose(disposing);
         }
     }

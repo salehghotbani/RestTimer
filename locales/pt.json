@@ -86,6 +86,16 @@
     "language": "Idioma",
     "system_language": "Idioma do sistema",
     "language_hint": "Salve para aplicar. Alterar o idioma preserva o tempo restante.",
-    "countdown_accessible": "Contagem regressiva do RestTimer"
+    "countdown_accessible": "Contagem regressiva do RestTimer",
+    "general": "Geral",
+    "updates_tab": "Atualizações",
+    "about": "Sobre",
+    "preferences_title": "Configurações",
+    "settings_navigation": "Seções de configurações",
+    "about_description": "Lembretes de trabalho e pausa em todos os seus monitores.",
+    "author": "Desenvolvedor",
+    "license": "Licença",
+    "project_site": "Projeto no GitHub",
+    "open_link_error": "Não foi possível abrir o link."
   }
 }

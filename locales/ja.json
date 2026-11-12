@@ -86,6 +86,16 @@
     "language": "言語",
     "system_language": "システムの言語",
     "language_hint": "保存して適用します。言語を変更しても残り時間は維持されます。",
-    "countdown_accessible": "RestTimer のカウントダウン"
+    "countdown_accessible": "RestTimer のカウントダウン",
+    "general": "一般",
+    "updates_tab": "更新",
+    "about": "アプリについて",
+    "preferences_title": "設定",
+    "settings_navigation": "設定のナビゲーション",
+    "about_description": "すべてのモニターで作業と休憩をお知らせします。",
+    "author": "開発者",
+    "license": "ライセンス",
+    "project_site": "GitHub のプロジェクト",
+    "open_link_error": "リンクを開けませんでした。"
   }
 }

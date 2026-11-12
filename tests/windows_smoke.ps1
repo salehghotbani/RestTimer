@@ -86,6 +86,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Reflection;
+using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 [assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8")]
@@ -127,6 +128,7 @@ internal static class Smoke
                     || menu.Items[1] != type.GetField("stopTimer", flags).GetValue(context)
                     || menu.Items[2] != type.GetField("startBreak", flags).GetValue(context))
                     throw new Exception("Start, stop and break must be the first menu entries.");
+                if (menu.Items.OfType<ToolStripMenuItem>().Count() != 8) throw new Exception("Release history must only appear in the settings sidebar.");
                 if (tray.ContextMenuStrip != menu || !menu.AutoClose) throw new Exception("Native right-click menu or auto-close missing.");
                 type.GetMethod("TrayMouseUp", flags).Invoke(context, new object[] { null, new MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0) });
                 Application.DoEvents();
@@ -354,20 +356,47 @@ internal static class Smoke
             var release = app.GetType("RestTimer.UpdateClient", true).GetMethod("ParseRelease", BindingFlags.Static | BindingFlags.NonPublic)
                 .Invoke(null, new object[] { "{\"tag_name\":\"v9.0.0\",\"body\":\"RestTimer 9.0.0\\n\\n## تغییرات نسخهٔ جدید\\n- دکمه‌های شروع و توقف بالای منو قرار دارند.\\n- نمایش به‌روزرسانی با حالت روشن و تاریک ویندوز هماهنگ است.\\n- انتخاب نسخه و خواندن تغییرات ساده‌تر شده است.\\n\\n## Update experience\\nRead the release notes, approve the update and let RestTimer download and install it automatically. Your timer settings remain available after restarting.\\n\\n### نکتهٔ نصب\\nبرنامه هنگام نصب بسته و پس از پایان دوباره اجرا می‌شود.\",\"assets\":[]}" });
             updateState.GetType().GetProperty("Latest").SetValue(updateState, release);
-            using (var dialog = (Form)Activator.CreateInstance(app.GetType("RestTimer.UpdateDialog", true),
-                SystemIcons.Application, updateService, false, false))
+            using (var dialog = (Form)Activator.CreateInstance(app.GetType("RestTimer.SettingsDialog", true),
+                Activator.CreateInstance(app.GetType("RestTimer.Preferences", true), 3600, 900), SystemIcons.Application,
+                (Action)(() => {}), (Action)(() => {}), updateService, "updates", false))
             {
                 dialog.Show();
                 Application.DoEvents();
                 var fields = BindingFlags.Instance | BindingFlags.NonPublic;
-                var notes = (RichTextBox)dialog.GetType().GetField("latestNotes", fields).GetValue(dialog);
-                var historyPanel = (Panel)dialog.GetType().GetField("historyPanel", fields).GetValue(dialog);
-                var install = (Button)dialog.GetType().GetField("install", fields).GetValue(dialog);
-                var versions = (ListBox)dialog.GetType().GetField("versions", fields).GetValue(dialog);
+                var panel = (Control)dialog.GetType().GetField("updatePanel", fields).GetValue(dialog);
+                var panelType = panel.GetType();
+                var notes = (RichTextBox)panelType.GetField("latestNotes", fields).GetValue(panel);
+                var historyPanel = (Panel)panelType.GetField("historyPanel", fields).GetValue(panel);
+                var install = (Button)panelType.GetField("install", fields).GetValue(panel);
+                var versions = (ListBox)panelType.GetField("versions", fields).GetValue(panel);
+                var generalDaily = (CheckBox)dialog.GetType().GetField("daily", fields).GetValue(dialog);
+                var updateDaily = (CheckBox)panelType.GetField("daily", fields).GetValue(panel);
+                generalDaily.Checked = false;
+                var restored = Activator.CreateInstance(updaterType, new object[] { System.IO.Path.GetFullPath("obj/smoke/update-ui") });
+                var restoredState = updaterType.GetProperty("State").GetValue(restored);
+                if (updateDaily.Checked || (bool)restoredState.GetType().GetProperty("DailyEnabled").GetValue(restoredState))
+                    throw new Exception("General daily-check preference was not synchronized and persisted.");
+                updateDaily.Checked = true;
+                if (!generalDaily.Checked) throw new Exception("Update daily-check preference did not sync back to General.");
                 versions.Items.Add(release);
                 versions.SelectedIndex = 1;
                 if (!notes.Text.Contains("تغییرات") || notes.Text.Contains("RestTimer 9.0.0") || !install.Enabled)
                     throw new Exception("Update consent or history UI missing.");
+                var selectPage = dialog.GetType().GetMethod("SelectPage");
+                var cancellation = (System.Threading.CancellationTokenSource)panelType.GetField("cancellation", fields).GetValue(panel);
+                panelType.GetField("working", fields).SetValue(panel, true);
+                foreach (string page in new[] {"general","history","about","updates"})
+                {
+                    selectPage.Invoke(dialog,new object[]{page});
+                    if (Application.OpenForms.Count != 1 || cancellation.IsCancellationRequested
+                        || !(bool)panelType.GetField("working",fields).GetValue(panel))
+                        throw new Exception("Sidebar navigation opened another window or interrupted an update.");
+                }
+                panelType.GetField("working", fields).SetValue(panel, false);
+                panelType.GetField("installing", fields).SetValue(panel, true);
+                dialog.Close();
+                if (dialog.IsDisposed || !dialog.Visible) throw new Exception("Closing settings interrupted an active installer.");
+                panelType.GetField("installing", fields).SetValue(panel, false);
                 var themeType = app.GetType("RestTimer.Theme", true);
                 var mode = themeType.GetProperty("LightOverride", BindingFlags.Static | BindingFlags.NonPublic);
                 try
@@ -381,7 +410,7 @@ internal static class Smoke
                             throw new Exception("Update notes did not adopt the selected OS color mode.");
                         foreach (bool historyPage in new bool[] { false, true })
                         {
-                            ((Button)dialog.GetType().GetField(historyPage ? "historyTab" : "latestTab", fields).GetValue(dialog)).PerformClick();
+                            selectPage.Invoke(dialog, new object[] { historyPage ? "history" : "updates" });
                             Application.DoEvents();
                             if (historyPanel.Visible != historyPage) throw new Exception("Page navigation failed.");
                             using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
@@ -397,10 +426,11 @@ internal static class Smoke
                     Application.DoEvents();
                     if (notes.BackColor.GetBrightness() > 0.5f || notes.SelectionStart != 2 || notes.SelectionLength != 3)
                         throw new Exception("Live theme switching lost the notes selection or failed to recolor the page.");
-                    dialog.Size = new Size(650, 550);
+                    selectPage.Invoke(dialog,new object[]{"updates"});
+                    dialog.Size = new Size(780, 550);
                     Application.DoEvents();
                     var viewport = dialog.RectangleToScreen(dialog.ClientRectangle);
-                    var check = (Button)dialog.GetType().GetField("check", fields).GetValue(dialog);
+                    var check = (Button)panelType.GetField("check", fields).GetValue(panel);
                     foreach (Control button in new Control[] { install, check, (Control)dialog.CancelButton })
                         if (!viewport.Contains(button.RectangleToScreen(button.ClientRectangle)))
                             throw new Exception("An update action was clipped in the compact window.");

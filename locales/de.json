@@ -86,6 +86,16 @@
     "language": "Sprache",
     "system_language": "Systemsprache",
     "language_hint": "Zum Anwenden speichern. Die verbleibende Zeit bleibt beim Sprachwechsel erhalten.",
-    "countdown_accessible": "RestTimer-Countdown"
+    "countdown_accessible": "RestTimer-Countdown",
+    "general": "Allgemein",
+    "updates_tab": "Updates",
+    "about": "Über",
+    "preferences_title": "Einstellungen",
+    "settings_navigation": "Einstellungsbereiche",
+    "about_description": "Arbeits- und Pausenerinnerungen auf allen Monitoren.",
+    "author": "Entwickler",
+    "license": "Lizenz",
+    "project_site": "Projekt auf GitHub",
+    "open_link_error": "Der Link konnte nicht geöffnet werden."
   }
 }

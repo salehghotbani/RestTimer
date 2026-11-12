@@ -86,6 +86,16 @@
     "language": "Langue",
     "system_language": "Langue du système",
     "language_hint": "Enregistrez pour appliquer. Changer de langue conserve le temps restant.",
-    "countdown_accessible": "Compte à rebours de RestTimer"
+    "countdown_accessible": "Compte à rebours de RestTimer",
+    "general": "Général",
+    "updates_tab": "Mises à jour",
+    "about": "À propos",
+    "preferences_title": "Paramètres",
+    "settings_navigation": "Navigation des paramètres",
+    "about_description": "Des rappels de travail et de pause sur tous vos écrans.",
+    "author": "Développeur",
+    "license": "Licence",
+    "project_site": "Projet sur GitHub",
+    "open_link_error": "Impossible d’ouvrir le lien."
   }
 }

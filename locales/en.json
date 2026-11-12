@@ -86,6 +86,16 @@
     "language": "Language",
     "system_language": "System language",
     "language_hint": "Save to apply. Changing language keeps your timer’s remaining time.",
-    "countdown_accessible": "RestTimer countdown"
+    "countdown_accessible": "RestTimer countdown",
+    "general": "General",
+    "updates_tab": "Updates",
+    "about": "About",
+    "preferences_title": "Settings",
+    "settings_navigation": "Settings navigation",
+    "about_description": "Work and break reminders across all your monitors.",
+    "author": "Developer",
+    "license": "License",
+    "project_site": "Project on GitHub",
+    "open_link_error": "Could not open the link."
   }
 }

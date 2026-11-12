@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import threading
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
@@ -26,9 +27,23 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     controller.settings.show()
     old_deadline, old_pause = controller.deadline, controller.paused_at
     # Retain the update dialog during a language change, including a running download.
-    dialog = module.UpdateDialog(controller, check_on_show=False)
-    controller.update_dialog = dialog
-    dialog.worker = object()
+    dialog = controller.settings.update_panel
+    dialog.check_on_show = False
+    class PendingDownload:
+        def __init__(self): self.cancelled = threading.Event()
+    pending = PendingDownload()
+    dialog.worker = pending
+    for page in ("updates", "history", "about", "general"):
+        controller.settings.select_page(page)
+        app.processEvents()
+        assert controller.settings.update_panel is dialog and not pending.cancelled.is_set()
+    controller.settings.daily.setChecked(True)
+    controller.settings.daily.setChecked(False)
+    assert not dialog.daily.isChecked()
+    assert not module.update_core.Updater(module.config_root() / "resttimer/updates").state["daily_enabled"]
+    dialog.daily.setChecked(True)
+    assert controller.settings.daily.isChecked()
+    controller.settings.daily.setChecked(False)
     for code in i18n.SUPPORTED:
         controller.settings.language.setCurrentIndex(controller.settings.language.findData(code))
         controller.settings.save.click()
@@ -39,15 +54,20 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
         assert not controller.running and controller.preferences["work_seconds"] == 3723
         assert controller.settings.language.count() == len(i18n.SUPPORTED) + 1
         assert app.layoutDirection() == (Qt.RightToLeft if code in ("fa", "ar") else Qt.LeftToRight)
-        assert dialog.heading.text() == i18n.tr("updates_title")
+        assert dialog.heading.text() == i18n.tr("version_history" if dialog.current_history else "updates_title")
         assert not dialog.install.isEnabled(), "Changing languages enabled installation during a download"
         assert controller.start_timer_action.text() == i18n.tr("start")
+        assert controller.settings.navigation.count() == 4
+        assert controller.settings.update_panel is dialog
+        assert not pending.cancelled.is_set()
         for mode, name in ((Qt.ColorScheme.Light, "light"), (Qt.ColorScheme.Dark, "dark")):
             module.apply_color_scheme(app, mode)
-            dialog.show()
-            app.processEvents()
-            controller.settings.grab().save(str(ROOT / f"build/linux-localization-settings-{code}-{name}.png"))
-            dialog.grab().save(str(ROOT / f"build/linux-localization-updates-{code}-{name}.png"))
+            for page in ("general", "updates", "history", "about"):
+                controller.settings.select_page(page)
+                app.processEvents()
+                assert controller.settings.update_panel is dialog and not pending.cancelled.is_set()
+                controller.settings.grab().save(str(ROOT / f"build/linux-localization-{page}-{code}-{name}.png"))
+            controller.settings.select_page("general")
         print("Localized settings, persistence, paused timer and active update passed:", code)
     controller.settings.language.setCurrentIndex(0)
     controller.settings.save.click()
@@ -56,6 +76,12 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert i18n.code == i18n.resolve("auto", module.QLocale.system().uiLanguages())
     assert controller.deadline == old_deadline and controller.paused_at == old_pause
     dialog.worker = None
-    dialog.close()
+    assert dialog.request_close()
+    controller.settings.select_page("updates")
+    replacement = controller.settings.update_panel
+    replacement.check_on_show = False
+    assert replacement is not dialog and not replacement.closed
+    assert controller.update_dialog is replacement
+    assert replacement.request_close()
     controller.quit()
 print("All language selectors, persistence, directions and timer preservation passed.")

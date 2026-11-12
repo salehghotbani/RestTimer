@@ -79,18 +79,21 @@ class Worker(QObject):
                 pass
 
 
-class UpdateDialog(QDialog):
-    def __init__(self, controller, history=False, check_on_show=True):
+class UpdatePanel(QWidget):
+    daily_changed = Signal(bool)
+
+    def __init__(self, controller, check_on_show=True):
         super().__init__()
         self.controller = controller
         self.updater = controller.updater
         self.worker = None
         self.process = None
         self.closed = False
+        self.check_on_show = check_on_show
+        self.initially_checked = False
+        self.current_history = False
         self.setWindowTitle("RestTimer — " + tr("updates_title"))
         self.setWindowIcon(controller.icon)
-        self.resize(700, 640)
-        self.setMinimumSize(620, 540)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 22, 24, 22)
         layout.setSpacing(14)
@@ -119,7 +122,7 @@ class UpdateDialog(QDialog):
         history_layout.addWidget(self.versions)
         history_layout.addWidget(self.history_notes)
         self.tabs.addTab(history_tab, tr("version_history"))
-        self.tabs.setCurrentIndex(1 if history else 0)
+        self.tabs.tabBar().hide()
         layout.addWidget(self.tabs, 1)
         set_notes(self.history_notes, self.bundled_history())
         consent = QLabel(tr("consent_linux"))
@@ -142,18 +145,29 @@ class UpdateDialog(QDialog):
         self.check = QPushButton(tr("check_again"))
         self.check.clicked.connect(self.refresh)
         self.close_button = QPushButton(tr("close_cancel"))
-        self.close_button.clicked.connect(self.close)
+        self.close_button.clicked.connect(lambda: self.window().close())
         for button in (self.install, self.check, self.close_button):
             buttons.addWidget(button)
         layout.addLayout(buttons)
         self.show_latest()
-        if check_on_show:
-            QTimer.singleShot(0, self.refresh)
+
+    def ensure_loaded(self):
+        if self.check_on_show and not self.initially_checked and not self.closed:
+            self.initially_checked = True
+            self.refresh()
+
+    def set_page(self, history):
+        self.current_history = history
+        self.tabs.setCurrentIndex(1 if history else 0)
+        self.heading.setText(tr("version_history" if history else "updates_title"))
+        self.consent.setVisible(not history)
+        self.install.setVisible(not history)
+        self.show_latest()
 
     def retranslate(self, previous=None):
         self.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
         self.setWindowTitle("RestTimer — " + tr("updates_title"))
-        self.heading.setText(tr("updates_title"))
+        self.heading.setText(tr("version_history" if self.current_history else "updates_title"))
         self.daily.setText(tr("daily_check"))
         self.tabs.setTabText(0, tr("latest"))
         self.tabs.setTabText(1, tr("version_history"))
@@ -173,8 +187,10 @@ class UpdateDialog(QDialog):
         return (self.controller.root / ("CHANGELOG.fa.md" if i18n.code == "fa" else "CHANGELOG.md")).read_text(encoding="utf-8")
 
     def toggle_daily(self, enabled):
-        self.updater.state["daily_enabled"] = enabled
-        self.updater.save()
+        if self.updater.state["daily_enabled"] != enabled:
+            self.updater.state["daily_enabled"] = enabled
+            self.updater.save()
+        self.daily_changed.emit(enabled)
 
     def select_history(self):
         release = self.versions.currentData()
@@ -282,14 +298,17 @@ class UpdateDialog(QDialog):
         if error == QProcess.FailedToStart:
             self.install_finished(-1, QProcess.CrashExit)
 
-    def closeEvent(self, event):
+    def request_close(self):
         if self.process is not None:
-            event.ignore()
-            return
+            self.status.setText(tr("install_busy"))
+            return False
         self.closed = True
         if self.worker is not None:
             self.worker.cancelled.set()
-        event.accept()
+        return True
+
+    def closeEvent(self, event):
+        event.accept() if self.request_close() else event.ignore()
 
     def reject(self):
         self.close()

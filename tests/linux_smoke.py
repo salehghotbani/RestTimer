@@ -33,6 +33,9 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     module.atomic_write(settings_path, '{"work_seconds":true,"break_seconds":0}')
     assert module.read_preferences() == module.DEFAULTS
     controller = module.Controller(app)
+    controller.settings.update_panel.check_on_show = False
+    assert not hasattr(controller, "history_action")
+    assert controller.settings.navigation.count() == 4
     assert controller.menu.actions()[:3] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
     controller.updater.state["daily_enabled"] = False
     controller.settings.show()
@@ -125,8 +128,9 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     controller.menu.grab().save(str(output / "linux-menu.png"))
     controller.menu.close()
     controller.updater.state["latest"] = {"tag_name": "v9.0.0", "body": "تغییرات آزمایشی نسخهٔ جدید", "assets": []}
-    dialog = module.UpdateDialog(controller, check_on_show=False)
-    dialog.show()
+    controller.settings.select_page("updates")
+    dialog = controller.settings.update_panel
+    dialog.show_latest()
     app.processEvents()
     assert dialog.install.isEnabled() and "تغییرات" in dialog.latest_notes.toPlainText()
     block = dialog.latest_notes.document().begin()
@@ -140,24 +144,24 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     rendered = notes_html("تغییرات فارسی\nEnglish notes\n<img src='file:///private'>")
     assert 'dir="rtl"' in rendered and 'dir="ltr"' in rendered and "&lt;img" in rendered
     assert dialog.tabs.count() == 2 and module.VERSION in dialog.history_notes.toPlainText()
-    dialog.grab().save(str(output / "linux-updates.png"))
-    dialog.tabs.setCurrentIndex(1)
+    controller.settings.grab().save(str(output / "linux-updates.png"))
+    controller.settings.select_page("history")
     app.processEvents()
-    dialog.grab().save(str(output / "linux-history.png"))
+    controller.settings.grab().save(str(output / "linux-history.png"))
     for scheme, name in ((Qt.ColorScheme.Light, "light"), (Qt.ColorScheme.Dark, "dark")):
         module.apply_color_scheme(app, scheme)
         app.processEvents()
-        dialog.tabs.setCurrentIndex(0)
-        dialog.grab().save(str(output / ("linux-updates-" + name + ".png")))
-        dialog.tabs.setCurrentIndex(1)
-        dialog.grab().save(str(output / ("linux-history-" + name + ".png")))
+        controller.settings.select_page("updates")
+        controller.settings.grab().save(str(output / ("linux-updates-" + name + ".png")))
+        controller.settings.select_page("history")
+        controller.settings.grab().save(str(output / ("linux-history-" + name + ".png")))
     controller.update_dialog = dialog
     dialog.process = object()
     controller.quit()
     assert not controller.quitting, "Quitting interrupted an active package installation"
     dialog.process = None
-    dialog.reject()
-    assert dialog.closed
+    assert controller.settings.update_panel is dialog
+    assert controller.settings.current_page == "updates"
     results = []
     main_thread = threading.get_ident()
     controller.run_update_job(lambda worker: "done", lambda value: results.append((value, threading.get_ident())), lambda error: results.append(error))
@@ -167,5 +171,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
             break
         time.sleep(0.01)
     assert results == [("done", main_thread)], "Background updater did not return to the UI thread"
+    dialog.request_close()
+    assert dialog.closed
     controller.quit()
 print("Linux settings, second-precision transitions, skip, tray actions, autostart and display coverage passed.")

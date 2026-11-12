@@ -1,5 +1,12 @@
 # RestTimer changelog
 
+## 1.9.0
+- Unify General settings, Updates, Version history and About in one window with vertical sidebar navigation on Windows and Linux.
+- Add the daily update check switch to General settings and keep it synchronized with the Updates page; save changes immediately.
+- Remove Version history from the tray menu; browse releases inside the settings window instead.
+- Preserve active downloads while switching sections or changing the Linux interface language, and prevent closing the window during installation.
+- Localize the new sections in all 13 supported languages with light/dark themes and right-to-left layouts.
+
 ## 1.8.2
 - Make the tray menu more compact on Windows and Linux, with smaller row padding and outer margins.
 - Use smaller Windows menu text and tighter rounded highlights and separators while retaining light/dark colors and all timer controls.

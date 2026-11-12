@@ -86,6 +86,16 @@
     "language": "اللغة",
     "system_language": "لغة النظام",
     "language_hint": "احفظ لتطبيق اللغة. تغيير اللغة يحافظ على الوقت المتبقي.",
-    "countdown_accessible": "العد التنازلي لـ RestTimer"
+    "countdown_accessible": "العد التنازلي لـ RestTimer",
+    "general": "عام",
+    "updates_tab": "التحديثات",
+    "about": "حول",
+    "preferences_title": "الإعدادات",
+    "settings_navigation": "أقسام الإعدادات",
+    "about_description": "تذكيرات العمل والاستراحة على جميع شاشاتك.",
+    "author": "المطوّر",
+    "license": "الترخيص",
+    "project_site": "المشروع على GitHub",
+    "open_link_error": "تعذر فتح الرابط."
   }
 }

@@ -65,7 +65,7 @@ internal static class LocalizationSmoke
                 {
                     light.SetValue(null, mode);
                     theme.GetMethod("Refresh").Invoke(null, null);
-                    using (var dialog = (Form)Activator.CreateInstance(settings, selected, SystemIcons.Application, (Action)(() => {}), (Action)(() => {})))
+                    using (var dialog = (Form)Activator.CreateInstance(settings, selected, SystemIcons.Application, (Action)(() => {}), (Action)(() => {}), service, "general", false))
                     {
                         settings.GetMethod("SetRunning").Invoke(dialog, new object[] { false });
                         dialog.Show(); Application.DoEvents();
@@ -78,14 +78,15 @@ internal static class LocalizationSmoke
                         if ((int)preferences.GetProperty("WorkSeconds").GetValue(saved) != 3723
                             || (string)preferences.GetProperty("Language").GetValue(saved) != code)
                             throw new Exception("Saving a language changed duration or lost the language.");
-                        using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
-                        { dialog.DrawToBitmap(bitmap, new Rectangle(Point.Empty, dialog.Size)); bitmap.Save("obj/localization/settings-"+code+"-"+(mode?"light":"dark")+".png",ImageFormat.Png); }
-                    }
-                    using (var dialog = (Form)Activator.CreateInstance(app.GetType("RestTimer.UpdateDialog",true),SystemIcons.Application,service,false,false))
-                    {
-                        dialog.Show(); Application.DoEvents();
-                        using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
-                        { dialog.DrawToBitmap(bitmap,new Rectangle(Point.Empty,dialog.Size)); bitmap.Save("obj/localization/updates-"+code+"-"+(mode?"light":"dark")+".png",ImageFormat.Png); }
+                        foreach(string page in new[]{"general","updates","history","about"})
+                        {
+                            settings.GetMethod("SelectPage").Invoke(dialog,new object[]{page});
+                            Application.DoEvents();
+                            if(Application.OpenForms.Count!=1 || (string)settings.GetProperty("CurrentPage").GetValue(dialog)!=page)
+                                throw new Exception("A settings section opened another window or failed to navigate.");
+                            using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
+                            { dialog.DrawToBitmap(bitmap,new Rectangle(Point.Empty,dialog.Size)); bitmap.Save("obj/localization/"+page+"-"+code+"-"+(mode?"light":"dark")+".png",ImageFormat.Png); }
+                        }
                     }
                 }
                 Console.WriteLine("Localized settings, selector, direction and updates passed: " + code);

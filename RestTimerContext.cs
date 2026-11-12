@@ -58,7 +58,6 @@ namespace RestTimer
             settings = new ToolStripMenuItem(I18n.T("settings_menu"), null, (_, __) => EditSettings());
             startup = new ToolStripMenuItem(I18n.T("startup"), null, (_, __) => ToggleStartup());
             updates = new ToolStripMenuItem(I18n.T("updates_menu"), null, (_, __) => ShowUpdates());
-            var history = new ToolStripMenuItem(I18n.T("history"), null, (_, __) => ShowUpdates(true));
             var exit = new ToolStripMenuItem(I18n.T("quit"), null, (_, __) => ExitThread());
             menu = new ContextMenuStrip
             {
@@ -74,7 +73,7 @@ namespace RestTimer
             menu.Items.AddRange(new ToolStripItem[]
             {
                 startTimer, stopTimer, startBreak, new ToolStripSeparator(), status,
-                new ToolStripSeparator(), settings, startup, updates, history, new ToolStripSeparator(), exit
+                new ToolStripSeparator(), settings, startup, updates, new ToolStripSeparator(), exit
             });
             foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
                 item.Padding = new Padding(6, 2, 6, 2);
@@ -244,13 +243,18 @@ namespace RestTimer
 
         private void EditSettings()
         {
+            OpenPreferences("general");
+        }
+
+        private void OpenPreferences(string page)
+        {
             if (breaking || editingSettings)
                 return;
 
             editingSettings = true;
             try
             {
-                using (var dialog = new SettingsDialog(preferences, icon, StartTimer, StopTimer, updater))
+                using (var dialog = new SettingsDialog(preferences, icon, StartTimer, StopTimer, updater, page, true))
                 {
                     settingsDialog = dialog;
                     dialog.SetRunning(clock.IsRunning);
@@ -280,7 +284,7 @@ namespace RestTimer
         {
             I18n.Use(preferences.Language);
             menu.RightToLeft = I18n.Flow;
-            string[] keys = { "start", "stop", "start_break", "settings_menu", "startup", "updates_menu", "history", "quit" };
+            string[] keys = { "start", "stop", "start_break", "settings_menu", "startup", "updates_menu", "quit" };
             var items = menu.Items.OfType<ToolStripMenuItem>().Where(item => item != status).ToArray();
             for (int i = 0; i < keys.Length; i++) items[i].Text = I18n.T(keys[i]);
         }
@@ -289,7 +293,7 @@ namespace RestTimer
         {
             if (!enableAutomaticUpdates || updater.Checking || !updater.State.IsDue(DateTime.UtcNow)) return;
             try { await updater.CheckAsync(updateCancellation.Token).ConfigureAwait(false); }
-            catch (Exception ex) when (UpdateDialog.ExpectedFailure(ex)) { }
+            catch (Exception ex) when (UpdatePanel.ExpectedFailure(ex)) { }
         }
 
         private void NotifyUpdate()
@@ -306,19 +310,7 @@ namespace RestTimer
 
         private void ShowUpdates(bool history = false)
         {
-            if (breaking || editingSettings)
-                return;
-
-            editingSettings = true;
-            try
-            {
-                using (var dialog = new UpdateDialog(icon, updater, history))
-                    dialog.ShowDialog();
-            }
-            finally
-            {
-                editingSettings = false;
-            }
+            OpenPreferences(history ? "history" : "updates");
         }
 
         private void UpdateStartupItem()
