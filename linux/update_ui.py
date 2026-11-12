@@ -1,11 +1,35 @@
 """Non-blocking updater UI. No download or install starts before an explicit click."""
 from pathlib import Path
 import threading
+import html
+import re
 
 from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, QTimer, Signal
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QTabWidget, QTextEdit, QVBoxLayout, QWidget
 
 import update_core as core
+
+
+def notes_html(markdown):
+    paragraphs = []
+    beginning = True
+    for raw in (markdown or "").splitlines():
+        line = raw.strip()
+        plain = line.lstrip("# *")
+        if not line:
+            continue
+        if beginning and (plain == "تغییرات RestTimer" or re.fullmatch(r"RestTimer\s+[vV]?\d+(?:\.\d+){1,3}|نسخه[ٔ\s]*[\d٫.]+(?:\s+RestTimer)?", plain)):
+            continue
+        beginning = False
+        heading = line.startswith("#") or re.fullmatch(r"[A-Za-z ]+:", line)
+        text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", plain).replace("**", "").replace("`", "")
+        if text.startswith("- "):
+            text = "•  " + text[2:]
+        rtl = bool(re.search(r"[\u0600-\u06ff]", text))
+        direction, alignment = ("rtl", "right") if rtl else ("ltr", "left")
+        tag = "h3" if heading else "p"
+        paragraphs.append(f'<{tag} dir="{direction}" style="text-align:{alignment};margin:8px 0 12px;">{html.escape(text)}</{tag}>')
+    return '<div style="font-size:11pt;">' + "".join(paragraphs) + '</div>'
 
 
 class Worker(QObject):
@@ -79,13 +103,14 @@ class UpdateDialog(QDialog):
         self.tabs.addTab(history_tab, "تاریخچهٔ نسخه‌ها")
         self.tabs.setCurrentIndex(1 if history else 0)
         layout.addWidget(self.tabs, 1)
-        self.history_notes.setPlainText(self.bundled_history())
+        self.history_notes.setHtml(notes_html(self.bundled_history()))
         consent = QLabel("با انتخاب «دانلود و نصب»، به‌روزرسانی انجام می‌شود. برای نصب، مجوز مدیر سیستم درخواست می‌شود و برنامه پس از نصب دوباره اجرا خواهد شد.")
         consent.setObjectName("muted")
         consent.setWordWrap(True)
         layout.addWidget(consent)
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
+        self.progress.setVisible(False)
         layout.addWidget(self.progress)
         self.status = QLabel()
         self.status.setWordWrap(True)
@@ -115,16 +140,14 @@ class UpdateDialog(QDialog):
 
     def select_history(self):
         release = self.versions.currentData()
-        self.history_notes.setPlainText((release["tag_name"] + "\n\n" + (release.get("body") or "توضیحی ثبت نشده است."))
-                                       if release else self.bundled_history())
+        self.history_notes.setHtml(notes_html((release.get("body") or "توضیحی ثبت نشده است.") if release else self.bundled_history()))
 
     def show_latest(self):
         release = self.updater.state["latest"]
         self.displayed_release = release
         newer = core.stable(release) and core.version_tuple(release["tag_name"]) > core.version_tuple(self.controller.version)
         self.description.setText("نسخهٔ نصب‌شده: " + self.controller.version + ("    ·    نسخهٔ جدید: " + release["tag_name"] if newer else ""))
-        self.latest_notes.setPlainText(release["tag_name"] + "\n\n" + (release.get("body") or "توضیحی ثبت نشده است.")
-                                      if core.stable(release) else self.bundled_history())
+        self.latest_notes.setHtml(notes_html((release.get("body") or "توضیحی ثبت نشده است.") if core.stable(release) else self.bundled_history()))
         self.install.setEnabled(bool(newer) and self.worker is None and self.process is None)
         self.check.setEnabled(self.worker is None and self.process is None)
         self.install.setText("دانلود و نصب " + release["tag_name"] if newer else "دانلود و نصب")
@@ -176,6 +199,7 @@ class UpdateDialog(QDialog):
             self.status.setText("بستهٔ سازگار با این سیستم هنوز آماده نشده است.")
             return
         self.progress.setValue(0)
+        self.progress.setVisible(True)
         self.status.setText("در حال دانلود و بررسی فایل… برای لغو پنجره را ببندید.")
 
         def received(path):

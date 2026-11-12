@@ -24,13 +24,13 @@ namespace RestTimer
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             var bounds = new RectangleF(4, 2, e.Item.Width - 8, e.Item.Height - 4);
             using (var path = Theme.RoundedRectangle(bounds, 7 * e.ToolStrip.DeviceDpi / 96f))
-            using (var fill = new SolidBrush(Color.FromArgb(34, 58, 72)))
+            using (var fill = new SolidBrush(Theme.Selection))
                 e.Graphics.FillPath(fill, path);
         }
 
         protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
         {
-            e.TextColor = e.Item.Enabled ? Theme.Text : Theme.Muted;
+            e.TextColor = e.Item.Enabled ? (e.Item.Selected ? Theme.OnSelection : Theme.Text) : Theme.Muted;
             base.OnRenderItemText(e);
         }
 
@@ -44,7 +44,7 @@ namespace RestTimer
         {
             var bounds = e.ImageRectangle;
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            using (var pen = new Pen(Theme.Mint, 2))
+            using (var pen = new Pen(e.Item.Selected ? Theme.OnSelection : Theme.AccentText, 2))
                 e.Graphics.DrawLines(pen, new[]
                 {
                     new Point(bounds.Left + 2, bounds.Top + bounds.Height / 2),

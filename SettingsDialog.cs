@@ -47,7 +47,7 @@ namespace RestTimer
             };
             var subtitle = new Label
             {
-                Text = "زمان هر دوره را با ساعت، دقیقه و ثانیه تنظیم کن.",
+                Text = "زمان هر دوره را با ساعت، دقیقه و ثانیه تنظیم کن.", Tag = "muted",
                 ForeColor = Theme.Muted, TextAlign = ContentAlignment.MiddleLeft,
                 Bounds = new Rectangle(28, 65, 480, 26)
             };
@@ -61,7 +61,7 @@ namespace RestTimer
             };
             note = new Label
             {
-                Text = "با تغییر زمان‌ها، شمارش کار از نو شروع می‌شود.",
+                Text = "با تغییر زمان‌ها، شمارش کار از نو شروع می‌شود.", Tag = "muted",
                 Font = Theme.SmallFont, ForeColor = Theme.Muted,
                 TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 474, 480, 30)
             };
@@ -71,7 +71,7 @@ namespace RestTimer
             stopTimer.Click += (_, __) => stop();
             timerStatus = new Label
             {
-                Font = Theme.SmallFont, ForeColor = Theme.Muted,
+                Font = Theme.SmallFont, ForeColor = Theme.Muted, Tag = "muted",
                 TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 388, 244, 34)
             };
             var save = new RoundedButton(primary: true)
@@ -130,7 +130,8 @@ namespace RestTimer
         private void ShowValidationError(string message)
         {
             note.Text = message;
-            note.ForeColor = Color.FromArgb(255, 164, 155);
+            note.Tag = "error";
+            note.ForeColor = Theme.Error;
         }
     }
 }

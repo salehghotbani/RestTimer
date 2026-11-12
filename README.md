@@ -43,7 +43,7 @@
 بستهٔ DEB را در مدیر نرم‌افزار باز کنید یا در پوشهٔ دانلودشده اجرا کنید.
 
 ```bash
-sudo apt install ./RestTimer-v1.5.1-linux-amd64.deb
+sudo apt install ./RestTimer-v1.6.0-linux-amd64.deb
 ```
 
 ### Fedora
@@ -51,12 +51,14 @@ sudo apt install ./RestTimer-v1.5.1-linux-amd64.deb
 بستهٔ RPM را در مدیر نرم‌افزار باز کنید یا اجرا کنید.
 
 ```bash
-sudo dnf install ./RestTimer-v1.5.1-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.6.0-linux-x86_64.rpm
 ```
 
 سپس RestTimer را از منوی برنامه‌ها یا فرمان `resttimer` اجرا کنید. Python و Qt مورد نیاز در بسته‌های لینوکس قرار دارند. حذف برنامه با `sudo apt remove resttimer` یا `sudo dnf remove resttimer` انجام می‌شود.
 
 ## استفاده
+
+دکمه‌های «شروع»، «توقف» و «شروع استراحت همین حالا» بالاترین گزینه‌های منو هستند. در ویندوز، رنگ پنجرهٔ به‌روزرسانی و منو از حالت رنگی برنامه‌ها در تنظیمات ویندوز پیروی می‌کند و حالت کنتراست بالا نیز رعایت می‌شود. تغییر رنگ هنگام باز بودن پنجره اعمال می‌شود. در لینوکس، حالت رنگی اعلام‌شده از دسکتاپ توسط Qt استفاده می‌شود. یادداشت‌های انتشار با جهت مناسب فارسی و انگلیسی، تیتر و فاصله‌گذاری نمایش داده می‌شوند. پنجرهٔ ویندوز قابل تغییر اندازه است و تاریخچهٔ آن فهرست جداگانه‌ای برای انتخاب نسخه دارد.
 
 در ویندوز، یک کادر شناور ثابت سمت چپ ناحیهٔ آیکن‌های تسک‌بار و کنار chevron، زمان کار یا استراحت و حالت مکث را در یک ردیف باریک با فونت ریز نشان می‌دهد؛ عنوان سمت راست و زمان سمت چپ است. پس‌زمینه و قاب ندارد و رنگ متن با حالت رنگی روشن یا تاریک ویندوز و حالت کنتراست بالا هماهنگ می‌شود. در تنظیمات با گزینهٔ «نمایش زمان کنار فلش آیکن‌های تسک‌بار» و زدن «ذخیرهٔ تنظیمات» آن را فعال یا غیرفعال کنید. این انتخاب پس از اجرای مجدد حفظ می‌شود و تغییر آن شمارش را از نو شروع نمی‌کند. کادر قابل کشیدن نیست و کلیک‌ها از آن عبور می‌کنند. با پنهان شدن تسک‌بار یا اجرای تمام‌صفحهٔ برنامه‌های دیگر پنهان می‌شود. این نمایشگر روی تسک‌بار افقی اصلی قرار می‌گیرد و فضایی در چیدمان ویندوز رزرو نمی‌کند.
 
@@ -108,9 +110,9 @@ sudo dnf install ./RestTimer-v1.5.1-linux-x86_64.rpm
 </div>
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.5.1/RestTimer-v1.5.1-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.5.1/RestTimer-v1.5.1-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.5.1/RestTimer-v1.5.1-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.6.0/RestTimer-v1.6.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.6.0/RestTimer-v1.6.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.6.0/RestTimer-v1.6.0-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

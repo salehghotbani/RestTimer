@@ -104,6 +104,10 @@ internal static class Smoke
             {
                 var menu = (ContextMenuStrip)type.GetField("menu", flags).GetValue(context);
                 var tray = (NotifyIcon)type.GetField("trayIcon", flags).GetValue(context);
+                if (menu.Items[0] != type.GetField("startTimer", flags).GetValue(context)
+                    || menu.Items[1] != type.GetField("stopTimer", flags).GetValue(context)
+                    || menu.Items[2] != type.GetField("startBreak", flags).GetValue(context))
+                    throw new Exception("Start, stop and break must be the first menu entries.");
                 if (tray.ContextMenuStrip != menu || !menu.AutoClose) throw new Exception("Native right-click menu or auto-close missing.");
                 type.GetMethod("TrayMouseUp", flags).Invoke(context, new object[] { null, new MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0) });
                 Application.DoEvents();
@@ -271,7 +275,7 @@ internal static class Smoke
             var updateService = Activator.CreateInstance(updaterType, new object[] { System.IO.Path.GetFullPath("obj/smoke/update-ui") });
             var updateState = updaterType.GetProperty("State").GetValue(updateService);
             var release = app.GetType("RestTimer.UpdateClient", true).GetMethod("ParseRelease", BindingFlags.Static | BindingFlags.NonPublic)
-                .Invoke(null, new object[] { "{\"tag_name\":\"v9.0.0\",\"body\":\"تغییرات آزمایشی نسخهٔ جدید\",\"assets\":[]}" });
+                .Invoke(null, new object[] { "{\"tag_name\":\"v9.0.0\",\"body\":\"RestTimer 9.0.0\\n\\n## تغییرات نسخهٔ جدید\\n- دکمه‌های شروع و توقف بالای منو قرار دارند.\\n- نمایش به‌روزرسانی با حالت روشن و تاریک ویندوز هماهنگ است.\\n- انتخاب نسخه و خواندن تغییرات ساده‌تر شده است.\\n\\n## Update experience\\nRead the release notes, approve the update and let RestTimer download and install it automatically. Your timer settings remain available after restarting.\\n\\n### نکتهٔ نصب\\nبرنامه هنگام نصب بسته و پس از پایان دوباره اجرا می‌شود.\",\"assets\":[]}" });
             updateState.GetType().GetProperty("Latest").SetValue(updateState, release);
             using (var dialog = (Form)Activator.CreateInstance(app.GetType("RestTimer.UpdateDialog", true),
                 SystemIcons.Application, updateService, false, false))
@@ -280,19 +284,57 @@ internal static class Smoke
                 Application.DoEvents();
                 var fields = BindingFlags.Instance | BindingFlags.NonPublic;
                 var notes = (RichTextBox)dialog.GetType().GetField("latestNotes", fields).GetValue(dialog);
-                var tabs = (TabControl)dialog.GetType().GetField("tabs", fields).GetValue(dialog);
+                var historyPanel = (Panel)dialog.GetType().GetField("historyPanel", fields).GetValue(dialog);
                 var install = (Button)dialog.GetType().GetField("install", fields).GetValue(dialog);
-                if (!notes.Text.Contains("تغییرات") || tabs.TabCount != 2 || !install.Enabled)
+                var versions = (ListBox)dialog.GetType().GetField("versions", fields).GetValue(dialog);
+                versions.Items.Add(release);
+                versions.SelectedIndex = 1;
+                if (!notes.Text.Contains("تغییرات") || notes.Text.Contains("RestTimer 9.0.0") || !install.Enabled)
                     throw new Exception("Update consent or history UI missing.");
-                using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
+                var themeType = app.GetType("RestTimer.Theme", true);
+                var mode = themeType.GetProperty("LightOverride", BindingFlags.Static | BindingFlags.NonPublic);
+                try
                 {
-                    dialog.DrawToBitmap(bitmap, new Rectangle(Point.Empty, dialog.Size));
-                    bitmap.Save("obj/smoke/windows-updates.png", ImageFormat.Png);
-                    tabs.SelectedIndex = 1;
+                    foreach (bool light in new bool[] { false, true })
+                    {
+                        mode.SetValue(null, light);
+                        themeType.GetMethod("Refresh").Invoke(null, null);
+                        dialog.GetType().GetMethod("ApplyTheme", fields).Invoke(dialog, null);
+                        if ((notes.BackColor.GetBrightness() > 0.5f) != light || (notes.ForeColor.GetBrightness() > 0.5f) == light)
+                            throw new Exception("Update notes did not adopt the selected OS color mode.");
+                        foreach (bool historyPage in new bool[] { false, true })
+                        {
+                            ((Button)dialog.GetType().GetField(historyPage ? "historyTab" : "latestTab", fields).GetValue(dialog)).PerformClick();
+                            Application.DoEvents();
+                            if (historyPanel.Visible != historyPage) throw new Exception("Page navigation failed.");
+                            using (var bitmap = new Bitmap(dialog.Width, dialog.Height))
+                            {
+                                dialog.DrawToBitmap(bitmap, new Rectangle(Point.Empty, dialog.Size));
+                                bitmap.Save("obj/smoke/windows-" + (historyPage ? "history-" : "updates-") + (light ? "light" : "dark") + ".png", ImageFormat.Png);
+                            }
+                        }
+                    }
+                    notes.Select(2, 3);
+                    mode.SetValue(null, false);
+                    Thread.Sleep(800);
                     Application.DoEvents();
-                    dialog.DrawToBitmap(bitmap, new Rectangle(Point.Empty, dialog.Size));
-                    bitmap.Save("obj/smoke/windows-history.png", ImageFormat.Png);
+                    if (notes.BackColor.GetBrightness() > 0.5f || notes.SelectionStart != 2 || notes.SelectionLength != 3)
+                        throw new Exception("Live theme switching lost the notes selection or failed to recolor the page.");
+                    dialog.Size = new Size(650, 550);
+                    Application.DoEvents();
+                    var viewport = dialog.RectangleToScreen(dialog.ClientRectangle);
+                    var check = (Button)dialog.GetType().GetField("check", fields).GetValue(dialog);
+                    foreach (Control button in new Control[] { install, check, (Control)dialog.CancelButton })
+                        if (!viewport.Contains(button.RectangleToScreen(button.ClientRectangle)))
+                            throw new Exception("An update action was clipped in the compact window.");
+                    var highContrast = themeType.GetField("highContrast", BindingFlags.Static | BindingFlags.NonPublic);
+                    var originalContrast = highContrast.GetValue(null);
+                    highContrast.SetValue(null, true);
+                    if ((Color)themeType.GetProperty("OnSelection").GetValue(null) != SystemColors.HighlightText)
+                        throw new Exception("High contrast selection text must use the system highlight foreground.");
+                    highContrast.SetValue(null, originalContrast);
                 }
+                finally { mode.SetValue(null, null); themeType.GetMethod("Refresh").Invoke(null, null); }
             }
             Console.WriteLine("Windows tray, settings, overlay, update consent and offline history passed.");
             return 0;

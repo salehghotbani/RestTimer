@@ -37,6 +37,8 @@ namespace RestTimer
         private bool editingSettings;
         private bool breakRequested;
         private bool disposed;
+        private DateTime nextThemeCheck;
+        private string paletteKey;
         private SettingsDialog settingsDialog;
 
         public RestTimerContext() : this(true) { }
@@ -70,12 +72,12 @@ namespace RestTimer
             };
             menu.Items.AddRange(new ToolStripItem[]
             {
-                status, new ToolStripSeparator(), startTimer, stopTimer, startBreak,
-                settings, startup, updates, history, new ToolStripSeparator(), exit
+                startTimer, stopTimer, startBreak, new ToolStripSeparator(), status,
+                new ToolStripSeparator(), settings, startup, updates, history, new ToolStripSeparator(), exit
             });
             foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
                 item.Padding = new Padding(12, 7, 12, 7);
-            menu.Opening += (_, __) => UpdateStartupItem();
+            menu.Opening += (_, __) => { Theme.Refresh(); Theme.Apply(menu); UpdateStartupItem(); };
 
             icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
             trayIcon = new NotifyIcon { Icon = icon, ContextMenuStrip = menu, Visible = true };
@@ -113,6 +115,18 @@ namespace RestTimer
 
         private void UpdateTimer()
         {
+            if (DateTime.UtcNow >= nextThemeCheck)
+            {
+                nextThemeCheck = DateTime.UtcNow.AddSeconds(1);
+                Theme.Refresh();
+                if (paletteKey != Theme.PaletteKey)
+                {
+                    paletteKey = Theme.PaletteKey;
+                    Theme.Apply(menu);
+                    foreach (Form form in Application.OpenForms)
+                        if (form is SettingsDialog) Theme.Apply(form);
+                }
+            }
             bool running = clock.IsRunning;
             startTimer.Enabled = !running;
             stopTimer.Enabled = running;

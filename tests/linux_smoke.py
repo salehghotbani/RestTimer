@@ -33,6 +33,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     module.atomic_write(settings_path, '{"work_seconds":true,"break_seconds":0}')
     assert module.read_preferences() == module.DEFAULTS
     controller = module.Controller(app)
+    assert controller.menu.actions()[:3] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
     controller.updater.state["daily_enabled"] = False
     controller.settings.show()
     app.processEvents()
@@ -128,11 +129,21 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     dialog.show()
     app.processEvents()
     assert dialog.install.isEnabled() and "تغییرات" in dialog.latest_notes.toPlainText()
+    from update_ui import notes_html
+    rendered = notes_html("تغییرات فارسی\nEnglish notes\n<img src='file:///private'>")
+    assert 'dir="rtl"' in rendered and 'dir="ltr"' in rendered and "&lt;img" in rendered
     assert dialog.tabs.count() == 2 and module.VERSION in dialog.history_notes.toPlainText()
     dialog.grab().save(str(output / "linux-updates.png"))
     dialog.tabs.setCurrentIndex(1)
     app.processEvents()
     dialog.grab().save(str(output / "linux-history.png"))
+    for scheme, name in ((Qt.ColorScheme.Light, "light"), (Qt.ColorScheme.Dark, "dark")):
+        module.apply_color_scheme(app, scheme)
+        app.processEvents()
+        dialog.tabs.setCurrentIndex(0)
+        dialog.grab().save(str(output / ("linux-updates-" + name + ".png")))
+        dialog.tabs.setCurrentIndex(1)
+        dialog.grab().save(str(output / ("linux-history-" + name + ".png")))
     controller.update_dialog = dialog
     dialog.process = object()
     controller.quit()

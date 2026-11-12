@@ -23,7 +23,7 @@ namespace RestTimer
             });
             Controls.Add(new Label
             {
-                Text = hint, Font = Theme.SmallFont, ForeColor = Theme.Muted,
+                Text = hint, Tag = "muted", Font = Theme.SmallFont, ForeColor = Theme.Muted,
                 BackColor = Color.Transparent, RightToLeft = RightToLeft.Yes,
                 TextAlign = ContentAlignment.MiddleRight, Bounds = new Rectangle(20, 10, 265, 27)
             });
@@ -34,7 +34,7 @@ namespace RestTimer
             foreach (int left in new[] { 166, 286 })
                 Controls.Add(new Label
                 {
-                    Text = ":", Font = digitsFont, ForeColor = Theme.Muted, BackColor = Color.Transparent,
+                    Text = ":", Tag = "muted", Font = digitsFont, ForeColor = Theme.Muted, BackColor = Color.Transparent,
                     TextAlign = ContentAlignment.MiddleCenter, Bounds = new Rectangle(left, 42, 28, 48)
                 });
         }
@@ -43,7 +43,7 @@ namespace RestTimer
         {
             var field = new RoundedPanel
             {
-                FillColor = Theme.Input, CornerRadius = 10, Bounds = new Rectangle(left, 44, 92, 48)
+                FillColor = Theme.Input, Tag = "input", CornerRadius = 10, Bounds = new Rectangle(left, 44, 92, 48)
             };
             var input = new TextBox
             {
@@ -69,7 +69,7 @@ namespace RestTimer
             Controls.Add(field);
             Controls.Add(new Label
             {
-                Text = label, Font = Theme.SmallFont, ForeColor = Theme.Muted, BackColor = Color.Transparent,
+                Text = label, Tag = "muted", Font = Theme.SmallFont, ForeColor = Theme.Muted, BackColor = Color.Transparent,
                 RightToLeft = RightToLeft.Yes, TextAlign = ContentAlignment.MiddleCenter,
                 Bounds = new Rectangle(left, 96, 92, 22)
             });

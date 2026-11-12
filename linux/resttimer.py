@@ -61,6 +61,17 @@ QMenu::separator { height: 1px; background: #2c3e52; margin: 5px 12px; }
 """
 
 
+def apply_color_scheme(app, scheme):
+    style = STYLE
+    if scheme == Qt.ColorScheme.Light:
+        colors = {"#0d1521": "#f4f7fa", "#edf4fa": "#1a2838", "#141f2e": "#ffffff",
+                  "#2c3e52": "#cdd8e2", "#1e2e40": "#e7edf3", "#223a48": "#dbeee8",
+                  "#83e6c4": "#11705b", "#a4f2d8": "#16836b", "#9bb0c3": "#536778", "#0c1623": "#eaf0f5", "#102c30": "#dbeee8"}
+        style = re.sub(r"#[a-fA-F0-9]{6}", lambda match: colors.get(match.group(), match.group()), style)
+        style += "\nQPushButton#primary { color: white; } QProgressBar { color: #11705b; } QProgressBar::chunk { background: #dbeee8; }"
+    app.setStyleSheet(style)
+
+
 def config_root():
     return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
 
@@ -362,12 +373,13 @@ class Controller:
         self.instance = None
         self.deadline = time.monotonic() + self.preferences["work_seconds"]
         self.menu = QMenu()
-        self.status = self.menu.addAction("RestTimer")
-        self.status.setEnabled(False)
-        self.menu.addSeparator()
         self.start_timer_action = self.menu.addAction("شروع", self.start_timer)
         self.stop_timer_action = self.menu.addAction("توقف", self.stop_timer)
         self.start_action = self.menu.addAction("شروع استراحت همین حالا", self.begin_break)
+        self.menu.addSeparator()
+        self.status = self.menu.addAction("RestTimer")
+        self.status.setEnabled(False)
+        self.menu.addSeparator()
         self.settings_action = self.menu.addAction("تنظیم زمان‌ها…", self.show_settings)
         self.startup_action = QAction("اجرا با ورود به سیستم", self.menu)
         self.startup_action.setCheckable(True)
@@ -640,7 +652,8 @@ def main():
     app.setQuitOnLastWindowClosed(False)
     app.setLayoutDirection(Qt.RightToLeft)
     app.setFont(QFont("DejaVu Sans", 10))
-    app.setStyleSheet(STYLE)
+    apply_color_scheme(app, app.styleHints().colorScheme())
+    app.styleHints().colorSchemeChanged.connect(lambda scheme: apply_color_scheme(app, scheme))
     controller = Controller(app)
     if "--smoke-test" in sys.argv:
         if update_core.tls_context().cert_store_stats()["x509_ca"] == 0:
