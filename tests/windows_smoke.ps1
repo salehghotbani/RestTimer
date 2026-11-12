@@ -1,4 +1,7 @@
-param([switch]$SkipInstaller)
+param(
+    [switch]$SkipInstaller,
+    [ValidateSet('en', 'fa')][string]$Language = 'en'
+)
 $ErrorActionPreference = 'Stop'
 Push-Location (Split-Path $PSScriptRoot)
 try {
@@ -7,10 +10,13 @@ try {
     $installPath = Join-Path $env:TEMP "RestTimer-install-smoke-$PID"
     if (!$SkipInstaller) {
         $setup = (Resolve-Path "dist/release/RestTimer-v$version-windows-x64-setup.exe").Path
-        $install = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/TASKS=""', "/DIR=`"$installPath`"") -WindowStyle Hidden -Wait -PassThru
+        $install = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/TASKS=""', "/LANG=$Language", "/DIR=`"$installPath`"") -WindowStyle Hidden -Wait -PassThru
         if ($install.ExitCode -ne 0) { throw "Installer failed: $($install.ExitCode)" }
         $targetExe = Join-Path $installPath 'RestTimer.exe'
         if (!(Test-Path -LiteralPath $targetExe)) { throw 'Installer did not install the application.' }
+        $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{77527277-48F0-4BDF-B74C-99A026A3B8C5}_is1'
+        $installedLanguage = Get-ItemPropertyValue -LiteralPath $uninstallKey -Name 'Inno Setup: Language'
+        if ($installedLanguage -ne $Language) { throw "Installer did not use the requested language $Language." }
     }
     New-Item -ItemType Directory -Path obj/smoke -Force | Out-Null
     @'
@@ -151,7 +157,7 @@ internal static class Smoke
         $uninstall = Start-Process -FilePath (Join-Path $installPath 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -Wait -PassThru
         if ($uninstall.ExitCode -ne 0 -or (Test-Path -LiteralPath $targetExe)) { throw 'Uninstall smoke test failed.' }
         if ((Get-ItemProperty -LiteralPath $runKey -ErrorAction SilentlyContinue).RestTimer) { throw 'Uninstaller left its startup command behind.' }
-        Write-Output 'Installer installation and removal passed.'
+        Write-Output "Installer installation and removal passed in language $Language."
     }
 } finally {
     Pop-Location

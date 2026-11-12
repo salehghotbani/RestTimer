@@ -27,3 +27,8 @@ Corresponding upstream source is available at these locations.
 
 The Windows installer uses the system .NET Framework and is generated with
 [Inno Setup](https://jrsoftware.org/isinfo.php).
+
+The installer includes the community Persian translation by Peyman Mohammadi,
+listed on the Inno Setup translations page. Its original author header is
+preserved in `packaging/languages/Farsi.isl`.
+[Translation source](https://github.com/jrsoftware/issrc/blob/2e0e2d7abff09c81de67daf4c2dcba10c5ff32ab/Files/Languages/Unofficial/Farsi.isl).

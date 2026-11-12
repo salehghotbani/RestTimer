@@ -24,14 +24,29 @@ LicenseFile=..\LICENSE
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+ShowLanguageDialog=yes
 CloseApplications=yes
 RestartApplications=no
 VersionInfoVersion={#AppVersion}
 VersionInfoDescription=RestTimer Installer
 
+[Languages]
+Name: "en"; MessagesFile: "compiler:Default.isl"
+Name: "fa"; MessagesFile: "compiler:Default.isl,languages\Farsi.isl"
+
+[CustomMessages]
+en.Autostart=Run RestTimer when I sign in
+fa.Autostart=اجرای RestTimer هنگام ورود به ویندوز
+en.DesktopIcon=Create a desktop shortcut
+fa.DesktopIcon=ساخت میانبر روی دسکتاپ
+en.LaunchApp=Run RestTimer
+fa.LaunchApp=اجرای RestTimer
+en.DotNetRequired=Install Microsoft .NET Framework 4.8, then run this installer again.
+fa.DotNetRequired=ابتدا Microsoft .NET Framework 4.8 را نصب کنید و سپس این نصاب را دوباره اجرا کنید.
+
 [Tasks]
-Name: "autostart"; Description: "Run RestTimer when I sign in"; Flags: unchecked
-Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
+Name: "autostart"; Description: "{cm:Autostart}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:DesktopIcon}"; Flags: unchecked
 
 [Files]
 Source: "..\dist\Windows\RestTimer.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -47,14 +62,14 @@ Name: "{autodesktop}\RestTimer"; Filename: "{app}\RestTimer.exe"; Tasks: desktop
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "RestTimer"; ValueData: """{app}\RestTimer.exe"""; Tasks: autostart
 
 [Run]
-Filename: "{app}\RestTimer.exe"; Description: "Run RestTimer"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\RestTimer.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 function InitializeSetup(): Boolean;
 begin
   Result := IsDotNetInstalled(net48, 0);
   if not Result then
-    MsgBox('Install Microsoft .NET Framework 4.8, then run this installer again.', mbError, MB_OK);
+    MsgBox(CustomMessage('DotNetRequired'), mbError, MB_OK);
 end;
 
 procedure InitializeWizard();

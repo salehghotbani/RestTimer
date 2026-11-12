@@ -25,7 +25,9 @@ jobs:
         run: ./tools/build_windows.ps1
       - name: Test installed application and uninstaller
         shell: pwsh
-        run: ./tests/windows_smoke.ps1
+        run: |
+          ./tests/windows_smoke.ps1 -Language en
+          ./tests/windows_smoke.ps1 -Language fa
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
