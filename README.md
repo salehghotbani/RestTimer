@@ -1,6 +1,26 @@
-# RestTimer
+<div align="center">
+  <img src="assets/RestTimer.png" width="88" height="88" alt="آیکن RestTimer">
+  <h1>RestTimer</h1>
+  <p dir="rtl"><strong>یادآوری استراحت روی همهٔ مانیتورها، برای ویندوز و لینوکس</strong></p>
+  <p dir="rtl">پیش‌فرض ۶۰ دقیقه کار و ۱۵ دقیقه استراحت است. زمان هر دوره را با ساعت، دقیقه و ثانیه تنظیم کنید.</p>
+</div>
 
-تایمر استراحت فارسی برای ویندوز و لینوکس. پیش‌فرض برنامه **۶۰ دقیقه کار و ۱۵ دقیقه استراحت** است. زمان هر دوره را می‌توانید با ورودی‌های ساعت، دقیقه و ثانیه تنظیم کنید.
+<div align="center">
+
+[![آخرین نسخه][release-badge]][releases]
+[![نصاب ویندوز][windows-badge]][windows]
+[![بستهٔ Ubuntu][ubuntu-badge]][ubuntu]
+[![بستهٔ Fedora][fedora-badge]][fedora]
+[![مجوز MIT][license-badge]](LICENSE)
+
+[![ساخت و آزمون نصاب‌ها][build-badge]][workflow]
+[![معماری x86-64][arch-badge]][releases]
+
+**[دریافت برنامه][releases] · [گزارش اشکال][issues] · [راهنمای مشارکت](CONTRIBUTING.md)**
+
+</div>
+
+<div dir="rtl">
 
 هنگام استراحت، بالای مرکز هر مانیتور یک نوار افقی با شمارش معکوس مشترک نمایش داده می‌شود. دکمهٔ کوچک رد کردن در سمت چپ قرار دارد و پس‌زمینه محو و تیره می‌شود. پایان تایمر، رد کردن یا زدن Esc، دورهٔ بعدی کار را آغاز می‌کند.
 
@@ -8,11 +28,11 @@
 
 فایل مناسب سیستم خود را از [آخرین انتشار](https://github.com/salehghotbani/RestTimer/releases/latest) دریافت کنید. بسته‌ها برای معماری **x86-64** ساخته می‌شوند.
 
-| سیستم | فایل نصب |
-| --- | --- |
-| Windows 10 / 11 | `RestTimer-v…-windows-x64-setup.exe` |
-| Ubuntu 22.04 یا جدیدتر | `RestTimer-v…-linux-amd64.deb` |
-| Fedora 43 یا جدیدتر | `RestTimer-v…-linux-x86_64.rpm` |
+| سیستم | قالب بسته | دریافت |
+| --- | --- | --- |
+| **Windows 10 / 11** | نصاب EXE | [نصب ویندوز][windows] |
+| **Ubuntu 22.04 یا جدیدتر** | بستهٔ DEB | [نصب Ubuntu][ubuntu] |
+| **Fedora 43 یا جدیدتر** | بستهٔ RPM | [نصب Fedora][fedora] |
 
 ### ویندوز
 
@@ -55,8 +75,53 @@ sudo dnf install ./RestTimer-v1.2.0-linux-x86_64.rpm
 
 در ویندوز، نسخهٔ فعلی را با «خروج» ببندید و **نصاب EXE جدید** را اجرا کنید. در Ubuntu یا Fedora، بستهٔ جدید را با همان دستور نصب کنید. تنظیمات زمان‌ها در ارتقا حفظ می‌شوند.
 
+## فناوری‌های استفاده‌شده
+
+[![C# و WinForms][csharp-badge]][winforms]
+[![.NET Framework][dotnet-badge]][dotnet]
+[![Python][python-badge]][python]
+[![PySide6 Essentials][pyside-badge]][pyside]
+[![PyInstaller][pyinstaller-badge]][pyinstaller]
+[![Inno Setup][inno-badge]][inno]
+
+| فناوری | کاربرد |
+| --- | --- |
+| **C#، WinForms و .NET Framework 4.8** | رابط ویندوز، منوی کنار ساعت و پوشش هم‌زمان مانیتورها |
+| **Python 3.11 و PySide6 Essentials / Qt 6.12** | رابط لینوکس، تنظیم زمان‌ها، آیکن سینی سیستم و پنجره‌های استراحت |
+| **Inno Setup 6** | ساخت نصاب EXE، میانبرها و حذف برنامه در ویندوز |
+| **PyInstaller، dpkg-deb و rpmbuild** | بسته‌بندی وابستگی‌های لینوکس و تولید DEB و RPM |
+| **GitHub Actions، Xvfb، Weston و Docker** | ساخت و آزمون نصب، حذف و اجرای برنامه روی Windows، Ubuntu، Fedora، X11 و Wayland |
+
 ## ساخت و مشارکت
 
 دستورهای ساخت نصاب ویندوز، بسته‌های لینوکس و آزمون‌ها در [راهنمای مشارکت](CONTRIBUTING.md) آمده‌اند. workflow مخزن نصب و حذف نصاب ویندوز و بسته‌ها در Ubuntu و Fedora، و اجرای رابط لینوکس روی X11 و Wayland را بررسی می‌کند.
 
 کد پروژه با [مجوز MIT](LICENSE) منتشر می‌شود. مجوز و سورس وابستگی‌های همراه در [اعلان اجزای ثالث](THIRD_PARTY_NOTICES.md) مشخص شده‌اند.
+
+</div>
+
+[releases]: https://github.com/salehghotbani/RestTimer/releases/latest
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.2.0/RestTimer-v1.2.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.2.0/RestTimer-v1.2.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.2.0/RestTimer-v1.2.0-linux-x86_64.rpm
+[issues]: https://github.com/salehghotbani/RestTimer/issues
+[workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
+[release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b
+[windows-badge]: https://img.shields.io/badge/Windows-EXE-2563eb
+[ubuntu-badge]: https://img.shields.io/badge/Ubuntu-DEB-E95420?logo=ubuntu&logoColor=white
+[fedora-badge]: https://img.shields.io/badge/Fedora-RPM-294172?logo=fedora&logoColor=white
+[license-badge]: https://img.shields.io/badge/License-MIT-475569
+[build-badge]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml/badge.svg?branch=main&event=push
+[arch-badge]: https://img.shields.io/badge/Architecture-x86--64-475569
+[csharp-badge]: https://img.shields.io/badge/C%23-WinForms-512BD4
+[dotnet-badge]: https://img.shields.io/badge/.NET_Framework-4.8-512BD4?logo=dotnet&logoColor=white
+[python-badge]: https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white
+[pyside-badge]: https://img.shields.io/badge/PySide6_Essentials-6.12.0-167a4b?logo=qt&logoColor=white
+[pyinstaller-badge]: https://img.shields.io/badge/PyInstaller-6.22.3-345d9d
+[inno-badge]: https://img.shields.io/badge/Inno_Setup-6-475569
+[winforms]: https://learn.microsoft.com/dotnet/desktop/winforms/
+[dotnet]: https://dotnet.microsoft.com/download/dotnet-framework/net48
+[python]: https://www.python.org/
+[pyside]: https://doc.qt.io/qtforpython-6/
+[pyinstaller]: https://pyinstaller.org/
+[inno]: https://jrsoftware.org/isinfo.php
