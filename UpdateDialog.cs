@@ -114,7 +114,7 @@ namespace RestTimer
                 {
                     availableVersion = latest;
                     description.Text = "نسخهٔ \u200e" + latest.ToString(3)
-                        + " آمادهٔ دریافت است. فایل ZIP نسخهٔ جدید را دانلود کن، برنامه را ببند و فایل‌ها را جایگزین کن.";
+                        + " آمادهٔ دریافت است. فایل نصبی EXE را دریافت کن و برای ارتقای برنامه اجرا کن.";
                 }
             }
             catch (Exception ex) when (ex is HttpRequestException || ex is OperationCanceledException

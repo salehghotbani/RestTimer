@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Windows.Forms;
 
@@ -37,21 +38,46 @@ namespace RestTimer
             startup = new ToolStripMenuItem("اجرا با ورود به ویندوز", null, (_, __) => ToggleStartup());
             updates = new ToolStripMenuItem("بررسی به‌روزرسانی…", null, (_, __) => ShowUpdates());
             var exit = new ToolStripMenuItem("خروج", null, (_, __) => ExitThread());
-            menu = new ContextMenuStrip { RightToLeft = RightToLeft.Yes };
+            menu = new ContextMenuStrip
+            {
+                RightToLeft = RightToLeft.Yes,
+                Renderer = new TrayMenuRenderer(),
+                Font = Theme.BodyFont,
+                BackColor = Theme.Surface,
+                ForeColor = Theme.Text,
+                ShowImageMargin = false,
+                ShowCheckMargin = true,
+                Padding = new Padding(6)
+            };
             menu.Items.AddRange(new ToolStripItem[]
             {
                 status, new ToolStripSeparator(), startBreak, settings, startup, updates, new ToolStripSeparator(), exit
             });
+            foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
+                item.Padding = new Padding(12, 7, 12, 7);
             menu.Opening += (_, __) => UpdateStartupItem();
 
             icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
             trayIcon = new NotifyIcon { Icon = icon, ContextMenuStrip = menu, Visible = true };
-            trayIcon.DoubleClick += (_, __) => EditSettings();
+            trayIcon.MouseUp += TrayMouseUp;
 
             timer = new Timer { Interval = 250 };
             timer.Tick += (_, __) => UpdateTimer();
             UpdateTimer();
             timer.Start();
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr window);
+
+        private void TrayMouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left)
+                return;
+
+            menu.Show(Cursor.Position);
+            SetForegroundWindow(menu.Handle);
+            menu.Focus();
         }
 
         private void UpdateTimer()

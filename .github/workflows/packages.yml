@@ -1,0 +1,102 @@
+name: Build and verify installers
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Ensure Inno Setup is available
+        shell: pwsh
+        run: |
+          if (!(Test-Path 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe')) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - name: Build application and installer
+        shell: pwsh
+        run: ./tools/build_windows.ps1
+      - name: Test installed application and uninstaller
+        shell: pwsh
+        run: ./tests/windows_smoke.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/release/*.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-preview
+          path: obj/smoke/*.png
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.9'
+      - name: Install packaging and desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm desktop-file-utils xvfb xauth weston \
+            libegl1 libgl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-cursor0 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0
+          python -m pip install -r requirements-build-linux.txt
+      - name: Test Linux frontend
+        run: QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+      - name: Build Debian and RPM installers
+        run: bash tools/build_linux.sh
+      - name: Test frozen desktop on X11
+        run: xvfb-run -a dist/resttimer/resttimer --smoke-test
+      - name: Test frozen desktop on Wayland
+        run: |
+          export XDG_RUNTIME_DIR="$(mktemp -d)"
+          chmod 700 "$XDG_RUNTIME_DIR"
+          weston --backend=headless-backend.so --socket=resttimer-ci --idle-time=0 --use-pixman > build/weston.log 2>&1 &
+          weston_pid=$!
+          trap 'kill "$weston_pid" || true' EXIT
+          for attempt in $(seq 1 30); do
+            test -S "$XDG_RUNTIME_DIR/resttimer-ci" && break
+            sleep 0.2
+          done
+          test -S "$XDG_RUNTIME_DIR/resttimer-ci"
+          QT_QPA_PLATFORM=wayland WAYLAND_DISPLAY=resttimer-ci dist/resttimer/resttimer --smoke-test
+      - name: Install and remove Debian package on Ubuntu 24.04
+        run: |
+          docker run --rm -v "$PWD/dist/release:/packages:ro" ubuntu:24.04 bash -ec '
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y /packages/*.deb
+            useradd -m smoke
+            runuser -u smoke -- env QT_QPA_PLATFORM=offscreen /opt/resttimer/resttimer --smoke-test
+            apt-get remove -y resttimer
+            test ! -e /opt/resttimer/resttimer
+          '
+      - name: Install and remove RPM package on Fedora 43
+        run: |
+          docker run --rm -v "$PWD/dist/release:/packages:ro" fedora:43 bash -ec '
+            dnf install -y /packages/*.rpm
+            useradd -m smoke
+            runuser -u smoke -- env QT_QPA_PLATFORM=offscreen /opt/resttimer/resttimer --smoke-test
+            dnf remove -y resttimer
+            test ! -e /opt/resttimer/resttimer
+          '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-installers
+          path: |
+            dist/release/*.deb
+            dist/release/*.rpm
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-previews-and-logs
+          path: |
+            build/*.png
+            build/*.log

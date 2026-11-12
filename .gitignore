@@ -3,3 +3,8 @@ obj/
 dist/
 .vs/
 *.user
+build/
+__pycache__/
+.venv/
+*.spec
+!packaging/fedora.spec

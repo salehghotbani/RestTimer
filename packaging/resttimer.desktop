@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=RestTimer
+Name[fa]=تایمر استراحت
+Comment=Take regular breaks from your desktop
+Comment[fa]=یادآوری منظم برای استراحت هنگام کار با رایانه
+Exec=/opt/resttimer/resttimer
+TryExec=/opt/resttimer/resttimer
+Icon=resttimer
+Terminal=false
+Categories=Utility;
+StartupNotify=false

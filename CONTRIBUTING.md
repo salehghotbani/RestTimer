@@ -1,0 +1,41 @@
+# مشارکت در RestTimer
+
+گزارش اشکال و پیشنهادها را در [Issues](https://github.com/salehghotbani/RestTimer/issues) ثبت کنید. برای اشکال‌های رابط، نسخهٔ برنامه، سیستم‌عامل، تعداد مانیتورها، درصد بزرگ‌نمایی و در لینوکس نوع نشست X11 یا Wayland را ذکر کنید.
+
+برای تغییر کد، مخزن را fork کنید و تغییر مرتبط را در یک شاخهٔ جداگانه بفرستید. توضیح Pull Request باید رفتار جدید و روش آزمون آن را مشخص کند. تغییرات ظاهری را همراه تصویر رابط بفرستید.
+
+## توسعهٔ ویندوز
+
+به .NET SDK، .NET Framework 4.8 Developer Pack و برای ساخت نصاب به Inno Setup 6 نیاز است.
+
+```powershell
+dotnet build -c Release
+powershell -File tools/build_windows.ps1
+```
+
+در صورت نصب Inno Setup در مسیر سفارشی، متغیر محیطی `ISCC` را به مسیر `ISCC.exe` تنظیم کنید.
+
+## توسعهٔ لینوکس
+
+نسخهٔ لینوکس در `linux/resttimer.py` قرار دارد. محیط مجازی بسازید و وابستگی‌ها را نصب کنید.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-build-linux.txt
+python linux/resttimer.py
+QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+bash tools/build_linux.sh
+```
+
+ساخت بسته‌ها روی Linux x86-64 به `dpkg-deb`، `rpmbuild` و `desktop-file-validate` نیاز دارد. فایل workflow مخزن وابستگی‌های ساخت و آزمون نصب روی Ubuntu و Fedora را مشخص می‌کند.
+
+## بررسی تغییرات
+
+- کار و استراحت یک‌ثانیه‌ای، رد کردن و شروع دوبارهٔ دوره را امتحان کنید.
+- منوی آیکن باید با هر دو کلیک چپ و راست باز شود و با کلیک بیرون یا Esc بسته شود.
+- نمایش هم‌زمان روی چند مانیتور و تنظیم ساعت، دقیقه و ثانیه را بررسی کنید.
+- برای تغییر قالب تنظیمات، خواندن داده‌های نسخه‌های پیشین را حفظ کنید.
+- فایل `VERSION` مرجع نسخهٔ مشترک ویندوز و لینوکس است. نسخهٔ جدید باید همراه نصاب EXE و بسته‌های DEB و RPM منتشر شود.
+
+با ارسال تغییرات، مشارکت خود را تحت مجوز MIT همین مخزن ارائه می‌کنید.

@@ -7,7 +7,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>RestTimer.ico</ApplicationIcon>
     <Product>RestTimer</Product>
-    <Version>1.1.0</Version>
+    <Version>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/VERSION').Trim())</Version>
     <Description>A Windows break timer with a synchronized overlay on every display.</Description>
   </PropertyGroup>
   <ItemGroup>
