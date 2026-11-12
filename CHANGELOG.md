@@ -1,5 +1,11 @@
 # RestTimer changelog
 
+## 1.9.2
+- Preview the selected interface language immediately, including right-to-left layouts, navigation, update messages and the tray menu. Save keeps the choice across restarts; Discard restores the previous language.
+- Preserve edited fields, checkbox choices, timer state and active update downloads when previewing languages.
+- Give every Windows settings checkbox the same rounded, theme-aware appearance, including Show floating timer.
+- Add matching rounded checkbox indicators and checkmarks for Linux light and dark themes.
+
 ## 1.9.1
 - Remove the duplicate Updates and changes and Cancel buttons from General, and all Close / cancel buttons from settings sections.
 - Prompt to save or discard pending settings when closing. Closing the prompt continues editing; invalid settings keep the window open. Daily checks and launch-at-sign-in changes now wait for Save.

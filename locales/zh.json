@@ -85,7 +85,7 @@
     "quit_app": "退出 RestTimer",
     "language": "语言",
     "system_language": "系统语言",
-    "language_hint": "保存以应用语言。切换语言会保留剩余时间。",
+    "language_hint": "语言会立即切换。保存后可在重新启动时保留。",
     "countdown_accessible": "RestTimer 倒计时",
     "general": "常规",
     "updates_tab": "更新",

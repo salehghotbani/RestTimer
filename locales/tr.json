@@ -85,7 +85,7 @@
     "quit_app": "RestTimer’dan çık",
     "language": "Dil",
     "system_language": "Sistem dili",
-    "language_hint": "Uygulamak için kaydedin. Dil değişikliği kalan süreyi korur.",
+    "language_hint": "Dil hemen değişir. Yeniden başlattıktan sonra korumak için kaydedin.",
     "countdown_accessible": "RestTimer geri sayımı",
     "general": "Genel",
     "updates_tab": "Güncellemeler",

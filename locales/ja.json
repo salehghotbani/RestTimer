@@ -85,7 +85,7 @@
     "quit_app": "RestTimer を終了",
     "language": "言語",
     "system_language": "システムの言語",
-    "language_hint": "保存して適用します。言語を変更しても残り時間は維持されます。",
+    "language_hint": "言語はすぐに切り替わります。再起動後も使うには保存してください。",
     "countdown_accessible": "RestTimer のカウントダウン",
     "general": "一般",
     "updates_tab": "更新",

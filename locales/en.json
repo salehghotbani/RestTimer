@@ -85,7 +85,7 @@
     "quit_app": "Quit RestTimer",
     "language": "Language",
     "system_language": "System language",
-    "language_hint": "Save to apply. Changing language keeps your timer’s remaining time.",
+    "language_hint": "Language changes immediately. Save to keep it after restarting.",
     "countdown_accessible": "RestTimer countdown",
     "general": "General",
     "updates_tab": "Updates",

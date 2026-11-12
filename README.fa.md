@@ -47,7 +47,7 @@
 بستهٔ DEB را در مدیر نرم‌افزار باز کنید یا در پوشهٔ دانلودشده اجرا کنید.
 
 ```bash
-sudo apt install ./RestTimer-v1.9.1-linux-amd64.deb
+sudo apt install ./RestTimer-v1.9.2-linux-amd64.deb
 ```
 
 ### Fedora
@@ -55,7 +55,7 @@ sudo apt install ./RestTimer-v1.9.1-linux-amd64.deb
 بستهٔ RPM را در مدیر نرم‌افزار باز کنید یا اجرا کنید.
 
 ```bash
-sudo dnf install ./RestTimer-v1.9.1-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.9.2-linux-x86_64.rpm
 ```
 
 سپس RestTimer را از منوی برنامه‌ها یا فرمان `resttimer` اجرا کنید. Python و Qt مورد نیاز در بسته‌های لینوکس قرار دارند. حذف برنامه با `sudo apt remove resttimer` یا `sudo dnf remove resttimer` انجام می‌شود.
@@ -78,7 +78,7 @@ sudo dnf install ./RestTimer-v1.9.1-linux-x86_64.rpm
 - شمارش از زمان اجرا شروع می‌شود. رد کردن استراحت، زمان کار بعدی را از نو آغاز می‌کند.
 - دکمه‌های **شروع** و **توقف** در منوی آیکن، تنظیمات و کادر استراحت قرار دارند. توقف، شمارش همان دوره را مکث می‌کند و شروع از زمان باقی‌مانده ادامه می‌دهد. در حالت توقف، کادر استراحت باز می‌ماند و دکمهٔ شروع روی همهٔ مانیتورها فعال است. رد کردن استراحت یا تغییر زمان‌ها، وضعیت توقف را حفظ می‌کند.
 - تنظیمات ویندوز در حساب فعلی و تنظیمات لینوکس در `~/.config/resttimer/settings.json` ذخیره می‌شوند. تنظیمات قدیمیِ دقیقه‌ای ویندوز نیز خوانده می‌شوند.
-- زبان رابط به‌صورت پیش‌فرض از زبان سیستم انتخاب می‌شود؛ برای زبان پشتیبانی‌نشده انگلیسی نمایش داده می‌شود. از **تنظیمات ← زبان**، زبان دلخواه یا «زبان سیستم» را انتخاب و «ذخیرهٔ تنظیمات» را بزنید. انتخاب پس از اجرای مجدد حفظ می‌شود و بدون شروع دوبارهٔ تایمر یا از دست رفتن مکث اعمال می‌شود. فارسی و عربی راست‌به‌چپ و دیگر زبان‌ها چپ‌به‌راست هستند. نام هر زبان به زبان بومی خودش نمایش داده می‌شود.
+- زبان رابط به‌صورت پیش‌فرض از زبان سیستم انتخاب می‌شود؛ برای زبان پشتیبانی‌نشده انگلیسی نمایش داده می‌شود. انتخاب زبان از **تنظیمات ← زبان** همان لحظه متن‌ها و جهت رابط را تغییر می‌دهد و زمان‌های واردشده، مکث تایمر و دانلود فعال حفظ می‌شوند. با «ذخیرهٔ تنظیمات» انتخاب ماندگار می‌شود و «نادیده گرفتن تغییرات» زبان قبلی را برمی‌گرداند. گزینهٔ «زبان سیستم» تشخیص خودکار را فعال می‌کند. فارسی و عربی راست‌به‌چپ و دیگر زبان‌ها چپ‌به‌راست هستند. نام هر زبان به زبان بومی خودش نمایش داده می‌شود. چک‌باکس‌های تنظیمات نیز ظاهر گرد و یکدست هماهنگ با رنگ سیستم دارند.
 - اجرای خودکار لینوکس از `~/.config/autostart/resttimer.desktop` استفاده می‌کند.
 
 ### پنجرهٔ تنظیمات
@@ -133,9 +133,9 @@ sudo dnf install ./RestTimer-v1.9.1-linux-x86_64.rpm
 </div>
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

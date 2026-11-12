@@ -21,6 +21,10 @@ namespace RestTimer
         private readonly Bitmap logo;
         private readonly Timer themeTimer;
         private string paletteKey;
+        private RoundedPanel sidebar;
+        private Panel generalBody;
+        private bool relocalizing;
+        public event Action LanguagePreviewChanged;
         private readonly Preferences originalPreferences;
         private readonly bool originalDaily;
         private bool originalStartup, saving;
@@ -70,7 +74,7 @@ namespace RestTimer
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            var sidebar = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(10),
+            sidebar = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(10),
                 Margin = I18n.IsRtl ? new Padding(16, 0, 0, 0) : new Padding(0, 0, 16, 0) };
             var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, AccessibleName = I18n.T("settings_navigation") };
             tabs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -105,6 +109,7 @@ namespace RestTimer
             layout.Controls.Add(sidebar, 0, 0);
             layout.Controls.Add(content, 1, 0);
             Controls.Add(layout);
+            language.SelectedIndexChanged += (_, __) => PreviewLanguage();
             SelectPage(initialPage);
             ApplyTheme();
             themeTimer = new Timer { Interval = 750 };
@@ -116,6 +121,7 @@ namespace RestTimer
         {
             var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
             var body = new Panel { Size = new Size(536, 730), RightToLeft = I18n.Flow };
+            generalBody = body;
             viewport.Controls.Add(body);
             viewport.AutoScrollMinSize = body.Size;
             viewport.Resize += (_, __) =>
@@ -126,12 +132,12 @@ namespace RestTimer
             };
             var title = new Label
             {
-                Text = I18n.T("settings_title"), Font = Theme.HeadingFont,
+                Name = "i18n:settings_title", Text = I18n.T("settings_title"), Font = Theme.HeadingFont,
                 TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 24, 480, 36)
             };
             var subtitle = new Label
             {
-                Text = I18n.T("settings_subtitle"), Tag = "muted",
+                Name = "i18n:settings_subtitle", Text = I18n.T("settings_subtitle"), Tag = "muted",
                 ForeColor = Theme.Muted, TextAlign = ContentAlignment.MiddleLeft,
                 Bounds = new Rectangle(28, 65, 480, 26)
             };
@@ -145,12 +151,12 @@ namespace RestTimer
             };
             note = new Label
             {
-                Text = I18n.T("duration_note"), Tag = "muted",
+                Name = "i18n:duration_note", Text = I18n.T("duration_note"), Tag = "muted",
                 Font = Theme.SmallFont, ForeColor = Theme.Muted,
                 TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 620, 480, 42)
             };
-            startTimer = new RoundedButton(primary: true) { Text = I18n.T("start"), Bounds = new Rectangle(408, 388, 100, 34), TabIndex = 2 };
-            stopTimer = new RoundedButton { Text = I18n.T("stop"), Bounds = new Rectangle(296, 388, 100, 34), TabIndex = 3 };
+            startTimer = new RoundedButton(primary: true) { Name = "i18n:start", Text = I18n.T("start"), Bounds = new Rectangle(408, 388, 100, 34), TabIndex = 2 };
+            stopTimer = new RoundedButton { Name = "i18n:stop", Text = I18n.T("stop"), Bounds = new Rectangle(296, 388, 100, 34), TabIndex = 3 };
             startTimer.Click += (_, __) => start();
             stopTimer.Click += (_, __) => stop();
             timerStatus = new Label
@@ -160,12 +166,12 @@ namespace RestTimer
             };
             var save = new RoundedButton(primary: true)
             {
-                Text = I18n.T("save"), Bounds = new Rectangle(366, 678, 142, 38), TabIndex = 6
+                Name = "i18n:save", Text = I18n.T("save"), Bounds = new Rectangle(366, 678, 142, 38), TabIndex = 6
             };
             save.Click += (_, __) => SaveDurations();
-            showTaskbarCountdown = new CheckBox { Text = I18n.T("show_countdown"), Checked = preferences.ShowTaskbarCountdown,
+            showTaskbarCountdown = new ThemedCheckBox { Name = "i18n:show_countdown", Text = I18n.T("show_countdown"), Checked = preferences.ShowTaskbarCountdown,
                 Bounds = new Rectangle(28, 584, 480, 30), TabIndex = 5 };
-            var languageTitle = new Label { Text = I18n.T("language"), TextAlign = ContentAlignment.MiddleLeft,
+            var languageTitle = new Label { Name = "i18n:language", Text = I18n.T("language"), TextAlign = ContentAlignment.MiddleLeft,
                 Bounds = new Rectangle(28, 434, 130, 32) };
             language = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Bounds = new Rectangle(170, 434, 338, 32),
                 TabIndex = 4, AccessibleName = I18n.T("language"), RightToLeft = RightToLeft.No, DropDownHeight = 320,
@@ -186,15 +192,15 @@ namespace RestTimer
             };
             for (int i = 0; i < language.Items.Count; i++)
                 if (((LanguageItem)language.Items[i]).Code == preferences.Language) language.SelectedIndex = i;
-            var languageHint = new Label { Text = I18n.T("language_hint"), Font = Theme.SmallFont, Tag = "muted",
+            var languageHint = new Label { Name = "i18n:language_hint", Text = I18n.T("language_hint"), Font = Theme.SmallFont, Tag = "muted",
                 ForeColor = Theme.Muted, TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 472, 480, 34) };
-            daily = new ThemedCheckBox { Text = I18n.T("daily_check"), Checked = service.State.DailyEnabled,
+            daily = new ThemedCheckBox { Name = "i18n:daily_check", Text = I18n.T("daily_check"), Checked = service.State.DailyEnabled,
                 Bounds = new Rectangle(28, 510, 480, 34) };
             daily.CheckedChanged += (_, __) =>
             {
                 updatePanel?.SyncDailyPreference(daily.Checked);
             };
-            startupPreference = new ThemedCheckBox { Text = I18n.T("startup"), Bounds = new Rectangle(28, 548, 480, 30) };
+            startupPreference = new ThemedCheckBox { Name = "i18n:startup", Text = I18n.T("startup"), Bounds = new Rectangle(28, 548, 480, 30) };
             try { startupPreference.Checked = Preferences.StartsWithWindows(); }
             catch (Exception ex) when (ex is System.IO.IOException || ex is UnauthorizedAccessException || ex is System.Security.SecurityException)
             { startupPreference.Enabled = false; }
@@ -223,10 +229,10 @@ namespace RestTimer
             layout.Controls.Add(new Label { Text = "RestTimer", Font = Theme.HeadingFont, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 1);
             layout.Controls.Add(new Label { Text = I18n.T("installed", UpdateClient.CurrentVersion.ToString(3)), Tag = "accent",
                 Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 2);
-            layout.Controls.Add(new Label { Text = I18n.T("about_description"), Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 3);
-            layout.Controls.Add(new Label { Text = I18n.T("author") + ": \u200eSaleh Ghotbani", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 4);
-            layout.Controls.Add(new Label { Text = I18n.T("license") + ": MIT", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 5);
-            var project = new RoundedButton { Text = I18n.T("project_site"), Dock = DockStyle.Fill, Margin = new Padding(20, 4, 20, 4) };
+            layout.Controls.Add(new Label { Name = "i18n:about_description", Text = I18n.T("about_description"), Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 3);
+            layout.Controls.Add(new Label { Name = "about_author", Text = I18n.T("author") + ": \u200eSaleh Ghotbani", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 4);
+            layout.Controls.Add(new Label { Name = "about_license", Text = I18n.T("license") + ": MIT", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 5);
+            var project = new RoundedButton { Name = "i18n:project_site", Text = I18n.T("project_site"), Dock = DockStyle.Fill, Margin = new Padding(20, 4, 20, 4) };
             project.Click += (_, __) =>
             {
                 try { Process.Start(new ProcessStartInfo("https://github.com/salehghotbani/RestTimer") { UseShellExecute = true }); }
@@ -249,6 +255,38 @@ namespace RestTimer
             foreach (var pair in navigation) { pair.Value.Selected = pair.Key == page; pair.Value.Invalidate(); }
             AcceptButton = page == "general" ? (IButtonControl)savePreferences : null;
             if (Visible && updatePanel.Visible) updatePanel.EnsureLoaded();
+        }
+
+        private void PreviewLanguage()
+        {
+            if (relocalizing || language.SelectedItem == null) return;
+            string previous = I18n.Code;
+            I18n.Use(((LanguageItem)language.SelectedItem).Code);
+            if (previous == I18n.Code) return;
+            relocalizing = true;
+            SuspendLayout();
+            try
+            {
+                I18n.RelocalizeControls(this, previous);
+                Text = "RestTimer — " + I18n.T("preferences_title");
+                RightToLeft = generalBody.RightToLeft = I18n.Flow;
+                int gap = (int)(16 * DeviceDpi / 96f);
+                sidebar.Margin = I18n.IsRtl ? new Padding(gap, 0, 0, 0) : new Padding(0, 0, gap, 0);
+                workDuration.Relocalize(I18n.T("work_duration"), I18n.T("work_hint"));
+                breakDuration.Relocalize(I18n.T("break_duration"), I18n.T("break_hint"));
+                string[] pages = { "general", "updates", "history", "about" };
+                string[] keys = { "general", "updates_tab", "version_history", "about" };
+                for (int i = 0; i < pages.Length; i++) navigation[pages[i]].Text = I18n.T(keys[i]);
+                int selected = language.SelectedIndex;
+                language.Items[0] = new LanguageItem("auto", I18n.T("system_language"));
+                language.SelectedIndex = selected;
+                aboutPage.Controls.Find("about_author", true)[0].Text = I18n.T("author") + ": \u200eSaleh Ghotbani";
+                aboutPage.Controls.Find("about_license", true)[0].Text = I18n.T("license") + ": MIT";
+                updatePanel.Relocalize(previous, CurrentPage == "history");
+                ApplyTheme();
+            }
+            finally { ResumeLayout(true); relocalizing = false; }
+            LanguagePreviewChanged?.Invoke();
         }
 
         private void ApplyTheme() { Theme.Apply(this); paletteKey = Theme.PaletteKey; }
@@ -277,7 +315,8 @@ namespace RestTimer
                             if (SelectPreferences()) { saving = true; DialogResult = DialogResult.OK; }
                             else { SelectPage("general"); e.Cancel = true; }
                         }
-                        else if (choice != DialogResult.No) e.Cancel = true;
+                        else if (choice == DialogResult.No) { I18n.Use(originalPreferences.Language); LanguagePreviewChanged?.Invoke(); }
+                        else e.Cancel = true;
                     }
                 }
             }

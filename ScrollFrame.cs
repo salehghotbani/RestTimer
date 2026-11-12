@@ -20,6 +20,12 @@ namespace RestTimer
         private readonly SlimScrollBar scrollbar;
         private readonly Timer refresh;
         private bool syncing;
+        public void ApplyDirection()
+        {
+            RightToLeft = I18n.Flow;
+            scrollbar.Dock = I18n.IsRtl ? DockStyle.Left : DockStyle.Right;
+            Synchronize();
+        }
 
         public ScrollFrame(Control editor)
         {

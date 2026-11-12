@@ -100,6 +100,52 @@ internal static class LocalizationSmoke
                 Console.WriteLine("Localized settings, selector, direction and updates passed: " + code);
             }
             }
+            use.Invoke(null,new object[]{"en"});
+            using(var dialog=(Form)Activator.CreateInstance(settings,
+                Activator.CreateInstance(preferences,new object[]{3723,901,false,"en"}),SystemIcons.Application,
+                (Action)(()=>{}),(Action)(()=>{}),service,"general",false))
+            {
+                dialog.Show();Application.DoEvents();
+                var duration=settings.GetField("workDuration",flags).GetValue(dialog);
+                var seconds=(TextBox)duration.GetType().GetField("seconds",flags).GetValue(duration);
+                seconds.Text="23";
+                var checkbox=(CheckBox)settings.GetField("showTaskbarCountdown",flags).GetValue(dialog);
+                checkbox.Checked=true;
+                var daily=(CheckBox)settings.GetField("daily",flags).GetValue(dialog);
+                bool draftDaily=true;daily.Checked=draftDaily;
+                ((CheckBox)settings.GetField("startupPreference",flags).GetValue(dialog)).Checked=true;
+                var panel=(Control)settings.GetField("updatePanel",flags).GetValue(dialog);
+                var token=(System.Threading.CancellationTokenSource)panel.GetType().GetField("cancellation",flags).GetValue(panel);
+                panel.GetType().GetField("working",flags).SetValue(panel,true);
+                var combo=(ComboBox)settings.GetField("language",flags).GetValue(dialog);
+                foreach(string code in codes)
+                {
+                    for(int index=0;index<combo.Items.Count;index++)
+                        if((string)combo.Items[index].GetType().GetProperty("Code").GetValue(combo.Items[index])==code) { combo.SelectedIndex=index;break; }
+                    Application.DoEvents();
+                    if((string)i18n.GetProperty("Code").GetValue(null)!=code || dialog.RightToLeft!=(code=="fa"||code=="ar"?RightToLeft.Yes:RightToLeft.No))
+                        throw new Exception("Language did not change immediately for "+code);
+                    if(seconds.Text!="23" || !checkbox.Checked || daily.Checked!=draftDaily || token.IsCancellationRequested
+                        || panel!=(Control)settings.GetField("updatePanel",flags).GetValue(dialog))
+                        throw new Exception("Live language changes lost pending settings or the active update panel.");
+                    if(settings.GetProperty("SelectedPreferences").GetValue(dialog)!=null)
+                        throw new Exception("Previewing a language applied settings before Save.");
+                    if(dialog.Text!="RestTimer — "+(string)translate.Invoke(null,new object[]{"preferences_title",new object[0]}))
+                        throw new Exception("Live settings title was not translated.");
+                    using(var bitmap=new Bitmap(dialog.Width,dialog.Height))
+                    { dialog.DrawToBitmap(bitmap,new Rectangle(Point.Empty,dialog.Size));bitmap.Save("obj/localization/live-"+code+".png",ImageFormat.Png); }
+                }
+                using(var revert=new System.Windows.Forms.Timer{Interval=20})
+                {
+                    revert.Tick+=delegate {
+                        foreach(Form prompt in Application.OpenForms)
+                            if(prompt.Name=="UnsavedChangesDialog") { revert.Stop();prompt.DialogResult=DialogResult.No;break; }
+                    };
+                    revert.Start();dialog.Close();
+                    if((string)i18n.GetProperty("Code").GetValue(null)!="en") throw new Exception("Discard did not restore the previewed language.");
+                }
+                Console.WriteLine("Instant language previews preserved drafts and active updates; Discard restored the original language.");
+            }
             if (args.Length > 1 && args[1] == "--persist")
             {
                 using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\RestTimer"))

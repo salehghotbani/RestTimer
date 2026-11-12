@@ -85,7 +85,7 @@
     "quit_app": "Закрыть RestTimer",
     "language": "Язык",
     "system_language": "Язык системы",
-    "language_hint": "Сохраните для применения. Смена языка сохраняет оставшееся время.",
+    "language_hint": "Язык меняется сразу. Сохраните, чтобы использовать его после перезапуска.",
     "countdown_accessible": "Обратный отсчёт RestTimer",
     "general": "Общие",
     "updates_tab": "Обновления",

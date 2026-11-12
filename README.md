@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.9.1-linux-amd64.deb
+sudo apt install ./RestTimer-v1.9.2-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.9.1-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.9.1-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.9.2-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -90,7 +90,7 @@ Switching tabs preserves pending settings and running update downloads. A confir
 
 Minute and second fields accept **0–59**, including Persian and Arabic digits on Windows. Settings, release notes and version lists use slim, rounded scrollbars that follow the system color mode.
 
-The interface follows your system UI language by default. Unsupported languages fall back to English. In **Settings → Language**, choose a language or **System language**, then **Save settings**. Your choice persists across restarts and applies immediately without resetting the remaining time or paused state. Persian and Arabic use right-to-left layouts; other languages use left-to-right layouts. Language names appear in their own language.
+The interface follows your system UI language by default. Unsupported languages fall back to English. Choosing a language in **Settings → Language** updates the interface immediately, including its reading direction. Edited fields, timer state and active update downloads are preserved. **Save settings** keeps the choice across restarts; **Discard changes** restores the previous language. **System language** returns to automatic detection. Persian and Arabic use right-to-left layouts; other languages use left-to-right layouts. Language names appear in their own language. All settings checkboxes share rounded, theme-aware indicators.
 
 Windows settings are stored in the current user's account; older minute-based settings are still read. Linux stores settings in `~/.config/resttimer/settings.json` and its launch-at-sign-in entry in `~/.config/autostart/resttimer.desktop`.
 
@@ -138,9 +138,9 @@ English is the default documentation language. Keep the [Persian README](README.
 RestTimer is released under the [MIT license](LICENSE). Bundled dependency licenses and source information are listed in [third-party notices](THIRD_PARTY_NOTICES.md).
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

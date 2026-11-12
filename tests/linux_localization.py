@@ -36,6 +36,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
         def __init__(self): self.cancelled = threading.Event()
     pending = PendingDownload()
     dialog.worker = pending
+    dialog.status.setText(i18n.tr("download_percent", 42))
     original_revision = dialog.latest_notes.document().revision()
     dialog.latest_notes.verticalScrollBar().setValue(100)
     original_scroll = dialog.latest_notes.verticalScrollBar().value()
@@ -54,7 +55,16 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert not controller.updater.state["daily_enabled"], "Draft daily checks persisted before Save"
     controller.settings.daily.setChecked(False)
     for code in i18n.SUPPORTED:
+        saved_language = module.read_preferences()["language"]
+        controller.settings.work.parts[2].setValue(7)
         controller.settings.language.setCurrentIndex(controller.settings.language.findData(code))
+        assert i18n.code == code, "Language did not change immediately"
+        assert module.read_preferences()["language"] == saved_language, "Preview persisted before Save"
+        assert controller.settings.work.parts[2].value() == 7, "Language preview lost a duration draft"
+        assert controller.settings.update_panel is dialog and not pending.cancelled.is_set()
+        assert dialog.status.text() == i18n.tr("download_percent", 42)
+        assert controller.deadline == old_deadline and controller.paused_at == old_pause
+        controller.settings.work.parts[2].setValue(3)
         controller.settings.save.click()
         app.processEvents()
         assert i18n.code == code

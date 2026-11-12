@@ -85,7 +85,7 @@
     "quit_app": "RestTimer beenden",
     "language": "Sprache",
     "system_language": "Systemsprache",
-    "language_hint": "Zum Anwenden speichern. Die verbleibende Zeit bleibt beim Sprachwechsel erhalten.",
+    "language_hint": "Die Sprache ändert sich sofort. Speichern Sie, um sie nach einem Neustart beizubehalten.",
     "countdown_accessible": "RestTimer-Countdown",
     "general": "Allgemein",
     "updates_tab": "Updates",

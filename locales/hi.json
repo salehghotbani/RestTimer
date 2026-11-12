@@ -85,7 +85,7 @@
     "quit_app": "RestTimer बंद करें",
     "language": "भाषा",
     "system_language": "सिस्टम की भाषा",
-    "language_hint": "लागू करने के लिए सहेजें। भाषा बदलने से बचा समय नहीं बदलता।",
+    "language_hint": "भाषा तुरंत बदलती है। पुनः शुरू करने के बाद भी रखने के लिए सहेजें।",
     "countdown_accessible": "RestTimer की उलटी गिनती",
     "general": "सामान्य",
     "updates_tab": "अपडेट",

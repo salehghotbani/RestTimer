@@ -438,6 +438,8 @@ internal static class Smoke
                 if (generalDaily.Checked!=savedDaily) throw new Exception("Update daily-check preference did not sync back to General.");
                 if(dialog.CancelButton!=null || Descendants(dialog).OfType<Button>().Any(button=>button.Text=="Close / cancel" || button.Text=="Cancel"))
                     throw new Exception("Removed close/cancel buttons remain in the settings panel.");
+                if(Descendants(dialog).OfType<CheckBox>().Any(box=>box.GetType().Name!="ThemedCheckBox"))
+                    throw new Exception("All settings and update checkboxes must use the same themed control.");
                 versions.Items.Add(release);
                 versions.SelectedIndex = 1;
                 if (!notes.Text.Contains("تغییرات") || notes.Text.Contains("RestTimer 9.0.0") || !install.Enabled)

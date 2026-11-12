@@ -10,6 +10,27 @@ namespace RestTimer
         private readonly TextBox minutes;
         private readonly TextBox seconds;
         private readonly Font digitsFont = new Font("Segoe UI", 20);
+        public void Relocalize(string title, string hint)
+        {
+            var titleLabel = (Label)Controls[0];
+            var hintLabel = (Label)Controls[1];
+            float scale = DeviceDpi / 96f;
+            titleLabel.Text = title; hintLabel.Text = hint;
+            titleLabel.RightToLeft = hintLabel.RightToLeft = I18n.Flow;
+            var titleBounds = I18n.IsRtl ? new Rectangle(300, 10, 160, 27) : new Rectangle(20, 10, 230, 27);
+            var hintBounds = I18n.IsRtl ? new Rectangle(20, 10, 265, 27) : new Rectangle(260, 10, 200, 27);
+            titleLabel.Bounds = new Rectangle((int)(titleBounds.X * scale), (int)(titleBounds.Y * scale), (int)(titleBounds.Width * scale), (int)(titleBounds.Height * scale));
+            hintLabel.Bounds = new Rectangle((int)(hintBounds.X * scale), (int)(hintBounds.Y * scale), (int)(hintBounds.Width * scale), (int)(hintBounds.Height * scale));
+            var inputs = new[] { hours, minutes, seconds };
+            string[] keys = { "hours", "minutes", "seconds" };
+            for (int i = 0; i < inputs.Length; i++)
+            {
+                inputs[i].AccessibleName = title + " – " + I18n.T(keys[i]);
+                foreach (Control control in Controls)
+                    if (control is Label caption && caption.Top > titleLabel.Bottom && caption.Left == inputs[i].Parent.Left)
+                    { caption.Text = I18n.T(keys[i]); caption.RightToLeft = I18n.Flow; }
+            }
+        }
 
         public DurationEditor(string title, string hint, int duration)
         {

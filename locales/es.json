@@ -85,7 +85,7 @@
     "quit_app": "Salir de RestTimer",
     "language": "Idioma",
     "system_language": "Idioma del sistema",
-    "language_hint": "Guarda para aplicar. Cambiar el idioma conserva el tiempo restante.",
+    "language_hint": "El idioma cambia al instante. Guarda para conservarlo tras reiniciar.",
     "countdown_accessible": "Cuenta atrás de RestTimer",
     "general": "General",
     "updates_tab": "Actualizaciones",

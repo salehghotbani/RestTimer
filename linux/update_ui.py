@@ -177,10 +177,7 @@ class UpdatePanel(QWidget):
         self.consent.setText(tr("consent_linux"))
         self.check.setText(tr("check_again"))
         if previous:
-            for key, value in i18n.catalog(previous)["strings"].items():
-                if self.status.text() == value:
-                    self.status.setText(tr(key))
-                    break
+            self.status.setText(i18n.translate_text(self.status.text(), previous))
         self.show_latest()
         self.select_history()
 

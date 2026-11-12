@@ -50,6 +50,7 @@ Building packages requires Linux x86-64, `dpkg-deb`, `rpmbuild`, and `desktop-fi
 - Check updates with a disconnected network, cancelled downloads, incomplete files, declined installation authorization, and restarting after an upgrade. Download checks must not launch a real installer.
 - Check all four settings sections in both layout directions and color modes. Daily update switches must stay synchronized and persist. Navigating between sections must preserve active downloads; closing must cancel downloads and wait for active installers.
 - Check Save, Discard, and closing the unsaved-changes prompt. Duration, language, floating-timer, startup and daily-check drafts must not apply on Discard. Invalid settings must keep General open; closing an unchanged window must not prompt.
+- Change languages before saving and verify immediate text and direction updates, retained field edits and downloads, and restoration of the original language on Discard. Compare every checkbox in checked, unchecked, focused, light and dark states.
 - Verify that the floating countdown hides for a foreground fullscreen window on its own monitor, returns afterward without taking focus, and remains visible over ordinary windows. Check minute/second limits with typed and pasted digits, and scrollbar dragging, wheel scrolling and keyboard navigation in long notes and compact settings.
 
 ## Documentation languages

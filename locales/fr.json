@@ -85,7 +85,7 @@
     "quit_app": "Quitter RestTimer",
     "language": "Langue",
     "system_language": "Langue du système",
-    "language_hint": "Enregistrez pour appliquer. Changer de langue conserve le temps restant.",
+    "language_hint": "La langue change immédiatement. Enregistrez pour la conserver après le redémarrage.",
     "countdown_accessible": "Compte à rebours de RestTimer",
     "general": "Général",
     "updates_tab": "Mises à jour",

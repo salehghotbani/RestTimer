@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace RestTimer
@@ -51,6 +52,30 @@ namespace RestTimer
             }
         }
         public static string NativeName(string code) => Read(code).Name;
+        public static string TranslateText(string text, string previous)
+        {
+            if (string.IsNullOrEmpty(text) || previous == Code) return text;
+            foreach (var pair in Read(previous).Strings)
+                if (pair.Value == text) return T(pair.Key);
+            foreach (var pair in Read(previous).Strings)
+            {
+                if (!pair.Value.Contains("{0}")) continue;
+                string pattern = "\\A" + Regex.Escape(pair.Value).Replace(Regex.Escape("{0}"), "(.*?)") + "\\z";
+                var match = Regex.Match(text, pattern, RegexOptions.Singleline);
+                if (match.Success) return T(pair.Key, match.Groups[1].Value);
+            }
+            return text;
+        }
+        public static void RelocalizeControls(Control root, string previous)
+        {
+            if (!(root is TextBoxBase) && !(root is ListControl))
+                root.Text = root.Name.StartsWith("i18n:") && Read(previous).Strings[root.Name.Substring(5)] == root.Text
+                    ? T(root.Name.Substring(5)) : TranslateText(root.Text, previous);
+            root.AccessibleName = TranslateText(root.AccessibleName, previous);
+            root.AccessibleDescription = TranslateText(root.AccessibleDescription, previous);
+            if (root is ScrollFrame frame) frame.ApplyDirection();
+            foreach (Control child in root.Controls) RelocalizeControls(child, previous);
+        }
         public static string T(string key, params object[] arguments)
         {
             if (!Read(Code).Strings.TryGetValue(key, out string value) && !Read("en").Strings.TryGetValue(key, out value))

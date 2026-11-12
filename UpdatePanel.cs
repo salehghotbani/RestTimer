@@ -58,14 +58,14 @@ namespace RestTimer
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
             var header = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
-            heading = new Label { Text = I18n.T("updates_title"), Font = Theme.HeadingFont,
+            heading = new Label { Name = "i18n:updates_title", Text = I18n.T("updates_title"), Font = Theme.HeadingFont,
                 TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Top, Height = 40 };
             header.Controls.Add(heading);
             description = new Label { Tag = "accent", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleLeft,
                 Dock = DockStyle.Bottom, Height = 38 };
             header.Controls.Add(description);
             layout.Controls.Add(header, 0, 0);
-            daily = new ThemedCheckBox { Text = I18n.T("daily_check"), Checked = this.service.State.DailyEnabled,
+            daily = new ThemedCheckBox { Name = "i18n:daily_check", Text = I18n.T("daily_check"), Checked = this.service.State.DailyEnabled,
                 Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 6) };
             daily.CheckedChanged += (_, __) =>
             {
@@ -76,11 +76,11 @@ namespace RestTimer
             latestPanel = new Panel { Dock = DockStyle.Fill };
             latestNotes = new ReleaseNotesBox();
             latestPanel.Controls.Add(new ScrollFrame(latestNotes));
-            latestPanel.Controls.Add(new Label { Text = I18n.T("release_notes"), Font = Theme.TitleFont, Dock = DockStyle.Top,
+            latestPanel.Controls.Add(new Label { Name = "i18n:release_notes", Text = I18n.T("release_notes"), Font = Theme.TitleFont, Dock = DockStyle.Top,
                 Height = 36, TextAlign = ContentAlignment.MiddleLeft });
             historyPanel = new Panel { Dock = DockStyle.Fill };
             historyNotes = new ReleaseNotesBox();
-            historyTitle = new Label { Text = I18n.T("version_history"), Font = Theme.TitleFont, Dock = DockStyle.Top,
+            historyTitle = new Label { Name = "i18n:version_history", Text = I18n.T("version_history"), Font = Theme.TitleFont, Dock = DockStyle.Top,
                 Height = 36, TextAlign = ContentAlignment.MiddleLeft };
             var historyBody = new Panel { Dock = DockStyle.Fill };
             historyBody.Controls.Add(new ScrollFrame(historyNotes));
@@ -111,7 +111,7 @@ namespace RestTimer
             content.Controls.Add(historyPanel);
             layout.Controls.Add(content, 0, 3);
             versions.SelectedIndex = 0;
-            consent = new Label { Tag = "muted", Text = I18n.T("consent_windows"),
+            consent = new Label { Tag = "muted", Name = "i18n:consent_windows", Text = I18n.T("consent_windows"),
                 Font = Theme.SmallFont, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 4) };
             layout.Controls.Add(consent, 0, 4);
             progress = new UpdateProgress { Dock = DockStyle.Fill, Visible = false, Margin = new Padding(0, 2, 0, 2) };
@@ -122,9 +122,9 @@ namespace RestTimer
             actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
-            install = new RoundedButton(primary: true) { Text = I18n.T("install"), Enabled = false, Dock = DockStyle.Fill, Margin = new Padding(6, 0, 0, 0) };
+            install = new RoundedButton(primary: true) { Name = "i18n:install", Text = I18n.T("install"), Enabled = false, Dock = DockStyle.Fill, Margin = new Padding(6, 0, 0, 0) };
             install.Click += async (_, __) => await InstallAsync();
-            check = new RoundedButton { Text = I18n.T("check_again"), Dock = DockStyle.Fill, Margin = new Padding(6, 0, 6, 0) };
+            check = new RoundedButton { Name = "i18n:check_again", Text = I18n.T("check_again"), Dock = DockStyle.Fill, Margin = new Padding(6, 0, 6, 0) };
             check.Click += async (_, __) => await RefreshAsync();
             actions.Controls.Add(install, 0, 0);
             actions.Controls.Add(check, 1, 0);
@@ -136,6 +136,19 @@ namespace RestTimer
         }
         private void ApplyTheme() { Theme.Apply(this); }
         public void SyncDailyPreference(bool enabled) => daily.Checked = enabled;
+        public void Relocalize(string previous, bool history)
+        {
+            I18n.RelocalizeControls(this, previous);
+            RightToLeft = I18n.Flow;
+            var versionFrame = versions.Parent.Parent;
+            versionFrame.Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left;
+            versions.Items[0] = I18n.T("bundled_history");
+            var release = versions.SelectedItem as ReleaseInfo;
+            historyTitle.Text = release == null ? I18n.T("bundled_history") : I18n.T("history_version", release.Version.ToString(3));
+            historyNotes.SetNotes(release?.Notes ?? UpdateService.BundledHistory(I18n.Code));
+            SelectPage(history);
+            versions.Invalidate();
+        }
         public void SelectPage(bool history)
         {
             latestPanel.Visible = !history;

@@ -23,6 +23,7 @@ app = QApplication([])
 app.setLayoutDirection(Qt.RightToLeft)
 app.setStyleSheet(module.STYLE)
 app.setFont(QFont("DejaVu Sans", 10))
+module.verify_ui_assets()
 (ROOT / "build").mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     os.environ["XDG_CONFIG_HOME"] = directory
@@ -72,6 +73,11 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     settings.work.parts[2].setValue(17)
     settings.daily.setChecked(True)
     settings.startup.setChecked(True)
+    saved_language = module.i18n.code
+    preview_language = "fa" if saved_language != "fa" else "en"
+    settings.language.setCurrentIndex(settings.language.findData(preview_language))
+    settings = controller.settings
+    assert module.i18n.code == preview_language and settings.work.parts[2].value() == 17
     assert not module.startup_path().exists() and not controller.updater.state["daily_enabled"]
     pending = type("Pending", (), {"cancelled": threading.Event()})()
     settings.update_panel.worker = pending
@@ -83,6 +89,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     settings.close()
     assert not settings.isVisible() and not settings.has_pending_changes() and pending.cancelled.is_set()
     assert controller.preferences == baseline and not module.startup_path().exists()
+    assert module.i18n.code == saved_language, "Discard did not restore the previous language"
     assert not controller.updater.state["daily_enabled"]
     controller.show_settings()
     settings = controller.settings
@@ -98,6 +105,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     settings = controller.settings
     language = "fa" if module.i18n.code != "fa" else "en"
     settings.language.setCurrentIndex(settings.language.findData(language))
+    settings = controller.settings
     choose_prompt("save")
     settings.close()
     assert not controller.settings.isVisible() and module.read_preferences()["language"] == language

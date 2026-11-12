@@ -65,7 +65,12 @@ QSpinBox:focus { background: #102c30; color: #83e6c4; }
 QFrame#timeField {
     background: #0c1623; border: 1px solid #2c3e52; border-radius: 10px;
 }
-QCheckBox { color: #9bb0c3; spacing: 10px; }
+QCheckBox { color: #edf4fa; spacing: 10px; }
+QCheckBox::indicator { width: 16px; height: 16px; border: 1px solid #2c3e52; border-radius: 4px; background: #0c1623; }
+QCheckBox::indicator:checked { background: #83e6c4; border-color: #83e6c4; image: url("CHECK_ICON"); }
+QCheckBox::indicator:hover { border-color: #83e6c4; }
+QCheckBox:disabled { color: #9bb0c3; }
+QCheckBox::indicator:disabled { border-color: #9bb0c3; }
 QMenu { border: 1px solid #2c3e52; padding: 3px; }
 QMenu::item { padding: 4px 12px; border-radius: 4px; }
 QMenu::item:selected { background: #223a48; color: #83e6c4; }
@@ -76,6 +81,7 @@ QListWidget#settingsNav { background: transparent; color: #edf4fa; border: none;
 QListWidget#settingsNav::item { padding: 12px 8px; margin: 3px 0; border-radius: 8px; }
 QListWidget#settingsNav::item:selected { background: #223a48; color: #83e6c4; }
 """
+STYLE = STYLE.replace("CHECK_ICON", (ROOT / "assets/check-dark.svg").as_posix())
 
 
 def apply_color_scheme(app, scheme):
@@ -85,8 +91,15 @@ def apply_color_scheme(app, scheme):
                   "#2c3e52": "#cdd8e2", "#1e2e40": "#e7edf3", "#223a48": "#dbeee8",
                   "#83e6c4": "#11705b", "#a4f2d8": "#16836b", "#9bb0c3": "#536778", "#0c1623": "#eaf0f5", "#102c30": "#dbeee8"}
         style = re.sub(r"#[a-fA-F0-9]{6}", lambda match: colors.get(match.group(), match.group()), style)
+        style = style.replace("check-dark.svg", "check-light.svg")
         style += "\nQPushButton#primary { color: white; } QProgressBar { color: #11705b; } QProgressBar::chunk { background: #dbeee8; }"
     app.setStyleSheet(style)
+
+
+def verify_ui_assets():
+    for name in ("check-dark.svg", "check-light.svg"):
+        if QIcon(str(ROOT / "assets" / name)).pixmap(16, 16).isNull():
+            raise RuntimeError("Missing checkbox indicator or SVG support: " + name)
 
 
 def verify_language_fonts(app):
@@ -249,7 +262,7 @@ class UnsavedChangesDialog(QDialog):
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, controller, update_panel=None):
+    def __init__(self, controller, update_panel=None, draft=None):
         super().__init__()
         self.controller = controller
         self.setWindowTitle("RestTimer — " + tr("preferences_title"))
@@ -355,6 +368,34 @@ class SettingsDialog(QDialog):
         self.remember_saved_settings()
         screen = controller.app.primaryScreen()
         self.resize(min(1020, screen.availableGeometry().width() - 40), min(800, screen.availableGeometry().height() - 48))
+        if draft:
+            self.restore_draft(draft)
+        self.language.currentIndexChanged.connect(self.preview_language)
+
+    def preview_language(self, index):
+        if index >= 0 and self.controller.settings is self and not self.controller.quitting:
+            self.controller.preview_language(self.language.itemData(index))
+
+    def capture_draft(self, previous):
+        return {"parts": [[(part.value(), part.lineEdit().text()) for part in editor.parts] for editor in (self.work, self.rest)],
+                "language": self.language.currentData(), "daily": self.daily.isChecked(), "startup": self.startup.isChecked(),
+                "saved_preferences": self.saved_preferences.copy(), "saved_daily": self.saved_daily, "saved_startup": self.saved_startup,
+                "note": self.note.text(), "source_language": previous, "page": self.current_page,
+                "geometry": self.geometry(), "scroll": self.pages.widget(0).verticalScrollBar().value()}
+
+    def restore_draft(self, draft):
+        self.saved_preferences = draft["saved_preferences"]
+        self.saved_daily, self.saved_startup = draft["saved_daily"], draft["saved_startup"]
+        for editor, parts in zip((self.work, self.rest), draft["parts"]):
+            for part, (value, raw) in zip(editor.parts, parts):
+                part.setValue(value)
+                part.lineEdit().setText(raw)
+        self.language.setCurrentIndex(self.language.findData(draft["language"]))
+        self.daily.setChecked(draft["daily"])
+        self.startup.setChecked(draft["startup"])
+        self.note.setText(i18n.translate_text(draft["note"], draft["source_language"]))
+        self.setGeometry(draft["geometry"])
+        self.select_page(draft["page"])
 
     def about_page(self):
         page = QFrame()
@@ -440,7 +481,9 @@ class SettingsDialog(QDialog):
             for part, value in zip(editor.parts, (seconds // 3600, seconds // 60 % 60, seconds % 60)):
                 part.setValue(value)
                 part.lineEdit().setText(part.textFromValue(value))
+        self.language.blockSignals(True)
         self.language.setCurrentIndex(self.language.findData(self.saved_preferences.get("language", "auto")))
+        self.language.blockSignals(False)
         self.daily.setChecked(self.saved_daily)
         self.startup.setChecked(self.saved_startup)
 
@@ -455,6 +498,7 @@ class SettingsDialog(QDialog):
             return False
         if choice == 2:
             self.restore_saved_settings()
+            self.controller.apply_language(keep_visible=False)
             return True
         return False
 
@@ -660,8 +704,14 @@ class Controller:
             self.menu.popup(QCursor.pos())
 
     def apply_language(self, keep_visible=True):
+        self.set_interface_language(self.preferences.get("language", "auto"), keep_visible)
+
+    def preview_language(self, selected):
+        self.set_interface_language(selected)
+
+    def set_interface_language(self, selected, keep_visible=True):
         previous = i18n.code
-        i18n.use(self.preferences.get("language", "auto"), QLocale.system().uiLanguages())
+        i18n.use(selected, QLocale.system().uiLanguages())
         if previous == i18n.code:
             return
         self.app.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
@@ -671,16 +721,20 @@ class Controller:
                             (self.quit_action, "quit")):
             action.setText(tr(key))
         previous_settings = self.settings
+        draft = previous_settings.capture_draft(previous)
         visible = previous_settings.isVisible()
         current_page = previous_settings.current_page
         panel = previous_settings.update_panel
         previous_settings.pages.removeWidget(panel)
         panel.setParent(None)
-        self.settings = SettingsDialog(self, update_panel=panel)
+        self.settings = SettingsDialog(self, update_panel=panel, draft=draft)
         self.settings.select_page(current_page)
+        previous_settings.hide()
         if visible and keep_visible:
             self.settings.show()
-        previous_settings.hide()
+            self.settings.pages.widget(0).verticalScrollBar().setValue(draft["scroll"])
+            if current_page == "general":
+                self.settings.language.setFocus()
         previous_settings.deleteLater()
         if self.update_dialog is not None and not self.update_dialog.closed:
             self.update_dialog.retranslate(previous)
@@ -927,6 +981,7 @@ def main():
     controller = Controller(app)
     if "--smoke-test" in sys.argv:
         verify_language_fonts(app)
+        verify_ui_assets()
         if update_core.tls_context().cert_store_stats()["x509_ca"] == 0:
             raise RuntimeError("No system certificate authorities available for updates.")
         controller.begin_break()

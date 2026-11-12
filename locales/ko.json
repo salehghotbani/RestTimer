@@ -85,7 +85,7 @@
     "quit_app": "RestTimer 종료",
     "language": "언어",
     "system_language": "시스템 언어",
-    "language_hint": "저장하여 적용하세요. 언어를 변경해도 남은 시간은 유지됩니다.",
+    "language_hint": "언어가 즉시 변경됩니다. 다시 시작한 후에도 유지하려면 저장하세요.",
     "countdown_accessible": "RestTimer 카운트다운",
     "general": "일반",
     "updates_tab": "업데이트",

@@ -257,6 +257,7 @@ namespace RestTimer
                 using (var dialog = new SettingsDialog(preferences, icon, StartTimer, StopTimer, updater, page, true))
                 {
                     settingsDialog = dialog;
+                    dialog.LanguagePreviewChanged += RefreshLanguage;
                     dialog.SetRunning(clock.IsRunning);
                     if (dialog.ShowDialog() != DialogResult.OK)
                         return;
@@ -278,6 +279,7 @@ namespace RestTimer
             }
             finally
             {
+                if (!disposed) ApplyLanguage();
                 settingsDialog = null;
                 editingSettings = false;
             }
@@ -286,10 +288,16 @@ namespace RestTimer
         private void ApplyLanguage()
         {
             I18n.Use(preferences.Language);
+            RefreshLanguage();
+        }
+        private void RefreshLanguage()
+        {
             menu.RightToLeft = I18n.Flow;
             string[] keys = { "start", "stop", "start_break", "settings_menu", "startup", "updates_menu", "quit" };
             var items = menu.Items.OfType<ToolStripMenuItem>().Where(item => item != status).ToArray();
             for (int i = 0; i < keys.Length; i++) items[i].Text = I18n.T(keys[i]);
+            if (UpdateClient.IsStable(updater.State.Latest) && updater.State.Latest.Version > UpdateClient.CurrentVersion)
+                updates.Text = I18n.T("update_available", updater.State.Latest.Version.ToString(3));
         }
 
         private async System.Threading.Tasks.Task CheckDailyUpdatesAsync()

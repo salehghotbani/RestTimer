@@ -1,5 +1,6 @@
 """Shared language catalogs; Qt is only needed by the frontend, not this module."""
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -49,3 +50,17 @@ def native_name(language):
 def tr(key, *arguments):
     value = catalog(code)["strings"].get(key, catalog("en")["strings"][key])
     return value.format(*arguments) if arguments else value
+
+
+def translate_text(text, previous):
+    if not text or previous == code:
+        return text
+    for key, value in catalog(previous)["strings"].items():
+        if value == text:
+            return tr(key)
+    for key, value in catalog(previous)["strings"].items():
+        if "{0}" in value:
+            match = re.fullmatch(re.escape(value).replace(re.escape("{0}"), "(.*?)"), text, re.S)
+            if match:
+                return tr(key, match[1])
+    return text
