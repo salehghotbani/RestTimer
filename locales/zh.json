@@ -14,7 +14,7 @@
     "save": "保存设置",
     "cancel": "取消",
     "updates_title": "更新与变更",
-    "show_countdown": "显示倒计时栏",
+    "show_countdown": "显示悬浮计时器",
     "timer_running": "正在计时",
     "timer_paused": "计时已暂停",
     "work_validation": "工作时长：1 秒至 24 小时。分钟和秒：0–59。",

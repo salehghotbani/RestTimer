@@ -1,5 +1,12 @@
 # RestTimer changelog
 
+## 1.8.1
+- Replace the full-width reserved Windows strip with a compact floating timer sized to its localized label and countdown.
+- Add a solid light/dark background, rounded corners, subtle border and distinct work/break colors.
+- Keep the box above application windows, including borderless fullscreen windows, without activation or dragging.
+- Stop reserving desktop workspace or resizing maximized windows. Keep the box outside the taskbar at all four positions.
+- Preserve the timer, pause state, language choice and visibility setting; rename the option to “Show floating timer”.
+
 ## 1.8.0
 - Interface translations for English, Persian, Arabic, Simplified Chinese, Spanish, French, German, Portuguese, Russian, Japanese, Korean, Hindi and Turkish.
 - Follow the system UI language by default, with English as the fallback for unsupported languages.

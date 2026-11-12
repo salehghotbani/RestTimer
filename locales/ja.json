@@ -14,7 +14,7 @@
     "save": "設定を保存",
     "cancel": "キャンセル",
     "updates_title": "更新と変更内容",
-    "show_countdown": "カウントダウンバーを表示",
+    "show_countdown": "フローティングタイマーを表示",
     "timer_running": "タイマー実行中",
     "timer_paused": "タイマー一時停止中",
     "work_validation": "作業：1秒～24時間。分と秒：0～59。",

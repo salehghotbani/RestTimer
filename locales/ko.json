@@ -14,7 +14,7 @@
     "save": "설정 저장",
     "cancel": "취소",
     "updates_title": "업데이트 및 변경 사항",
-    "show_countdown": "카운트다운 표시줄 표시",
+    "show_countdown": "플로팅 타이머 표시",
     "timer_running": "타이머 실행 중",
     "timer_paused": "타이머 일시정지됨",
     "work_validation": "작업: 1초~24시간. 분과 초: 0~59.",

@@ -43,7 +43,7 @@ Building packages requires Linux x86-64, `dpkg-deb`, `rpmbuild`, and `desktop-fi
 - Try one-second work and break periods, skipping a break, and starting the next period.
 - Check that both left-click and right-click open the tray menu, and that clicking outside it or pressing Esc closes it.
 - Verify synchronized reminders across monitors and the hour, minute, and second controls.
-- Check countdown placement with bottom, top, left, and right taskbars, display scaling, and monitors at negative coordinates. Disabling the strip or quitting must restore the reserved workspace.
+- Check floating-timer placement with bottom, top, left, and right taskbars, display scaling, and monitors at negative coordinates. Showing, pausing, hiding or closing the box must not change the desktop work area. Verify topmost behavior, click-through and light/dark backgrounds.
 - Preserve compatibility with previous settings when changing their format.
 - Treat `VERSION` as the shared Windows and Linux version source. Each application release should include an EXE installer, a DEB package, and an RPM package.
 - Add release changes to `CHANGELOG.md` and the GitHub release notes. The application uses release notes to explain new versions.

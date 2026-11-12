@@ -14,7 +14,7 @@
     "save": "Save settings",
     "cancel": "Cancel",
     "updates_title": "Updates and changes",
-    "show_countdown": "Show countdown strip",
+    "show_countdown": "Show floating timer",
     "timer_running": "Timer is running",
     "timer_paused": "Timer is paused",
     "work_validation": "Work: 1 second to 24 hours. Minutes and seconds: 0–59.",

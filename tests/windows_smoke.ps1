@@ -91,6 +91,25 @@ using System.Windows.Forms;
 [assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8")]
 internal static class Smoke
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NativeRect { public int Left, Top, Right, Bottom; }
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct MonitorInfo { public uint Size; public NativeRect Monitor, Work; public uint Flags; }
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr MonitorFromRect(ref NativeRect rect, uint flags);
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet=System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint="GetWindowLongW")]
+    private static extern int GetWindowLong(IntPtr window, int index);
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr window, uint relation);
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+    private static Rectangle WorkArea(Rectangle screen)
+    {
+        var rect = new NativeRect { Left=screen.Left, Top=screen.Top, Right=screen.Right, Bottom=screen.Bottom };
+        var info = new MonitorInfo { Size=(uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(MonitorInfo)) };
+        if(!GetMonitorInfo(MonitorFromRect(ref rect,2),ref info)) throw new Exception("Could not read native work area.");
+        return Rectangle.FromLTRB(info.Work.Left,info.Work.Top,info.Work.Right,info.Work.Bottom);
+    }
+
     [STAThread]
     private static int Main(string[] args)
     {
@@ -211,153 +230,123 @@ internal static class Smoke
                 context.Dispose();
             var badgeType = app.GetType("RestTimer.TaskbarCountdown", true);
             var place = badgeType.GetMethod("Place", BindingFlags.Static | BindingFlags.NonPublic);
-            var stripEdge = badgeType.GetMethod("StripEdge", BindingFlags.Static | BindingFlags.NonPublic);
+            var measure = badgeType.GetMethod("MeasureFrame", BindingFlags.Static | BindingFlags.NonPublic);
             foreach (float scale in new float[] { 1f, 1.25f, 1.5f, 2f })
             foreach (var screen in new[] { new Rectangle(0, 0, 1920, 1080), new Rectangle(-1920, -1080, 1920, 1080) })
             foreach (string edge in new[] { "bottom", "left", "right", "top" })
             {
-                int height = (int)(48 * scale), width = (int)(80 * scale), thickness = (int)Math.Ceiling(24 * scale);
+                int height = (int)(48 * scale), width = (int)(80 * scale);
                 bool vertical = edge == "left" || edge == "right";
                 var bar = vertical
                     ? new Rectangle(edge == "left" ? screen.Left : screen.Right - width, screen.Top, width, screen.Height)
                     : new Rectangle(screen.Left, edge == "top" ? screen.Top : screen.Bottom - height, screen.Width, height);
                 var trayBounds = vertical ? new Rectangle(bar.Left, bar.Bottom - 200, width, 200)
                     : new Rectangle(screen.Right - 400, bar.Top, 400, height);
-                var strip = vertical
-                    ? new Rectangle(edge == "left" ? bar.Right : screen.Left, screen.Bottom - thickness, screen.Width - width, thickness)
-                    : new Rectangle(screen.Left, edge == "top" ? bar.Bottom : bar.Top - thickness, screen.Width, thickness);
-                var position = (Rectangle)place.Invoke(null, new object[] { strip, trayBounds, bar, screen, scale });
-                uint expectedEdge = edge == "top" ? 1u : 3u;
-                if ((uint)stripEdge.Invoke(null, new object[] { bar, screen }) != expectedEdge
-                    || position.IsEmpty || !screen.Contains(position) || !strip.Contains(position) || bar.IntersectsWith(position))
-                    throw new Exception("Countdown placement failed for " + edge + " taskbar at scale " + scale + ".");
-                if (vertical && (edge == "left" ? position.Left < bar.Right || position.Left > bar.Right + 10 * scale
-                    : position.Right > bar.Left || position.Right < bar.Left - 10 * scale))
-                    throw new Exception("A vertical taskbar's countdown must stay near the same side of the screen.");
-                if (!vertical && position.Right >= trayBounds.Left)
-                    throw new Exception("A horizontal taskbar's countdown must stay near the notification area.");
-                var hidden = new Rectangle(screen.Left, screen.Bottom - 1, screen.Width, thickness);
-                if (!((Rectangle)place.Invoke(null, new object[] { hidden, trayBounds, bar, screen, scale })).IsEmpty)
-                    throw new Exception("An out-of-bounds reservation must not display a countdown.");
+                var size = (Size)measure.Invoke(null, new object[] { "23:59:59", true, scale });
+                var position = (Rectangle)place.Invoke(null, new object[] { bar, trayBounds, screen, size, scale });
+                if (position.IsEmpty || !screen.Contains(position) || bar.IntersectsWith(position) || position.Size != size)
+                    throw new Exception("Floating countdown placement failed for " + edge + " taskbar at scale " + scale + ".");
+                if (vertical && (edge == "left" ? position.Left <= bar.Right || position.Left > bar.Right + 10 * scale
+                    : position.Right >= bar.Left || position.Right < bar.Left - 10 * scale))
+                    throw new Exception("A vertical taskbar's countdown must stay beside its inner edge.");
+                if (!vertical && (position.Right >= trayBounds.Left || (edge == "top" ? position.Top <= bar.Bottom : position.Bottom >= bar.Top)))
+                    throw new Exception("The floating box must sit outside the taskbar, near the notification area.");
+                var hidden = vertical
+                    ? new Rectangle(edge == "left" ? screen.Left - width + 2 : screen.Right - 2, screen.Top, width, screen.Height)
+                    : new Rectangle(screen.Left, edge == "top" ? screen.Top - height + 2 : screen.Bottom - 2, screen.Width, height);
+                var hiddenPosition = (Rectangle)place.Invoke(null, new object[] { hidden, Rectangle.Empty, screen, size, scale });
+                if (hiddenPosition.IsEmpty || !screen.Contains(hiddenPosition) || hidden.IntersectsWith(hiddenPosition))
+                    throw new Exception("The floating countdown must remain visible with an auto-hidden taskbar.");
+                if (!((Rectangle)place.Invoke(null, new object[] { bar, trayBounds, new Rectangle(0, 0, 20, 20), size, scale })).IsEmpty)
+                    throw new Exception("An oversized floating box must not be placed outside the screen.");
             }
             using (var badge = (Form)Activator.CreateInstance(badgeType))
             {
-                badge.Size = new Size(100, 20);
-                if (badge.ShowInTaskbar || badge.FormBorderStyle != FormBorderStyle.None)
-                    throw new Exception("Taskbar countdown must be a fixed borderless tool window.");
+                if (badge.ShowInTaskbar || badge.FormBorderStyle != FormBorderStyle.None || !badge.TopMost)
+                    throw new Exception("The countdown must be a topmost borderless tool window.");
                 var parameters = (CreateParams)badgeType.GetProperty("CreateParams", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
                 if ((parameters.ExStyle & 0x08000020) != 0x08000020) throw new Exception("Countdown must not activate or intercept mouse dragging.");
                 var updateBadge = badgeType.GetMethod("UpdateDisplay");
                 var renderFrame = badgeType.GetMethod("RenderFrame", BindingFlags.Static | BindingFlags.NonPublic);
                 var foregroundColor = badgeType.GetMethod("ForegroundColor", BindingFlags.Static | BindingFlags.NonPublic);
-                foreach (string phase in new string[] { "work", "rest", "paused" })
+                var backgroundColor = badgeType.GetMethod("BackgroundColor", BindingFlags.Static | BindingFlags.NonPublic);
+                var i18n = app.GetType("RestTimer.I18n", true);
+                string originalLanguage = (string)i18n.GetProperty("Code").GetValue(null);
+                foreach (string code in (string[])i18n.GetField("SupportedCodes").GetValue(null))
                 {
-                    updateBadge.Invoke(badge, new object[] { "47:12", phase == "rest", phase != "paused", false });
-                    if (badge.Visible) throw new Exception("Countdown ignored its disabled setting.");
-                    foreach (bool light in new bool[] { true, false })
+                    i18n.GetMethod("Use").Invoke(null, new object[] { code });
+                    foreach (string phase in new[] { "work", "rest", "paused" })
+                    foreach (bool light in new[] { true, false })
                     {
-                        var color = (Color)foregroundColor.Invoke(null, new object[] { light, false });
-                        if ((color.GetBrightness() > 0.5f) == light) throw new Exception("Taskbar text does not contrast with the Windows color mode.");
-                        using (var bitmap = (Bitmap)renderFrame.Invoke(null, new object[] { badge.Size, "23:59:59", phase != "work", phase != "paused", color }))
+                        var size = (Size)measure.Invoke(null, new object[] { "23:59:59", phase == "rest", 1f });
+                        var stable = (Size)measure.Invoke(null, new object[] { "00:00:00", phase == "rest", 1f });
+                        if (size != stable || size.Width > 240 || size.Height != 30)
+                            throw new Exception("The floating box must fit its localized text without countdown-width jitter.");
+                        var foreground = (Color)foregroundColor.Invoke(null, new object[] { light, false });
+                        var background = (Color)backgroundColor.Invoke(null, new object[] { light, false });
+                        if ((foreground.GetBrightness() > 0.5f) == light || (background.GetBrightness() > 0.5f) != light)
+                            throw new Exception("Floating box colors must follow the system mode.");
+                        using (var bitmap = (Bitmap)renderFrame.Invoke(null, new object[] { size, "23:59:59", phase == "rest", phase != "paused", light, false }))
                         {
-                            int transparent = 0, left = 0, right = 0;
+                            int opaque = 0;
                             for (int y = 0; y < bitmap.Height; y++)
-                                for (int x = 0; x < bitmap.Width; x++)
+                                for (int x = 0; x < bitmap.Width; x++) if (bitmap.GetPixel(x, y).A == 255) opaque++;
+                            if (opaque < bitmap.Width * bitmap.Height * 0.6 || bitmap.GetPixel(0, 0).A != 0
+                                || bitmap.GetPixel(bitmap.Width / 2, 5).ToArgb() != background.ToArgb())
+                                throw new Exception("Floating timer needs a solid background, rounded transparent corners and compact bounds.");
+                            bitmap.Save("obj/smoke/windows-taskbar-" + code + "-" + (light ? "light-" : "dark-") + phase + ".png", ImageFormat.Png);
+                            if (code == "en" || code == "fa")
+                                using (var preview = new Bitmap((size.Width + 24) * 3, (size.Height + 20) * 3))
+                                using (var graphics = Graphics.FromImage(preview))
                                 {
-                                    if (bitmap.GetPixel(x, y).A == 0) transparent++;
-                                    else if (x < 55) left++; else right++;
+                                    graphics.Clear(light ? Color.FromArgb(224, 228, 234) : Color.FromArgb(12, 18, 27));
+                                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                                    graphics.DrawImage(bitmap, new Rectangle(36, 30, size.Width * 3, size.Height * 3));
+                                    preview.Save("obj/smoke/windows-taskbar-preview-" + code + "-" + (light ? "light-" : "dark-") + phase + ".png", ImageFormat.Png);
                                 }
-                            if (transparent < bitmap.Width * bitmap.Height * 0.6 || bitmap.GetPixel(0, 0).A != 0 || left == 0 || right == 0)
-                                throw new Exception("Taskbar text must have a transparent background with a side-by-side label and time.");
-                            bitmap.Save("obj/smoke/windows-taskbar-" + (light ? "light-" : "dark-") + phase + ".png", ImageFormat.Png);
-                            using (var preview = new Bitmap(140, 36))
-                            using (var graphics = Graphics.FromImage(preview))
-                            {
-                                graphics.Clear(light ? Color.FromArgb(245, 239, 232) : Color.FromArgb(30, 30, 30));
-                                graphics.DrawImageUnscaled(bitmap, 20, 8);
-                                preview.Save("obj/smoke/windows-taskbar-preview-" + (light ? "light-" : "dark-") + phase + ".png", ImageFormat.Png);
-                            }
                         }
                     }
                 }
-                var reservationType = app.GetType("RestTimer.AppbarReservation", true);
-                var workArea = reservationType.GetMethod("WorkArea", BindingFlags.Static | BindingFlags.NonPublic);
+                i18n.GetMethod("Use").Invoke(null, new object[] { originalLanguage });
+                if ((Color)foregroundColor.Invoke(null, new object[] { false, true }) != SystemColors.WindowText
+                    || (Color)backgroundColor.Invoke(null, new object[] { false, true }) != SystemColors.Window)
+                    throw new Exception("High-contrast floating colors must use the system window palette.");
                 var primary = Screen.PrimaryScreen.Bounds;
-                var before = (Rectangle)workArea.Invoke(null, new object[] { primary });
+                var before = WorkArea(primary);
                 updateBadge.Invoke(badge, new object[] { "47:12", false, true, true });
                 Application.DoEvents();
-                Console.WriteLine("Live taskbar anchor: visible=" + badge.Visible + ", bounds=" + badge.Bounds);
-                bool reserved = (bool)badgeType.GetProperty("HasReservation", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
-                var reservedBounds = (Rectangle)badgeType.GetProperty("ReservedBounds", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge);
-                if (reserved)
+                Console.WriteLine("Live floating countdown: visible=" + badge.Visible + ", bounds=" + badge.Bounds);
+                if (WorkArea(primary) != before) throw new Exception("The floating timer must never reserve a desktop row.");
+                if (badge.Visible && (!(bool)badgeType.GetProperty("FrameUploaded", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge)
+                    || (GetWindowLong(badge.Handle, -20) & 8) == 0))
+                    throw new Exception("The opaque floating frame must be uploaded and remain native topmost.");
+                if (badge.Visible)
                 {
-                    var during = (Rectangle)workArea.Invoke(null, new object[] { primary });
-                    if (during.Height > before.Height - reservedBounds.Height || during.IntersectsWith(reservedBounds) || !reservedBounds.Contains(badge.Bounds))
-                        throw new Exception("The Shell did not reserve real workspace for the countdown.");
-                    Console.WriteLine("Reserved work area: before=" + before + ", during=" + during + ", strip=" + reservedBounds);
-                    for (int attempt = 0; attempt < 3; attempt++)
+                    using (var cover = new Form { FormBorderStyle=FormBorderStyle.None, StartPosition=FormStartPosition.Manual,
+                        Bounds=primary, ShowInTaskbar=false, BackColor=Color.DimGray })
                     {
-                        badgeType.GetField("nextPosition", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(badge, DateTime.MinValue);
-                        updateBadge.Invoke(badge, new object[] { "47:11", attempt == 1, attempt != 2, true });
+                        cover.Show(); Application.DoEvents();
+                        var foreground = GetForegroundWindow();
+                        updateBadge.Invoke(badge, new object[] { "47:11", false, true, true });
                         Application.DoEvents();
-                        if ((Rectangle)workArea.Invoke(null, new object[] { primary }) != during)
-                            throw new Exception("Refreshing the countdown accumulated additional workspace reservations.");
+                        bool above = false;
+                        var window = cover.Handle;
+                        for (int i=0; i<1000 && window!=IntPtr.Zero; i++)
+                        { window=GetWindow(window,3); if(window==badge.Handle) { above=true; break; } }
+                        if (!badge.Visible || !above || GetForegroundWindow()!=foreground || WorkArea(primary)!=before)
+                            throw new Exception("The floating timer must stay above a borderless fullscreen window without focus or workspace changes.");
+                        Console.WriteLine("Native z-order above a borderless fullscreen window passed without taking focus.");
                     }
                 }
-                if (badge.Visible && !reserved) throw new Exception("A countdown must never overlay the taskbar without a reservation.");
-                if (badge.Visible && !(bool)badgeType.GetProperty("FrameUploaded", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge))
-                    throw new Exception("The per-pixel transparent taskbar frame was not uploaded to Windows.");
-                updateBadge.Invoke(badge, new object[] { "47:12", false, true, false });
+                updateBadge.Invoke(badge, new object[] { "15:00", true, false, true });
                 Application.DoEvents();
-                if ((bool)badgeType.GetProperty("HasReservation", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge))
-                    throw new Exception("Disabling the countdown did not unregister its appbar.");
-                if (reserved && (Rectangle)workArea.Invoke(null, new object[] { primary }) != before)
-                    throw new Exception("Disabling the countdown did not restore the previous work area.");
-                if (reserved)
-                {
-                    updateBadge.Invoke(badge, new object[] { "15:00", true, true, true });
-                    Application.DoEvents();
-                    if (!(bool)badgeType.GetProperty("HasReservation", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(badge))
-                        throw new Exception("Re-enabling the countdown failed to reserve workspace.");
-                    badge.Dispose();
-                    Application.DoEvents();
-                    if ((Rectangle)workArea.Invoke(null, new object[] { primary }) != before)
-                        throw new Exception("Closing the countdown did not restore the previous work area.");
-                    Console.WriteLine("Repeated refresh, disable/re-enable and disposal restored the original workspace.");
-                    // Real Shell appbars simulate side taskbars without moving Explorer or changing user preferences.
-                    var reserve = reservationType.GetMethod("Reserve");
-                    var boundsProperty = reservationType.GetProperty("Bounds");
-                    foreach (uint side in new uint[] { 0, 2 })
-                    {
-                        using (var sideBar = (IDisposable)Activator.CreateInstance(reservationType, true))
-                        using (var stripBar = (IDisposable)Activator.CreateInstance(reservationType, true))
-                        {
-                            if (!(bool)reserve.Invoke(sideBar, new object[] { primary, 96, side }))
-                                throw new Exception("Could not register the simulated side taskbar.");
-                            foreach (uint horizontal in new uint[] { 3, 1, 3 })
-                            {
-                                if (!(bool)reserve.Invoke(stripBar, new object[] { primary, 24, horizontal }))
-                                    throw new Exception("Could not reserve a countdown strip alongside a side taskbar.");
-                                Application.DoEvents();
-                                reserve.Invoke(sideBar, new object[] { primary, 96, side });
-                                reserve.Invoke(stripBar, new object[] { primary, 24, horizontal });
-                                var sideBounds = (Rectangle)boundsProperty.GetValue(sideBar);
-                                var stripBounds = (Rectangle)boundsProperty.GetValue(stripBar);
-                                var sideTray = new Rectangle(sideBounds.Left, sideBounds.Bottom - 120, sideBounds.Width, 120);
-                                var position = (Rectangle)place.Invoke(null, new object[] { stripBounds, sideTray, sideBounds, primary, 1f });
-                                var during = (Rectangle)workArea.Invoke(null, new object[] { primary });
-                                if (position.IsEmpty || !stripBounds.Contains(position) || sideBounds.IntersectsWith(position)
-                                    || during.IntersectsWith(stripBounds) || during.IntersectsWith(sideBounds)
-                                    || during.Height > before.Height - 24 || during.Width > before.Width - 96)
-                                    throw new Exception("Side taskbar and countdown must have separate Shell-reserved workspace.");
-                                Console.WriteLine("Native side layout: edge=" + side + ", strip edge=" + horizontal + ", countdown=" + position);
-                            }
-                        }
-                        Application.DoEvents();
-                        if ((Rectangle)workArea.Invoke(null, new object[] { primary }) != before)
-                            throw new Exception("Side taskbar layout test did not restore the original workspace.");
-                    }
-                }
+                if (WorkArea(primary) != before) throw new Exception("Changing timer phase or pause state changed the desktop workspace.");
+                updateBadge.Invoke(badge, new object[] { "15:00", true, false, false });
+                if (badge.Visible || WorkArea(primary) != before) throw new Exception("Disabling the floating box changed the desktop workspace.");
+                updateBadge.Invoke(badge, new object[] { "15:00", true, false, true });
+                badge.Dispose(); Application.DoEvents();
+                if (WorkArea(primary) != before) throw new Exception("Closing the floating box changed the desktop workspace.");
+                Console.WriteLine("Topmost floating box, localized backgrounds and unchanged desktop workspace passed.");
             }
             var updaterType = app.GetType("RestTimer.UpdateService", true);
             var updateService = Activator.CreateInstance(updaterType, new object[] { System.IO.Path.GetFullPath("obj/smoke/update-ui") });

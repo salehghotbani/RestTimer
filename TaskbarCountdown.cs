@@ -1,10 +1,10 @@
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -29,22 +29,16 @@ namespace RestTimer
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string name, string title);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string name, string title);
         [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr window, out NativeRect bounds);
-        [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
-        [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
-        [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
-        [DllImport("kernel32.dll")] private static extern uint GetCurrentProcessId();
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder name, int size);
         [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int width, int height, uint flags);
         private string countdown = "1:00:00";
         private bool resting, running = true;
         private DateTime nextPosition;
-        private Color textColor = Color.White;
+        private bool lightMode, highContrast;
+        private Rectangle taskbarBounds, trayBounds, screenBounds;
+        private float displayScale = 1;
         private bool dirty = true;
         private string languageCode;
-        private readonly AppbarReservation reservation = new AppbarReservation();
         internal bool FrameUploaded { get; private set; }
-        internal Rectangle ReservedBounds => reservation.Bounds;
-        internal bool HasReservation => reservation.Registered;
 
         public TaskbarCountdown()
         {
@@ -55,7 +49,6 @@ namespace RestTimer
             TopMost = true;
             DoubleBuffered = true;
             AccessibleName = I18n.T("countdown_accessible");
-            reservation.LayoutChanged += () => nextPosition = DateTime.MinValue;
         }
         protected override bool ShowWithoutActivation => true;
         protected override CreateParams CreateParams
@@ -66,38 +59,33 @@ namespace RestTimer
         {
             if (message.Msg == 0x0084) { message.Result = new IntPtr(-1); return; } // Click-through, including dragging.
             if (message.Msg == 0x0021) { message.Result = new IntPtr(3); return; } // MA_NOACTIVATE
-            if (message.Msg == 0x001A || message.Msg == 0x031A) { dirty = true; nextPosition = DateTime.MinValue; }
+            if (message.Msg == 0x001A || message.Msg == 0x031A || message.Msg == 0x007E || message.Msg == 0x02E0)
+            { dirty = true; nextPosition = DateTime.MinValue; }
             base.WndProc(ref message);
         }
 
-        internal static uint StripEdge(Rectangle taskbar, Rectangle screen) => taskbar.Width > taskbar.Height
-            && taskbar.Top + taskbar.Height / 2 < screen.Top + screen.Height / 2 ? 1u : 3u;
-
-        internal static Rectangle Place(Rectangle reservedStrip, Rectangle tray, Rectangle taskbar, Rectangle screen, float scale)
+        internal static Rectangle Place(Rectangle taskbar, Rectangle tray, Rectangle screen, Size size, float scale)
         {
-            int width = (int)Math.Round(100 * scale), height = (int)Math.Round(20 * scale);
-            int gap = Math.Max(3, (int)Math.Round(5 * scale));
-            if (reservedStrip.Width <= reservedStrip.Height || reservedStrip.Height < height || tray.Width <= 0
-                || tray.Height <= 0 || !screen.Contains(reservedStrip)) return Rectangle.Empty;
-            int anchor = tray.Left - gap - width;
-            if (taskbar.Width < taskbar.Height)
-                anchor = taskbar.Left + taskbar.Width / 2 < screen.Left + screen.Width / 2
-                    ? taskbar.Right + gap : taskbar.Left - gap - width;
-            int x = Math.Max(reservedStrip.Left, Math.Min(anchor, reservedStrip.Right - width));
-            var result = new Rectangle(x, reservedStrip.Top + (reservedStrip.Height - height) / 2, width, height);
-            return screen.Contains(result) && reservedStrip.Contains(result) && !taskbar.IntersectsWith(result) ? result : Rectangle.Empty;
-        }
-
-        private bool CoveredByFullscreen(Rectangle screen, IntPtr taskbar)
-        {
-            var foreground = GetForegroundWindow();
-            if (foreground == IntPtr.Zero || foreground == taskbar) return false;
-            GetWindowThreadProcessId(foreground, out uint process);
-            if (process == GetCurrentProcessId()) return false;
-            var name = new StringBuilder(64);
-            GetClassName(foreground, name, name.Capacity);
-            if (name.ToString() == "Progman" || name.ToString() == "WorkerW") return false;
-            return GetWindowRect(foreground, out NativeRect bounds) && bounds.Rectangle.Contains(screen);
+            int gap = Math.Max(4, (int)Math.Round(6 * scale));
+            if (taskbar.Width < 1 || taskbar.Height < 1 || size.Width < 1 || size.Height < 1
+                || screen.Width < size.Width + 2 * gap || screen.Height < size.Height + 2 * gap) return Rectangle.Empty;
+            int x, y;
+            if (taskbar.Width > taskbar.Height)
+            {
+                x = tray.Width > 0 ? tray.Left - gap - size.Width : screen.Right - gap - size.Width;
+                y = taskbar.Top + taskbar.Height / 2 < screen.Top + screen.Height / 2
+                    ? taskbar.Bottom + gap : taskbar.Top - gap - size.Height;
+            }
+            else
+            {
+                x = taskbar.Left + taskbar.Width / 2 < screen.Left + screen.Width / 2
+                    ? taskbar.Right + gap : taskbar.Left - gap - size.Width;
+                y = screen.Bottom - gap - size.Height;
+            }
+            x = Math.Max(screen.Left + gap, Math.Min(x, screen.Right - gap - size.Width));
+            y = Math.Max(screen.Top + gap, Math.Min(y, screen.Bottom - gap - size.Height));
+            var result = new Rectangle(x, y, size.Width, size.Height);
+            return screen.Contains(result) && !taskbar.IntersectsWith(result) ? result : Rectangle.Empty;
         }
 
         public void UpdateDisplay(string text, bool isResting, bool isRunning, bool enabled)
@@ -110,30 +98,28 @@ namespace RestTimer
                 AccessibleDescription = I18n.T(resting ? "break_short" : "work_short") + " " + countdown + (running ? "" : " · " + I18n.T("paused"));
                 dirty = true;
             }
-            if (!enabled) { Hide(); reservation.Release(); nextPosition = DateTime.MinValue; return; }
-            if (DateTime.UtcNow < nextPosition)
+            if (!enabled) { Hide(); nextPosition = DateTime.MinValue; return; }
+            if (DateTime.UtcNow >= nextPosition)
             {
-                if (Visible && dirty && !PaintLayered(Bounds)) Hide();
-                return;
+                nextPosition = DateTime.UtcNow.AddSeconds(1);
+                bool light = ReadLightMode(), contrast = SystemInformation.HighContrast;
+                if (lightMode != light || highContrast != contrast) { lightMode = light; highContrast = contrast; dirty = true; }
+                var taskbar = FindWindow("Shell_TrayWnd", null);
+                if (taskbar == IntPtr.Zero || !GetWindowRect(taskbar, out NativeRect bar))
+                { taskbarBounds = Rectangle.Empty; Hide(); return; }
+                taskbarBounds = bar.Rectangle;
+                var tray = FindWindowEx(taskbar, IntPtr.Zero, "TrayNotifyWnd", null);
+                trayBounds = tray != IntPtr.Zero && GetWindowRect(tray, out NativeRect icons) ? icons.Rectangle : Rectangle.Empty;
+                screenBounds = Screen.FromRectangle(taskbarBounds).Bounds;
+                displayScale = GetScale(taskbar);
             }
-            nextPosition = DateTime.UtcNow.AddSeconds(1);
-            var foreground = ForegroundColor(ReadLightMode(), SystemInformation.HighContrast);
-            if (textColor != foreground) { textColor = foreground; dirty = true; }
-            var taskbar = FindWindow("Shell_TrayWnd", null);
-            var tray = FindWindowEx(taskbar, IntPtr.Zero, "TrayNotifyWnd", null);
-            if (taskbar == IntPtr.Zero || tray == IntPtr.Zero || !IsWindowVisible(taskbar)
-                || !GetWindowRect(taskbar, out NativeRect bar) || !GetWindowRect(tray, out NativeRect icons)) { Hide(); reservation.Release(); return; }
-            var monitor = Screen.FromRectangle(bar.Rectangle);
-            float scale = monitor.Bounds.Height > 0 ? GetScale(taskbar) : 1;
-            if (!reservation.Reserve(monitor.Bounds, (int)Math.Ceiling(24 * scale), StripEdge(bar.Rectangle, monitor.Bounds)))
-            { Hide(); reservation.Release(); return; }
-            var target = Place(reservation.Bounds, icons.Rectangle, bar.Rectangle, monitor.Bounds, scale);
-            if (target.IsEmpty) { Hide(); reservation.Release(); return; }
-            if (CoveredByFullscreen(monitor.Bounds, taskbar)) { Hide(); return; }
+            var target = Place(taskbarBounds, trayBounds, screenBounds, MeasureFrame(countdown, resting, displayScale), displayScale);
+            if (target.IsEmpty) { Hide(); return; }
             bool paint = dirty || !Visible || Size != target.Size;
             Bounds = target;
             if (paint && !PaintLayered(target)) { Hide(); return; }
             if (!Visible) Show();
+            // Reassert topmost without activation, including over borderless fullscreen windows.
             SetWindowPos(Handle, new IntPtr(-1), target.X, target.Y, target.Width, target.Height, 0x0010 | 0x0040);
         }
         [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr window);
@@ -151,36 +137,75 @@ namespace RestTimer
         internal static Color ForegroundColor(bool lightMode, bool highContrast) => highContrast
             ? SystemColors.WindowText : lightMode ? Color.FromArgb(24, 24, 24) : Color.FromArgb(245, 245, 245);
 
-        internal static Bitmap RenderFrame(Size size, string time, bool isResting, bool isRunning, Color foreground)
+        internal static Color BackgroundColor(bool lightMode, bool highContrast) => highContrast
+            ? SystemColors.Window : lightMode ? Color.FromArgb(247, 250, 253) : Color.FromArgb(23, 34, 49);
+
+        private static float TimeWidth(Graphics graphics, string time, Font font)
+        {
+            char[] digits = time.ToCharArray();
+            for (int i = 0; i < digits.Length; i++) if (char.IsDigit(digits[i])) digits[i] = '8';
+            return graphics.MeasureString(new string(digits), font, PointF.Empty, StringFormat.GenericTypographic).Width;
+        }
+
+        internal static Size MeasureFrame(string time, bool isResting, float scale)
+        {
+            int height = (int)Math.Round(30 * scale);
+            scale = height / 30f;
+            using (var bitmap = new Bitmap(1, 1))
+            using (var graphics = Graphics.FromImage(bitmap))
+            using (var timeFont = new Font("Segoe UI", 12 * scale, FontStyle.Bold, GraphicsUnit.Pixel))
+            using (var labelFont = new Font("Segoe UI", 11 * scale, FontStyle.Regular, GraphicsUnit.Pixel))
+            {
+                float label = graphics.MeasureString(I18n.T(isResting ? "break_short" : "work_short"), labelFont,
+                    PointF.Empty, StringFormat.GenericTypographic).Width;
+                return new Size((int)Math.Ceiling(44 * scale + TimeWidth(graphics, time, timeFont) + label), height);
+            }
+        }
+
+        internal static Bitmap RenderFrame(Size size, string time, bool isResting, bool isRunning, bool lightMode, bool highContrast)
         {
             var bitmap = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppPArgb);
-            float scale = size.Height / 20f;
+            float scale = size.Height / 30f;
             using (var graphics = Graphics.FromImage(bitmap))
-            using (var font = new Font("Segoe UI", 11 * scale, FontStyle.Regular, GraphicsUnit.Pixel))
-            using (var brush = new SolidBrush(foreground))
+            using (var timeFont = new Font("Segoe UI", 12 * scale, FontStyle.Bold, GraphicsUnit.Pixel))
+            using (var labelFont = new Font("Segoe UI", 11 * scale, FontStyle.Regular, GraphicsUnit.Pixel))
+            using (var brush = new SolidBrush(ForegroundColor(lightMode, highContrast)))
+            using (var background = new SolidBrush(BackgroundColor(lightMode, highContrast)))
+            using (var border = new Pen(highContrast ? SystemColors.WindowText : lightMode ? Color.FromArgb(205, 217, 229) : Color.FromArgb(53, 70, 91), Math.Max(1, scale)))
+            using (var accent = new SolidBrush(highContrast ? SystemColors.WindowText : isResting
+                ? (lightMode ? Color.FromArgb(96, 76, 174) : Color.FromArgb(193, 178, 255))
+                : (lightMode ? Color.FromArgb(17, 112, 91) : Color.FromArgb(131, 230, 196))))
             using (var timeFormat = new StringFormat(StringFormat.GenericTypographic) { Alignment = StringAlignment.Near,
                 LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap })
             using (var captionFormat = new StringFormat(StringFormat.GenericTypographic) { Alignment = I18n.IsRtl ? StringAlignment.Near : StringAlignment.Far,
                 LineAlignment = StringAlignment.Center, FormatFlags = StringFormatFlags.NoWrap | (I18n.IsRtl ? StringFormatFlags.DirectionRightToLeft : 0) })
             {
                 graphics.Clear(Color.Transparent);
-                // Grayscale anti-aliasing preserves alpha without a colored background fringe.
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                var card = new RectangleF(1.5f * scale, 1.5f * scale, size.Width - 3 * scale, size.Height - 4 * scale);
+                using (var path = Theme.RoundedRectangle(card, 8 * scale))
+                {
+                    graphics.FillPath(background, path);
+                    graphics.DrawPath(border, path);
+                }
                 graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
-                graphics.DrawString(time, font, brush, new RectangleF(2 * scale, 0, 53 * scale, size.Height), timeFormat);
-                graphics.DrawString(isResting ? I18n.T("break_short") : I18n.T("work_short"), font, brush,
-                    new RectangleF(57 * scale, 0, size.Width - 59 * scale, size.Height), captionFormat);
+                float timeWidth = TimeWidth(graphics, time, timeFont), divider = 12 * scale + timeWidth + 9 * scale;
+                graphics.DrawString(time, timeFont, brush, new RectangleF(12 * scale, 0, timeWidth + scale, size.Height - scale), timeFormat);
+                graphics.DrawString(I18n.T(isResting ? "break_short" : "work_short"), labelFont, accent,
+                    new RectangleF(divider + 9 * scale, 0, size.Width - divider - 21 * scale, size.Height - scale), captionFormat);
                 if (!isRunning)
                 {
-                    graphics.FillRectangle(brush, 53 * scale, 7 * scale, scale, 6 * scale);
-                    graphics.FillRectangle(brush, 56 * scale, 7 * scale, scale, 6 * scale);
+                    graphics.FillRectangle(accent, divider - 2 * scale, 11 * scale, scale, 7 * scale);
+                    graphics.FillRectangle(accent, divider + scale, 11 * scale, scale, 7 * scale);
                 }
+                else graphics.DrawLine(border, divider, 10 * scale, divider, 19 * scale);
             }
             return bitmap;
         }
 
         private bool PaintLayered(Rectangle target)
         {
-            using (var bitmap = RenderFrame(target.Size, countdown, resting, running, textColor))
+            using (var bitmap = RenderFrame(target.Size, countdown, resting, running, lightMode, highContrast))
             {
                 IntPtr screenDC = GetDC(IntPtr.Zero), memoryDC = IntPtr.Zero, nativeBitmap = IntPtr.Zero, previous = IntPtr.Zero;
                 try
@@ -208,10 +233,5 @@ namespace RestTimer
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing) reservation.Dispose();
-            base.Dispose(disposing);
-        }
     }
 }
