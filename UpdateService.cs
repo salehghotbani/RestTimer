@@ -70,7 +70,7 @@ namespace RestTimer
         {
             State.Attempt(DateTime.UtcNow);
             Save();
-            var release = await UpdateClient.GetLatestAsync(token);
+            var release = await UpdateClient.GetLatestAsync(token).ConfigureAwait(false);
             State.Latest = release;
             State.Success(DateTime.UtcNow);
             Save();

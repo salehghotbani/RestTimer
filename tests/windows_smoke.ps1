@@ -39,7 +39,11 @@ try {
         $log = Join-Path (Get-Location).Path "obj/smoke/upgrade-$Label-$Language.log"
         Invoke-Setup $setup $log
         if (!$old.WaitForExit(10000)) { throw 'Setup did not close the running application.' }
-        if ($Graceful -and $old.ExitCode -ne 0) { throw 'The current version was forcibly terminated instead of closing gracefully.' }
+        if ($Graceful -and $old.ExitCode -ne 0) {
+            Get-WinEvent -FilterHashtable @{LogName='Application'; Id=1026,1000; StartTime=(Get-Date).AddMinutes(-5)} -ErrorAction SilentlyContinue |
+                Format-List TimeCreated,Message | Out-String | Write-Output
+            throw "The current version did not exit gracefully. Exit code: $($old.ExitCode)"
+        }
         $restarted = Wait-App
         if ($restarted.Id -eq $old.Id) { throw 'Setup did not restart the application.' }
         if ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($targetExe).ProductVersion -notlike "$version*") {

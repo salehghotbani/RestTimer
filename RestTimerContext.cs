@@ -257,7 +257,7 @@ namespace RestTimer
         private async System.Threading.Tasks.Task CheckDailyUpdatesAsync()
         {
             if (!enableAutomaticUpdates || updater.Checking || !updater.State.IsDue(DateTime.UtcNow)) return;
-            try { await updater.CheckAsync(updateCancellation.Token); }
+            try { await updater.CheckAsync(updateCancellation.Token).ConfigureAwait(false); }
             catch (Exception ex) when (UpdateDialog.ExpectedFailure(ex)) { }
         }
 
