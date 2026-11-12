@@ -9,17 +9,15 @@ namespace RestTimer
 {
     internal sealed class BreakOverlay : Form
     {
-        private static readonly Color Ink = Color.FromArgb(239, 244, 250);
-        private static readonly Color Mint = Color.FromArgb(131, 230, 196);
         private readonly Bitmap background;
-        private readonly Panel card;
-        private readonly Panel accent;
+        private readonly RoundedPanel card;
+        private readonly Panel separator;
         private readonly Label heading;
         private readonly Label countdown;
+        private readonly Label countdownCaption;
         private readonly Label caption;
-        private readonly Font headingFont = new Font("Segoe UI", 19, FontStyle.Bold);
-        private readonly Font countdownFont = new Font("Segoe UI", 44, FontStyle.Bold);
-        private readonly Font bodyFont = new Font("Segoe UI", 11, FontStyle.Regular);
+        private readonly Font headingFont = new Font("Segoe UI", 14, FontStyle.Bold);
+        private readonly Font countdownFont = new Font("Segoe UI", 30, FontStyle.Bold);
 
         public Rectangle DisplayBounds { get; }
         public bool IsPrimary { get; }
@@ -38,27 +36,25 @@ namespace RestTimer
             TopMost = true;
             AutoScaleMode = AutoScaleMode.None;
             DoubleBuffered = true;
-            BackColor = Color.FromArgb(14, 20, 29);
+            BackColor = Theme.Background;
             Bounds = DisplayBounds;
 
-            card = new Panel { BackColor = Color.FromArgb(19, 29, 44) };
-            accent = new Panel { BackColor = Mint };
-            heading = CenteredLabel("وقت استراحت است", headingFont, Ink, RightToLeft.Yes);
-            countdown = CenteredLabel("", countdownFont, Mint, RightToLeft.No);
+            card = new RoundedPanel { CornerRadius = 18 };
+            separator = new Panel { BackColor = Theme.Border };
+            heading = CenteredLabel("وقت استراحت است", headingFont, Theme.Text, RightToLeft.Yes);
+            heading.TextAlign = ContentAlignment.MiddleLeft;
+            countdown = CenteredLabel("", countdownFont, Theme.Mint, RightToLeft.No);
             countdown.AccessibleName = "زمان باقی‌ماندهٔ استراحت";
-            caption = CenteredLabel("چند دقیقه از صفحه فاصله بگیر.", bodyFont, Color.FromArgb(174, 189, 207), RightToLeft.Yes);
-            Skip = new Button
+            countdownCaption = CenteredLabel("زمان باقی‌مانده", Theme.SmallFont, Theme.Muted, RightToLeft.Yes);
+            caption = CenteredLabel("چند دقیقه از صفحه فاصله بگیر.", Theme.BodyFont, Theme.Muted, RightToLeft.Yes);
+            caption.TextAlign = ContentAlignment.MiddleLeft;
+            Skip = new RoundedButton
             {
                 Text = "رد کردن استراحت",
-                Font = bodyFont,
-                RightToLeft = RightToLeft.Yes,
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(34, 49, 69),
-                ForeColor = Ink
+                Font = Theme.SmallFont,
+                RightToLeft = RightToLeft.Yes
             };
-            Skip.FlatAppearance.BorderColor = Color.FromArgb(78, 102, 127);
-            Skip.FlatAppearance.MouseOverBackColor = Color.FromArgb(50, 72, 97);
-            card.Controls.AddRange(new Control[] { accent, heading, countdown, caption, Skip });
+            card.Controls.AddRange(new Control[] { separator, heading, countdown, countdownCaption, caption, Skip });
             Controls.Add(card);
             SizeChanged += (_, __) => LayoutCard();
             DpiChanged += (_, __) => LayoutCard();
@@ -98,7 +94,7 @@ namespace RestTimer
 
             e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
             e.Graphics.DrawImage(background, ClientRectangle);
-            using (var shade = new SolidBrush(Color.FromArgb(175, BackColor)))
+            using (var shade = new SolidBrush(Color.FromArgb(110, BackColor)))
                 e.Graphics.FillRectangle(shade, ClientRectangle);
         }
 
@@ -106,19 +102,30 @@ namespace RestTimer
         {
             int Scale(int units) => (units * DeviceDpi + 48) / 96;
 
-            int width = Math.Max(1, Math.Min(Scale(480), ClientSize.Width - Scale(24)));
-            int top = Math.Max(0, Math.Min(Scale(36), ClientSize.Height - Scale(256)));
-            card.SetBounds((ClientSize.Width - width) / 2, top, width, Scale(252));
-            accent.SetBounds(0, 0, width, Scale(4));
-            heading.SetBounds(0, Scale(22), width, Scale(40));
-            countdown.SetBounds(0, Scale(62), width, Scale(92));
-            caption.SetBounds(0, Scale(152), width, Scale(30));
-            int buttonWidth = Math.Min(width, Scale(176));
-            Skip.SetBounds((width - buttonWidth) / 2, Scale(195), buttonWidth, Scale(38));
+            int width = Math.Max(1, Math.Min(Scale(720), ClientSize.Width - Scale(32)));
+            int top = Math.Max(0, Math.Min(Scale(24), ClientSize.Height - Scale(108)));
+            int padding = Scale(20);
+            int buttonWidth = Math.Min(Scale(112), width / 4);
+            int timerWidth = Math.Min(Scale(168), width / 3);
+            int timerLeft = padding + buttonWidth + Scale(32);
+            int textLeft = timerLeft + timerWidth + Scale(24);
+            int textWidth = Math.Max(1, width - textLeft - padding);
+            bool compact = width < Scale(600);
+
+            card.SetBounds((ClientSize.Width - width) / 2, top, width, Scale(108));
+            Skip.SetBounds(padding, Scale(36), buttonWidth, Scale(36));
+            separator.SetBounds(padding + buttonWidth + Scale(16), Scale(32), Scale(1), Scale(44));
+            countdown.SetBounds(timerLeft, Scale(compact ? 24 : 15), timerWidth, Scale(54));
+            countdownCaption.SetBounds(timerLeft, Scale(69), timerWidth, Scale(22));
+            countdownCaption.Visible = !compact;
+            heading.SetBounds(textLeft, Scale(compact ? 21 : 22), textWidth, Scale(compact ? 66 : 32));
+            caption.SetBounds(textLeft, Scale(57), textWidth, Scale(28));
+            caption.Visible = !compact;
         }
 
         private static Label CenteredLabel(string text, Font font, Color color, RightToLeft direction) =>
-            new Label { Text = text, Font = font, ForeColor = color, TextAlign = ContentAlignment.MiddleCenter, RightToLeft = direction };
+            new Label { Text = text, Font = font, ForeColor = color, BackColor = Color.Transparent,
+                TextAlign = ContentAlignment.MiddleCenter, RightToLeft = direction };
 
         private static Bitmap CaptureBlurredDesktop(Rectangle bounds)
         {
@@ -131,7 +138,7 @@ namespace RestTimer
                     using (var capture = Graphics.FromImage(desktop))
                         capture.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
 
-                    double scale = 64.0 / Math.Max(bounds.Width, bounds.Height);
+                    double scale = Math.Min(1, 240.0 / Math.Max(bounds.Width, bounds.Height));
                     var blurred = new Bitmap(Math.Max(1, (int)(bounds.Width * scale)),
                         Math.Max(1, (int)(bounds.Height * scale)), PixelFormat.Format32bppRgb);
                     using (var graphics = Graphics.FromImage(blurred))
@@ -156,7 +163,6 @@ namespace RestTimer
                 background?.Dispose();
                 headingFont.Dispose();
                 countdownFont.Dispose();
-                bodyFont.Dispose();
             }
         }
     }

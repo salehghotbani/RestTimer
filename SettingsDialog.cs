@@ -1,74 +1,112 @@
+using System;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace RestTimer
 {
     internal sealed class SettingsDialog : Form
     {
-        private readonly NumericUpDown workMinutes;
-        private readonly NumericUpDown breakMinutes;
+        private readonly DurationEditor workDuration;
+        private readonly DurationEditor breakDuration;
+        private readonly Label note;
 
-        public Preferences SelectedPreferences => new Preferences((int)workMinutes.Value, (int)breakMinutes.Value);
+        public Preferences SelectedPreferences { get; private set; }
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, ref int value, int size);
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            const int UseImmersiveDarkMode = 20;
+            const int CaptionColor = 35;
+            const int TextColor = 36;
+            int dark = 1;
+            int background = ColorTranslator.ToWin32(Theme.Background);
+            int foreground = ColorTranslator.ToWin32(Theme.Text);
+            // Older Windows versions ignore unsupported frame attributes.
+            DwmSetWindowAttribute(Handle, UseImmersiveDarkMode, ref dark, sizeof(int));
+            DwmSetWindowAttribute(Handle, CaptionColor, ref background, sizeof(int));
+            DwmSetWindowAttribute(Handle, TextColor, ref foreground, sizeof(int));
+        }
 
         public SettingsDialog(Preferences preferences, Icon icon)
         {
-            Text = "تنظیم زمان‌ها — RestTimer";
+            Text = "زمان‌بندی استراحت — RestTimer";
             Icon = icon;
-            Font = SystemFonts.MessageBoxFont;
+            Font = Theme.BodyFont;
+            BackColor = Theme.Background;
+            ForeColor = Theme.Text;
             RightToLeft = RightToLeft.Yes;
-            RightToLeftLayout = true;
             AutoScaleMode = AutoScaleMode.Dpi;
             AutoScaleDimensions = new SizeF(96, 96);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
-            ClientSize = new Size(350, 166);
+            ClientSize = new Size(536, 490);
 
-            workMinutes = DurationField("مدت کار", preferences.WorkMinutes, Preferences.MaxWorkMinutes, 18);
-            breakMinutes = DurationField("مدت استراحت", preferences.BreakMinutes, Preferences.MaxBreakMinutes, 55);
-            var note = new Label
+            var title = new Label
+            {
+                Text = "زمان‌بندی استراحت", Font = Theme.HeadingFont,
+                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 24, 480, 36)
+            };
+            var subtitle = new Label
+            {
+                Text = "زمان هر دوره را با ساعت، دقیقه و ثانیه تنظیم کن.",
+                ForeColor = Theme.Muted, TextAlign = ContentAlignment.MiddleLeft,
+                Bounds = new Rectangle(28, 65, 480, 26)
+            };
+            workDuration = new DurationEditor("زمان کار", "تا استراحت بعدی", preferences.WorkSeconds)
+            {
+                Location = new Point(28, 106), TabIndex = 0
+            };
+            breakDuration = new DurationEditor("زمان استراحت", "فرصتی برای تجدید انرژی", preferences.BreakSeconds)
+            {
+                Location = new Point(28, 248), TabIndex = 1
+            };
+            note = new Label
             {
                 Text = "با تغییر زمان‌ها، شمارش کار از نو شروع می‌شود.",
-                AutoSize = true,
-                Location = new Point(18, 94)
+                Font = Theme.SmallFont, ForeColor = Theme.Muted,
+                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 388, 480, 30)
             };
-            var save = new Button
+            var save = new RoundedButton(primary: true)
             {
-                Text = "ذخیره",
-                DialogResult = DialogResult.OK,
-                Bounds = new Rectangle(18, 120, 94, 30)
+                Text = "ذخیرهٔ زمان‌ها", Bounds = new Rectangle(366, 432, 142, 38), TabIndex = 2
             };
-            var cancel = new Button
+            save.Click += (_, __) => SaveDurations();
+            var cancel = new RoundedButton
             {
-                Text = "انصراف",
-                DialogResult = DialogResult.Cancel,
-                Bounds = new Rectangle(120, 120, 94, 30)
+                Text = "انصراف", DialogResult = DialogResult.Cancel,
+                Bounds = new Rectangle(28, 432, 100, 38), TabIndex = 3
             };
-            Controls.AddRange(new Control[] { note, save, cancel });
+            Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration, note, save, cancel });
             AcceptButton = save;
             CancelButton = cancel;
         }
 
-        private NumericUpDown DurationField(string label, int value, int maximum, int top)
+        private void SaveDurations()
         {
-            Controls.Add(new Label
+            if (!workDuration.TryGetSeconds(out int work) || work < 1 || work > Preferences.MaxWorkSeconds)
             {
-                Text = label + " (دقیقه)",
-                AutoSize = true,
-                Location = new Point(18, top + 3)
-            });
-            var input = new NumericUpDown
+                ShowValidationError("زمان کار باید از ۱ ثانیه تا ۲۴ ساعت باشد. دقیقه و ثانیه حداکثر ۵۹ هستند.");
+                return;
+            }
+            if (!breakDuration.TryGetSeconds(out int rest) || rest < 1 || rest > Preferences.MaxBreakSeconds)
             {
-                AccessibleName = label + " به دقیقه",
-                Minimum = 1,
-                Maximum = maximum,
-                Value = value,
-                RightToLeft = RightToLeft.No,
-                TextAlign = HorizontalAlignment.Center,
-                Bounds = new Rectangle(206, top, 126, 25)
-            };
-            Controls.Add(input);
-            return input;
+                ShowValidationError("زمان استراحت باید از ۱ ثانیه تا ۲ ساعت باشد. دقیقه و ثانیه حداکثر ۵۹ هستند.");
+                return;
+            }
+
+            SelectedPreferences = new Preferences(work, rest);
+            DialogResult = DialogResult.OK;
+        }
+
+        private void ShowValidationError(string message)
+        {
+            note.Text = message;
+            note.ForeColor = Color.FromArgb(255, 164, 155);
         }
     }
 }

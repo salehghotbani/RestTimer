@@ -57,7 +57,7 @@ namespace RestTimer
             if (editingSettings)
                 return;
 
-            TimeSpan remaining = TimeSpan.FromMinutes(breaking ? preferences.BreakMinutes : preferences.WorkMinutes)
+            TimeSpan remaining = TimeSpan.FromSeconds(breaking ? preferences.BreakSeconds : preferences.WorkSeconds)
                 - clock.Elapsed;
             if (breaking && remaining <= TimeSpan.Zero)
             {
@@ -72,7 +72,7 @@ namespace RestTimer
                 breaking = true;
                 startBreak.Enabled = settings.Enabled = false;
                 clock.Restart();
-                remaining = TimeSpan.FromMinutes(preferences.BreakMinutes);
+                remaining = TimeSpan.FromSeconds(preferences.BreakSeconds);
             }
 
             var rounded = TimeSpan.FromSeconds(Math.Ceiling(remaining.TotalSeconds));
@@ -146,7 +146,7 @@ namespace RestTimer
 
                     var updated = dialog.SelectedPreferences;
                     updated.Save();
-                    if (updated.WorkMinutes != preferences.WorkMinutes || updated.BreakMinutes != preferences.BreakMinutes)
+                    if (updated.WorkSeconds != preferences.WorkSeconds || updated.BreakSeconds != preferences.BreakSeconds)
                         clock.Restart();
                     preferences = updated;
                 }

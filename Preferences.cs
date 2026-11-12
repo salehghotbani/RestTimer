@@ -12,40 +12,53 @@ namespace RestTimer
         private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string AppName = "RestTimer";
         private const string DurationsName = "Durations";
-        public const int MaxWorkMinutes = 1440;
-        public const int MaxBreakMinutes = 120;
+        private const string DurationsSecondsName = "DurationsSeconds";
+        public const int MaxWorkSeconds = 24 * 60 * 60;
+        public const int MaxBreakSeconds = 2 * 60 * 60;
 
-        public int WorkMinutes { get; }
-        public int BreakMinutes { get; }
+        public int WorkSeconds { get; }
+        public int BreakSeconds { get; }
 
-        public Preferences(int workMinutes = 60, int breakMinutes = 15)
+        public Preferences(int workSeconds = 3600, int breakSeconds = 900)
         {
-            WorkMinutes = workMinutes;
-            BreakMinutes = breakMinutes;
+            if (workSeconds < 1 || workSeconds > MaxWorkSeconds)
+                throw new ArgumentOutOfRangeException(nameof(workSeconds));
+            if (breakSeconds < 1 || breakSeconds > MaxBreakSeconds)
+                throw new ArgumentOutOfRangeException(nameof(breakSeconds));
+            WorkSeconds = workSeconds;
+            BreakSeconds = breakSeconds;
         }
 
         public static Preferences Load()
         {
             using (var key = Registry.CurrentUser.OpenSubKey(SettingsKey))
             {
-                if (key?.GetValue(DurationsName) is string[] values && values.Length == 2
-                    && int.TryParse(values[0], NumberStyles.None, CultureInfo.InvariantCulture, out int work)
-                    && int.TryParse(values[1], NumberStyles.None, CultureInfo.InvariantCulture, out int rest)
-                    && work >= 1 && work <= MaxWorkMinutes && rest >= 1 && rest <= MaxBreakMinutes)
-                    return new Preferences(work, rest);
+                return ReadDurations(key?.GetValue(DurationsSecondsName), 1)
+                    ?? ReadDurations(key?.GetValue(DurationsName), 60)
+                    ?? new Preferences();
             }
+        }
 
-            return new Preferences();
+        private static Preferences ReadDurations(object value, int secondsPerUnit)
+        {
+            if (value is string[] values && values.Length == 2
+                && int.TryParse(values[0], NumberStyles.None, CultureInfo.InvariantCulture, out int work)
+                && int.TryParse(values[1], NumberStyles.None, CultureInfo.InvariantCulture, out int rest)
+                && work >= 1 && work <= MaxWorkSeconds / secondsPerUnit
+                && rest >= 1 && rest <= MaxBreakSeconds / secondsPerUnit)
+                return new Preferences(work * secondsPerUnit, rest * secondsPerUnit);
+
+            return null;
         }
 
         public void Save()
         {
             using (var key = Registry.CurrentUser.CreateSubKey(SettingsKey))
             {
-                key.SetValue(DurationsName, new[]
+                key.SetValue(DurationsSecondsName, new[]
                 {
-                    WorkMinutes.ToString(CultureInfo.InvariantCulture),
-                    BreakMinutes.ToString(CultureInfo.InvariantCulture)
+                    WorkSeconds.ToString(CultureInfo.InvariantCulture),
+                    BreakSeconds.ToString(CultureInfo.InvariantCulture)
                 }, RegistryValueKind.MultiString);
             }
         }
