@@ -5,6 +5,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -30,6 +31,11 @@ namespace RestTimer
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string name, string title);
         [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr window, out NativeRect bounds);
         [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int width, int height, uint flags);
+        [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
+        [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr window);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder name, int maximum);
+        [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr window, int attribute, out NativeRect bounds, int size);
         private string countdown = "1:00:00";
         private bool resting, running = true;
         private DateTime nextPosition;
@@ -114,13 +120,33 @@ namespace RestTimer
                 displayScale = GetScale(taskbar);
             }
             var target = Place(taskbarBounds, trayBounds, screenBounds, MeasureFrame(countdown, resting, displayScale), displayScale);
-            if (target.IsEmpty) { Hide(); return; }
+            if (target.IsEmpty || IsFullscreenWindow(GetForegroundWindow(), screenBounds)) { Hide(); return; }
             bool paint = dirty || !Visible || Size != target.Size;
             Bounds = target;
             if (paint && !PaintLayered(target)) { Hide(); return; }
             if (!Visible) Show();
-            // Reassert topmost without activation, including over borderless fullscreen windows.
+            // Stay above ordinary windows without covering a foreground fullscreen application.
             SetWindowPos(Handle, new IntPtr(-1), target.X, target.Y, target.Width, target.Height, 0x0010 | 0x0040);
+        }
+        internal static bool CoversDisplay(Rectangle window, Rectangle display) => !display.IsEmpty
+            && window.Left <= display.Left && window.Top <= display.Top
+            && window.Right >= display.Right && window.Bottom >= display.Bottom;
+
+        internal static bool IsFullscreenWindow(IntPtr foreground, Rectangle display)
+        {
+            if (foreground == IntPtr.Zero || !IsWindowVisible(foreground) || IsIconic(foreground)) return false;
+            // The desktop and our own break reminders are not fullscreen games.
+            var managed = Control.FromHandle(foreground);
+            if (managed is BreakOverlay || managed is TaskbarCountdown) return false;
+            var name = new StringBuilder(128);
+            GetClassName(foreground, name, name.Capacity);
+            if (name.ToString() == "Progman" || name.ToString() == "WorkerW" || name.ToString() == "Shell_TrayWnd") return false;
+            if (DwmGetWindowAttribute(foreground, 9, out NativeRect frame, Marshal.SizeOf(typeof(NativeRect))) != 0
+                || frame.Rectangle.IsEmpty)
+            {
+                if (!GetWindowRect(foreground, out frame)) return false;
+            }
+            return CoversDisplay(frame.Rectangle, display);
         }
         [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr window);
         private static float GetScale(IntPtr taskbar) { uint dpi = GetDpiForWindow(taskbar); return dpi == 0 ? 1 : dpi / 96f; }

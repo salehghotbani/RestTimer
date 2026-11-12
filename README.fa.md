@@ -47,7 +47,7 @@
 بستهٔ DEB را در مدیر نرم‌افزار باز کنید یا در پوشهٔ دانلودشده اجرا کنید.
 
 ```bash
-sudo apt install ./RestTimer-v1.9.0-linux-amd64.deb
+sudo apt install ./RestTimer-v1.9.1-linux-amd64.deb
 ```
 
 ### Fedora
@@ -55,7 +55,7 @@ sudo apt install ./RestTimer-v1.9.0-linux-amd64.deb
 بستهٔ RPM را در مدیر نرم‌افزار باز کنید یا اجرا کنید.
 
 ```bash
-sudo dnf install ./RestTimer-v1.9.0-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.9.1-linux-x86_64.rpm
 ```
 
 سپس RestTimer را از منوی برنامه‌ها یا فرمان `resttimer` اجرا کنید. Python و Qt مورد نیاز در بسته‌های لینوکس قرار دارند. حذف برنامه با `sudo apt remove resttimer` یا `sudo dnf remove resttimer` انجام می‌شود.
@@ -72,7 +72,7 @@ sudo dnf install ./RestTimer-v1.9.0-linux-x86_64.rpm
 | بالا | زیر تسک‌بار، نزدیک ناحیهٔ اعلان‌ها |
 | چپ یا راست | کنار لبهٔ داخلی تسک‌بار، نزدیک پایین صفحه؛ متن افقی می‌ماند |
 
-در تنظیمات با گزینهٔ «نمایش کادر شناور زمان» و زدن «ذخیرهٔ تنظیمات» آن را فعال یا غیرفعال کنید. انتخاب پس از اجرای مجدد حفظ می‌شود و تغییر آن شمارش را از نو شروع نمی‌کند. فقط همین کادر کوچک روی پنجرهٔ برنامه‌ها، از جمله تمام‌صفحهٔ بدون حاشیه، قرار می‌گیرد؛ ردیفی از صفحه رزرو نمی‌شود و پنجره‌های بیشینه‌شده تغییر اندازه نمی‌دهند. کادر بیرون از محدودهٔ تسک‌بار است، با جابه‌جایی آن تطبیق پیدا می‌کند، قابل کشیدن نیست و کلیک‌ها بدون گرفتن تمرکز از آن عبور می‌کنند. با پنهان‌شدن خودکار تسک‌بار هم کادر نمایان می‌ماند. محل‌های قابل انتخاب برای تسک‌بار به پیکربندی دسکتاپ ویندوز شما بستگی دارد.
+در تنظیمات با گزینهٔ «نمایش کادر شناور زمان» و زدن «ذخیرهٔ تنظیمات» آن را فعال یا غیرفعال کنید. انتخاب پس از اجرای مجدد حفظ می‌شود و تغییر آن شمارش را از نو شروع نمی‌کند. فقط همین کادر کوچک روی پنجرهٔ برنامه‌ها قرار می‌گیرد؛ هنگام فعال‌بودن بازی یا برنامهٔ تمام‌صفحه روی همان مانیتور پنهان می‌شود و پس از خروج از تمام‌صفحه برمی‌گردد؛ ردیفی از صفحه رزرو نمی‌شود و پنجره‌های بیشینه‌شده تغییر اندازه نمی‌دهند. کادر بیرون از محدودهٔ تسک‌بار است، با جابه‌جایی آن تطبیق پیدا می‌کند، قابل کشیدن نیست و کلیک‌ها بدون گرفتن تمرکز از آن عبور می‌کنند. با پنهان‌شدن خودکار تسک‌بار هم کادر نمایان می‌ماند. محل‌های قابل انتخاب برای تسک‌بار به پیکربندی دسکتاپ ویندوز شما بستگی دارد.
 
 - با کلیک چپ یا راست روی آیکن کنار ساعت، منوی برنامه باز می‌شود. می‌توانید زمان‌ها را تنظیم کنید، استراحت را همان لحظه شروع کنید، اجرای خودکار را تغییر دهید، به‌روزرسانی را بررسی کنید یا از برنامه خارج شوید.
 - شمارش از زمان اجرا شروع می‌شود. رد کردن استراحت، زمان کار بعدی را از نو آغاز می‌کند.
@@ -82,6 +82,8 @@ sudo dnf install ./RestTimer-v1.9.0-linux-x86_64.rpm
 - اجرای خودکار لینوکس از `~/.config/autostart/resttimer.desktop` استفاده می‌کند.
 
 ### پنجرهٔ تنظیمات
+
+فیلدهای دقیقه و ثانیه مقادیر **۰ تا ۵۹** را می‌پذیرند؛ در ویندوز ارقام فارسی و عربی هم پشتیبانی می‌شوند. تنظیمات، توضیحات انتشار و فهرست نسخه‌ها اسکرول باریک و گرد هماهنگ با رنگ سیستم دارند.
 
 همهٔ بخش‌ها در یک پنجره با تب‌های عمودی **عمومی**، **به‌روزرسانی**، **تاریخچهٔ نسخه‌ها** و **درباره** قرار دارند. تاریخچه از همین پنجره در دسترس است و گزینهٔ جداگانهٔ آن از منوی آیکن حذف شده است.
 
@@ -129,9 +131,9 @@ sudo dnf install ./RestTimer-v1.9.0-linux-x86_64.rpm
 </div>
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.0/RestTimer-v1.9.0-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.0/RestTimer-v1.9.0-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.0/RestTimer-v1.9.0-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

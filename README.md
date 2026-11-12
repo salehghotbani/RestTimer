@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.9.0-linux-amd64.deb
+sudo apt install ./RestTimer-v1.9.1-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.9.0-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.9.0-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.9.1-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -78,13 +78,15 @@ A compact floating box shows the countdown beside the primary taskbar. Its width
 
 In settings, toggle **Show floating timer**, then select **Save settings**. Your choice persists across restarts and does not reset the timer.
 
-Only this small box floats above application windows, including borderless fullscreen windows. It reserves no desktop row and does not resize maximized windows. It stays outside the taskbar, follows its position automatically, cannot be dragged, and lets mouse clicks pass through without taking focus. It remains visible when the taskbar auto-hides. Available taskbar positions depend on your Windows desktop configuration.
+Only this small box floats above application windows, hiding automatically while a foreground fullscreen game or application fills the same display and returning when you leave fullscreen. It reserves no desktop row and does not resize maximized windows. It stays outside the taskbar, follows its position automatically, cannot be dragged, and lets mouse clicks pass through without taking focus. It remains visible when the taskbar auto-hides. Available taskbar positions depend on your Windows desktop configuration.
 
 ### Settings and startup
 
 Settings opens one window with vertical tabs for **General**, **Updates**, **Version history**, and **About**. Browse releases and application details without opening extra windows. Version history is available here instead of in the tray menu.
 
 In **General**, toggle **Check daily for updates** to save the preference immediately. The same switch on the Updates page stays synchronized. Switching tabs preserves a running update download; closing the window cancels the download. The window stays open while an installer is running.
+
+Minute and second fields accept **0–59**, including Persian and Arabic digits on Windows. Settings, release notes and version lists use slim, rounded scrollbars that follow the system color mode.
 
 The interface follows your system UI language by default. Unsupported languages fall back to English. In **Settings → Language**, choose a language or **System language**, then **Save settings**. Your choice persists across restarts and applies immediately without resetting the remaining time or paused state. Persian and Arabic use right-to-left layouts; other languages use left-to-right layouts. Language names appear in their own language.
 
@@ -134,9 +136,9 @@ English is the default documentation language. Keep the [Persian README](README.
 RestTimer is released under the [MIT license](LICENSE). Bundled dependency licenses and source information are listed in [third-party notices](THIRD_PARTY_NOTICES.md).
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.0/RestTimer-v1.9.0-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.0/RestTimer-v1.9.0-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.0/RestTimer-v1.9.0-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.1/RestTimer-v1.9.1-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

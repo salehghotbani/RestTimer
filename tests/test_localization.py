@@ -33,6 +33,9 @@ class LocalizationTests(unittest.TestCase):
         self.assertNotIn("he", i18n.SUPPORTED)
         for code in i18n.SUPPORTED:
             catalog = i18n.catalog(code)
+            for key in ("settings_menu", "updates_menu", "history", "update_available"):
+                self.assertNotIn("…", catalog["strings"][key])
+                self.assertNotIn("...", catalog["strings"][key])
             self.assertTrue(catalog["name"].strip())
             self.assertEqual(catalog["direction"], "rtl" if code in ("fa", "ar") else "ltr")
             self.assertEqual(set(catalog["strings"]), set(english), code)
@@ -46,6 +49,7 @@ class LocalizationTests(unittest.TestCase):
                 self.assertEqual(i18n.tr(key), value)
             self.assertIn("1.8.0", i18n.tr("update_available", "1.8.0"))
         i18n.use("auto", ["en-US"])
+        self.assertEqual(i18n.catalog("fa")["strings"]["settings_menu"], "تنظیمات")
 
     def test_used_keys_exist(self):
         known = set(i18n.catalog("en")["strings"])

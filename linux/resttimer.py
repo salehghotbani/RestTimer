@@ -26,6 +26,16 @@ DEFAULTS = {"work_seconds": 3600, "break_seconds": 900, "language": "auto"}
 STYLE = """
 QDialog, QMenu { background: #0d1521; color: #edf4fa; }
 QScrollArea, QScrollArea > QWidget > QWidget { background: #0d1521; border: none; }
+QScrollBar:vertical { background: transparent; width: 12px; margin: 4px 2px; border: none; }
+QScrollBar::handle:vertical { background: #9bb0c3; min-height: 28px; border-radius: 4px; }
+QScrollBar::handle:vertical:hover, QScrollBar::handle:vertical:pressed { background: #83e6c4; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; border: none; background: transparent; }
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
+QScrollBar:horizontal { background: transparent; height: 12px; margin: 2px 4px; border: none; }
+QScrollBar::handle:horizontal { background: #9bb0c3; min-width: 28px; border-radius: 4px; }
+QScrollBar::handle:horizontal:hover, QScrollBar::handle:horizontal:pressed { background: #83e6c4; }
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; border: none; background: transparent; }
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: transparent; }
 QTextEdit, QComboBox, QTabWidget::pane { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; border-radius: 6px; padding: 8px; }
 QTabBar::tab { background: #1e2e40; color: #edf4fa; padding: 10px 20px; }
 QTabBar::tab:selected { background: #223a48; color: #83e6c4; }

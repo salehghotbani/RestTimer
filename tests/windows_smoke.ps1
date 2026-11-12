@@ -103,6 +103,7 @@ internal static class Smoke
     private static extern int GetWindowLong(IntPtr window, int index);
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr window, uint relation);
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr window);
     private static Rectangle WorkArea(Rectangle screen)
     {
         var rect = new NativeRect { Left=screen.Left, Top=screen.Top, Right=screen.Right, Bottom=screen.Bottom };
@@ -206,6 +207,23 @@ internal static class Smoke
                     dialog.StartPosition = FormStartPosition.Manual;
                     dialog.Location = new Point(-10000, -10000);
                     dialog.Show();
+                    var durationEditor = dialog.GetType().GetField("workDuration", flags).GetValue(dialog);
+                    foreach (string partName in new[] { "minutes", "seconds" })
+                    {
+                        var part = (TextBox)durationEditor.GetType().GetField(partName, flags).GetValue(durationEditor);
+                        string originalPart = part.Text;
+                        foreach (string valid in new[] { "0", "59", "۵۹", "٥٩" })
+                        {
+                            part.Text = valid;
+                            if (part.Text != valid) throw new Exception("Valid localized duration digits were rejected.");
+                            foreach (string invalid in new[] { "60", "99", "۶۰", "٦٠", "-1", "x" })
+                            {
+                                part.Text = invalid;
+                                if (part.Text != valid) throw new Exception("Minutes or seconds allowed an invalid value while editing.");
+                            }
+                        }
+                        part.Text = originalPart;
+                    }
                     update.Invoke(context, null);
                     ((Button)dialog.GetType().GetField("startTimer", flags).GetValue(dialog)).PerformClick();
                     if (!clock.IsRunning) throw new Exception("Settings start failed.");
@@ -233,6 +251,12 @@ internal static class Smoke
             var badgeType = app.GetType("RestTimer.TaskbarCountdown", true);
             var place = badgeType.GetMethod("Place", BindingFlags.Static | BindingFlags.NonPublic);
             var measure = badgeType.GetMethod("MeasureFrame", BindingFlags.Static | BindingFlags.NonPublic);
+            var coversDisplay = badgeType.GetMethod("CoversDisplay", BindingFlags.Static | BindingFlags.NonPublic);
+            var fullscreenMonitor = new Rectangle(-1920, 0, 1920, 1080);
+            if (!(bool)coversDisplay.Invoke(null, new object[] { fullscreenMonitor, fullscreenMonitor })
+                || (bool)coversDisplay.Invoke(null, new object[] { new Rectangle(0, 0, 1920, 1080), fullscreenMonitor })
+                || (bool)coversDisplay.Invoke(null, new object[] { new Rectangle(-1920, 0, 1920, 1040), fullscreenMonitor }))
+                throw new Exception("Fullscreen detection confused work area, monitor bounds or secondary displays.");
             foreach (float scale in new float[] { 1f, 1.25f, 1.5f, 2f })
             foreach (var screen in new[] { new Rectangle(0, 0, 1920, 1080), new Rectangle(-1920, -1080, 1920, 1080) })
             foreach (string edge in new[] { "bottom", "left", "right", "top" })
@@ -327,17 +351,25 @@ internal static class Smoke
                     using (var cover = new Form { FormBorderStyle=FormBorderStyle.None, StartPosition=FormStartPosition.Manual,
                         Bounds=primary, ShowInTaskbar=false, BackColor=Color.DimGray })
                     {
-                        cover.Show(); Application.DoEvents();
+                        cover.Show(); cover.Activate(); SetForegroundWindow(cover.Handle); Application.DoEvents();
+                        cover.Bounds = primary;
+                        Application.DoEvents();
                         var foreground = GetForegroundWindow();
                         updateBadge.Invoke(badge, new object[] { "47:11", false, true, true });
                         Application.DoEvents();
-                        bool above = false;
-                        var window = cover.Handle;
-                        for (int i=0; i<1000 && window!=IntPtr.Zero; i++)
-                        { window=GetWindow(window,3); if(window==badge.Handle) { above=true; break; } }
-                        if (!badge.Visible || !above || GetForegroundWindow()!=foreground || WorkArea(primary)!=before)
-                            throw new Exception("The floating timer must stay above a borderless fullscreen window without focus or workspace changes.");
-                        Console.WriteLine("Native z-order above a borderless fullscreen window passed without taking focus.");
+                        var isFullscreen = badgeType.GetMethod("IsFullscreenWindow", BindingFlags.Static | BindingFlags.NonPublic);
+                        if (!(bool)isFullscreen.Invoke(null, new object[]{cover.Handle, primary})
+                            || foreground == cover.Handle && badge.Visible || GetForegroundWindow()!=foreground || WorkArea(primary)!=before)
+                            throw new Exception("The floating timer must hide over a foreground fullscreen window without taking focus or workspace changes. Visible=" + badge.Visible + ", foreground=" + foreground + ", cover=" + cover.Handle + ", bounds=" + cover.Bounds);
+                        cover.Bounds = Rectangle.Inflate(primary, -160, -120);
+                        Application.DoEvents();
+                        updateBadge.Invoke(badge, new object[] { "47:10", false, true, true });
+                        Application.DoEvents();
+                        if ((bool)isFullscreen.Invoke(null, new object[]{cover.Handle, primary})
+                            || !badge.Visible || GetForegroundWindow()!=foreground || WorkArea(primary)!=before)
+                            throw new Exception("The timer did not return after leaving fullscreen, or it took focus.");
+                        Console.WriteLine(foreground == cover.Handle ? "Fullscreen suppression and automatic restoration passed without taking focus."
+                            : "Native fullscreen geometry passed; desktop foreground lock prevented activation of the simulated game.");
                     }
                 }
                 updateBadge.Invoke(badge, new object[] { "15:00", true, false, true });
@@ -383,6 +415,47 @@ internal static class Smoke
                 if (!notes.Text.Contains("تغییرات") || notes.Text.Contains("RestTimer 9.0.0") || !install.Enabled)
                     throw new Exception("Update consent or history UI missing.");
                 var selectPage = dialog.GetType().GetMethod("SelectPage");
+                selectPage.Invoke(dialog, new object[] { "history" });
+                for (int i=0; i<50; i++) versions.Items.Add(release);
+                Application.DoEvents();
+                var versionFrame = versions.Parent.Parent;
+                versionFrame.GetType().GetMethod("Synchronize", fields).Invoke(versionFrame,null);
+                var versionThumb = (Control)versionFrame.GetType().GetField("scrollbar", fields).GetValue(versionFrame);
+                if (!versionThumb.Visible) throw new Exception("Long version lists need a themed scrollbar.");
+                versionThumb.GetType().GetMethod("ChangeValue", fields).Invoke(versionThumb, new object[]{int.MaxValue});
+                if (versions.TopIndex == 0) throw new Exception("The custom version scrollbar did not move the native version list.");
+                while (versions.Items.Count>2) versions.Items.RemoveAt(versions.Items.Count-1);
+                versions.TopIndex=0;
+                selectPage.Invoke(dialog, new object[] { "updates" });
+                var setNotes = notes.GetType().GetMethod("SetNotes", fields);
+                setNotes.Invoke(notes, new object[] { string.Join("\n", Enumerable.Range(0, 160).Select(i => "Scrollable release line " + i)) });
+                var scrollFrame = notes.Parent.Parent;
+                var syncScroll = scrollFrame.GetType().GetMethod("Synchronize", fields);
+                syncScroll.Invoke(scrollFrame, null);
+                var scrollThumb = (Control)scrollFrame.GetType().GetField("scrollbar", fields).GetValue(scrollFrame);
+                if (!scrollThumb.Visible || notes.Right - SystemInformation.VerticalScrollBarWidth != notes.Parent.ClientSize.Width)
+                    throw new Exception("Long release notes must expose the themed thumb and clip only the native scrollbar.");
+                int initialTop = notes.GetCharIndexFromPosition(new Point(4, 4));
+                scrollThumb.GetType().GetMethod("ChangeValue", fields).Invoke(scrollThumb, new object[] { int.MaxValue });
+                Application.DoEvents();
+                if (notes.GetCharIndexFromPosition(new Point(4, 4)) <= initialTop)
+                    throw new Exception("The custom thumb did not scroll the actual release notes.");
+                setNotes.Invoke(notes, new object[] { release.GetType().GetProperty("Notes").GetValue(release) });
+                selectPage.Invoke(dialog, new object[] { "general" });
+                dialog.Height = 550;
+                Application.DoEvents();
+                var generalFrame = (Control)dialog.GetType().GetField("generalPage", fields).GetValue(dialog);
+                syncScroll.Invoke(generalFrame, null);
+                var generalThumb = (Control)generalFrame.GetType().GetField("scrollbar", fields).GetValue(generalFrame);
+                if (!generalThumb.Visible) throw new Exception("Compact settings need a visible themed scrollbar.");
+                generalThumb.GetType().GetMethod("ChangeValue", fields).Invoke(generalThumb, new object[] { int.MaxValue });
+                Application.DoEvents();
+                var generalEditor = (ScrollableControl)generalFrame.GetType().GetField("editor", fields).GetValue(generalFrame);
+                if (generalEditor.AutoScrollPosition.Y >= 0 || generalEditor.HorizontalScroll.Visible)
+                    throw new Exception("Settings scrollbar failed to reach lower controls or introduced horizontal scrolling.");
+                dialog.Height = 820;
+                selectPage.Invoke(dialog, new object[] { "updates" });
+                Application.DoEvents();
                 var cancellation = (System.Threading.CancellationTokenSource)panelType.GetField("cancellation", fields).GetValue(panel);
                 panelType.GetField("working", fields).SetValue(panel, true);
                 foreach (string page in new[] {"general","history","about","updates"})
@@ -452,7 +525,7 @@ internal static class Smoke
 '@ | Set-Content -LiteralPath obj/smoke/Smoke.cs -Encoding utf8
     $smokeSource = (Resolve-Path 'obj\smoke\Smoke.cs').Path
     $smokeExe = Join-Path (Get-Location).Path 'obj\smoke\Smoke.exe'
-    & "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /r:System.Windows.Forms.dll /r:System.Drawing.dll "/out:$smokeExe" $smokeSource
+    & "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /debug:full /r:System.Windows.Forms.dll /r:System.Drawing.dll "/out:$smokeExe" $smokeSource
     if ($LASTEXITCODE -ne 0) { throw 'Smoke test compilation failed.' }
     Copy-Item -LiteralPath "$targetExe.config" -Destination obj/smoke/Smoke.exe.config
     & ./obj/smoke/Smoke.exe $targetExe

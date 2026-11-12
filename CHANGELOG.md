@@ -1,5 +1,11 @@
 # RestTimer changelog
 
+## 1.9.1
+- Hide the Windows floating countdown while a foreground game or application fills its display; restore it automatically when leaving fullscreen.
+- Add slim, rounded, theme-aware scrollbars to settings, release notes and version lists on Windows and Linux.
+- Reject minute and second values outside 0–59 while editing on Windows, including pasted Persian and Arabic numerals; retain the same bounds on Linux.
+- Use “تنظیمات” for the Persian Settings menu entry and remove ellipses from tray menu labels in every language.
+
 ## 1.9.0
 - Unify General settings, Updates, Version history and About in one window with vertical sidebar navigation on Windows and Linux.
 - Add the daily update check switch to General settings and keep it synchronized with the Updates page; save changes immediately.

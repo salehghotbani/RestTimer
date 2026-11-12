@@ -49,6 +49,7 @@ Building packages requires Linux x86-64, `dpkg-deb`, `rpmbuild`, and `desktop-fi
 - Add release changes to `CHANGELOG.md` and the GitHub release notes. The application uses release notes to explain new versions.
 - Check updates with a disconnected network, cancelled downloads, incomplete files, declined installation authorization, and restarting after an upgrade. Download checks must not launch a real installer.
 - Check all four settings sections in both layout directions and color modes. Daily update switches must stay synchronized and persist. Navigating between sections must preserve active downloads; closing must cancel downloads and wait for active installers.
+- Verify that the floating countdown hides for a foreground fullscreen window on its own monitor, returns afterward without taking focus, and remains visible over ordinary windows. Check minute/second limits with typed and pasted digits, and scrollbar dragging, wheel scrolling and keyboard navigation in long notes and compact settings.
 
 ## Documentation languages
 

@@ -28,9 +28,9 @@ namespace RestTimer
                 TextAlign = ContentAlignment.MiddleRight, Bounds = I18n.IsRtl ? new Rectangle(20, 10, 265, 27) : new Rectangle(260, 10, 200, 27)
             });
 
-            hours = CreatePart(I18n.T("hours"), title + " – " + I18n.T("hours"), duration / 3600, 74);
-            minutes = CreatePart(I18n.T("minutes"), title + " – " + I18n.T("minutes"), duration / 60 % 60, 194);
-            seconds = CreatePart(I18n.T("seconds"), title + " – " + I18n.T("seconds"), duration % 60, 314);
+            hours = CreatePart(I18n.T("hours"), title + " – " + I18n.T("hours"), duration / 3600, 74, 99);
+            minutes = CreatePart(I18n.T("minutes"), title + " – " + I18n.T("minutes"), duration / 60 % 60, 194, 59);
+            seconds = CreatePart(I18n.T("seconds"), title + " – " + I18n.T("seconds"), duration % 60, 314, 59);
             foreach (int left in new[] { 166, 286 })
                 Controls.Add(new Label
                 {
@@ -39,7 +39,7 @@ namespace RestTimer
                 });
         }
 
-        private TextBox CreatePart(string label, string accessibleName, int value, int left)
+        private TextBox CreatePart(string label, string accessibleName, int value, int left, int maximum)
         {
             var field = new RoundedPanel
             {
@@ -52,6 +52,22 @@ namespace RestTimer
                 BackColor = Theme.Input, BorderStyle = BorderStyle.None,
                 TextAlign = HorizontalAlignment.Center, RightToLeft = RightToLeft.No,
                 MaxLength = 2, Bounds = new Rectangle(10, 6, 72, 36)
+            };
+            string previous = input.Text;
+            bool restoring = false;
+            input.TextChanged += (_, __) =>
+            {
+                if (restoring) return;
+                if (input.Text.Length == 0 || TryReadPart(input, out int number) && number <= maximum)
+                    previous = input.Text;
+                else
+                {
+                    int caret = input.SelectionStart;
+                    restoring = true;
+                    input.Text = previous;
+                    input.SelectionStart = System.Math.Min(caret, input.TextLength);
+                    restoring = false;
+                }
             };
             input.Enter += (_, __) =>
             {

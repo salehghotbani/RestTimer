@@ -75,7 +75,7 @@ namespace RestTimer
             var content = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(18), Margin = Padding.Empty };
             latestPanel = new Panel { Dock = DockStyle.Fill };
             latestNotes = new ReleaseNotesBox();
-            latestPanel.Controls.Add(latestNotes);
+            latestPanel.Controls.Add(new ScrollFrame(latestNotes));
             latestPanel.Controls.Add(new Label { Text = I18n.T("release_notes"), Font = Theme.TitleFont, Dock = DockStyle.Top,
                 Height = 36, TextAlign = ContentAlignment.MiddleLeft });
             historyPanel = new Panel { Dock = DockStyle.Fill };
@@ -83,7 +83,7 @@ namespace RestTimer
             historyTitle = new Label { Text = I18n.T("version_history"), Font = Theme.TitleFont, Dock = DockStyle.Top,
                 Height = 36, TextAlign = ContentAlignment.MiddleLeft };
             var historyBody = new Panel { Dock = DockStyle.Fill };
-            historyBody.Controls.Add(historyNotes);
+            historyBody.Controls.Add(new ScrollFrame(historyNotes));
             historyBody.Controls.Add(historyTitle);
             versions = new ListBox { Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left, Width = 154, BorderStyle = BorderStyle.None,
                 DrawMode = DrawMode.OwnerDrawFixed, ItemHeight = 40, IntegralHeight = false, Font = Theme.BodyFont,
@@ -106,7 +106,7 @@ namespace RestTimer
                 historyNotes.SetNotes(release?.Notes ?? UpdateService.BundledHistory(I18n.Code));
             };
             historyPanel.Controls.Add(historyBody);
-            historyPanel.Controls.Add(versions);
+            historyPanel.Controls.Add(new ScrollFrame(versions) { Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left, Width = 154 });
             content.Controls.Add(latestPanel);
             content.Controls.Add(historyPanel);
             layout.Controls.Add(content, 0, 3);

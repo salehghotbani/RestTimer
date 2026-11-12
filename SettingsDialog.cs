@@ -107,10 +107,15 @@ namespace RestTimer
         private Control CreateGeneralPage(Preferences preferences, Action start, Action stop)
         {
             var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-            var body = new Panel { Size = new Size(536, 730) };
+            var body = new Panel { Size = new Size(536, 730), RightToLeft = I18n.Flow };
             viewport.Controls.Add(body);
             viewport.AutoScrollMinSize = body.Size;
-            viewport.Resize += (_, __) => body.Left = Math.Max(0, (viewport.ClientSize.Width - body.Width) / 2);
+            viewport.Resize += (_, __) =>
+            {
+                body.Width = Math.Max(508, Math.Min(536, viewport.ClientSize.Width));
+                viewport.AutoScrollMinSize = body.Size;
+                body.Left = Math.Max(0, (viewport.ClientSize.Width - body.Width) / 2);
+            };
             var title = new Label
             {
                 Text = I18n.T("settings_title"), Font = Theme.HeadingFont,
@@ -210,7 +215,7 @@ namespace RestTimer
             body.Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration,
                 startTimer, stopTimer, timerStatus, languageTitle, language, languageHint, daily, startupPreference, showTaskbarCountdown, note, save, updates, cancel });
             savePreferences = save;
-            return viewport;
+            return new ScrollFrame(viewport);
         }
 
         public void SetRunning(bool running)

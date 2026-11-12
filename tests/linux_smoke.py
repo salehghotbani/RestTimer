@@ -44,6 +44,14 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
         for part in editor.parts:
             assert part.lineEdit().width() > 30
             assert part.lineEdit().text()
+        for part in editor.parts[1:]:
+            previous = part.value()
+            part.setValue(60)
+            assert part.value() == 59
+            part.lineEdit().setText("99")
+            part.interpretText()
+            assert 0 <= part.value() <= 59
+            part.setValue(previous)
     controller.settings.work.parts[0].setValue(1)
     controller.settings.work.parts[1].setValue(2)
     controller.settings.work.parts[2].setValue(3)
