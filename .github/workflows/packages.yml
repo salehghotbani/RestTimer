@@ -47,7 +47,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm desktop-file-utils xvfb xauth weston \
             libegl1 libgl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-cursor0 \
-            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
           python -m pip install -r requirements-build-linux.txt
       - name: Test Linux frontend
         run: QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
