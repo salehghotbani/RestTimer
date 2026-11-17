@@ -59,6 +59,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
         controller.settings.work.parts[2].setValue(7)
         controller.settings.language.setCurrentIndex(controller.settings.language.findData(code))
         assert i18n.code == code, "Language did not change immediately"
+        assert controller.reset_timer_action.text() == i18n.tr("reset_timer")
         assert module.read_preferences()["language"] == saved_language, "Preview persisted before Save"
         assert controller.settings.work.parts[2].value() == 7, "Language preview lost a duration draft"
         assert controller.settings.update_panel is dialog and not pending.cancelled.is_set()

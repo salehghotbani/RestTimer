@@ -11,6 +11,7 @@
     "duration_note": "시간을 변경하면 작업 타이머가 다시 시작됩니다.",
     "start": "시작",
     "stop": "일시정지",
+    "reset_timer": "타이머 초기화",
     "save": "설정 저장",
     "cancel": "취소",
     "updates_title": "업데이트 및 변경 사항",

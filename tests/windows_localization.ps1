@@ -60,6 +60,8 @@ internal static class LocalizationSmoke
                 var menu = (ContextMenuStrip)contextType.GetField("menu", flags).GetValue(context);
                 if (clock.IsRunning || clock.Elapsed != frozen || menu.Items[0].Text != (string)translate.Invoke(null, new object[] { "start", new object[0] }))
                     throw new Exception("Applying a language reset the paused timer or failed to translate the menu.");
+                if (menu.Items[3].Text != (string)translate.Invoke(null, new object[] { "reset_timer", new object[0] }))
+                    throw new Exception("Reset timer menu text did not follow the selected language.");
                 if ((string)preferences.GetProperty("Language").GetValue(selected) != code) throw new Exception("Language preference was not retained.");
                 foreach (bool mode in new[] { true, false })
                 {

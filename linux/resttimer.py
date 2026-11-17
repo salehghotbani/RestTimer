@@ -666,6 +666,7 @@ class Controller:
         self.start_timer_action = self.menu.addAction(tr("start"), self.start_timer)
         self.stop_timer_action = self.menu.addAction(tr("stop"), self.stop_timer)
         self.start_action = self.menu.addAction(tr("start_break"), self.begin_break)
+        self.reset_timer_action = self.menu.addAction(tr("reset_timer"), self.reset_timer)
         self.menu.addSeparator()
         self.status = self.menu.addAction("RestTimer")
         self.status.setEnabled(False)
@@ -716,7 +717,8 @@ class Controller:
             return
         self.app.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
         for action, key in ((self.start_timer_action, "start"), (self.stop_timer_action, "stop"),
-                            (self.start_action, "start_break"), (self.settings_action, "settings_menu"),
+                            (self.start_action, "start_break"), (self.reset_timer_action, "reset_timer"),
+                            (self.settings_action, "settings_menu"),
                             (self.startup_action, "startup"), (self.update_action, "updates_menu"),
                             (self.quit_action, "quit")):
             action.setText(tr(key))
@@ -777,6 +779,14 @@ class Controller:
     def stop_timer(self):
         if self.running:
             self.paused_at = time.monotonic()
+        self.tick()
+
+    def reset_timer(self):
+        now = time.monotonic()
+        if not self.running:
+            self.paused_at = now
+        duration = self.preferences["break_seconds" if self.breaking else "work_seconds"]
+        self.deadline = now + duration
         self.tick()
 
     def refresh_displays(self):

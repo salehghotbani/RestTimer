@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.9.2-linux-amd64.deb
+sudo apt install ./RestTimer-v1.9.3-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.9.2-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.9.2-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.9.3-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -63,6 +63,7 @@ Launch RestTimer from the application menu or with `resttimer`. The Linux packag
 - Left-click or right-click the tray icon to open the menu. **Start** («شروع»), **Stop** («توقف»), and **Start a break now** («شروع استراحت همین حالا») are the first entries. You can also change durations, toggle launch at sign-in, check for updates, and quit.
 - The countdown starts when the application launches. Skipping a break resets the next work period.
 - Start and Stop are available in the tray menu, settings, and break reminder. Stop pauses the current period; Start resumes from its remaining time. During a paused break, reminders stay open and can be resumed from any monitor. Skipping a break or changing durations preserves the paused state.
+- **Reset timer** in the tray menu restarts the current work or break period from its configured duration, keeping it running or paused. All countdowns update immediately.
 - On Windows, the update window and menu follow the Windows **application** color mode and support high contrast. Theme changes apply while the window is open. Linux follows the desktop color scheme reported by Qt.
 - Release notes have headings, spacing, and paragraph direction appropriate for Persian and English. The Windows update window is resizable and has a separate version list for browsing release history.
 
@@ -138,9 +139,9 @@ English is the default documentation language. Keep the [Persian README](README.
 RestTimer is released under the [MIT license](LICENSE). Bundled dependency licenses and source information are listed in [third-party notices](THIRD_PARTY_NOTICES.md).
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.2/RestTimer-v1.9.2-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.3/RestTimer-v1.9.3-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.3/RestTimer-v1.9.3-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.9.3/RestTimer-v1.9.3-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

@@ -11,6 +11,7 @@
     "duration_note": "期間を変更すると作業タイマーがリセットされます。",
     "start": "開始",
     "stop": "一時停止",
+    "reset_timer": "タイマーをリセット",
     "save": "設定を保存",
     "cancel": "キャンセル",
     "updates_title": "更新と変更内容",

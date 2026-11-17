@@ -11,6 +11,7 @@
     "duration_note": "Changing durations restarts the work timer.",
     "start": "Start",
     "stop": "Stop",
+    "reset_timer": "Reset timer",
     "save": "Save settings",
     "cancel": "Cancel",
     "updates_title": "Updates and changes",

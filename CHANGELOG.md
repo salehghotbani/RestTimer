@@ -1,5 +1,8 @@
 # RestTimer changelog
 
+## 1.9.3
+- Add Reset timer to the tray menu on Windows and Linux in all 13 languages. Reset the current work or break countdown to its configured duration while preserving running or paused state; refresh all displays immediately.
+
 ## 1.9.2
 - Preview the selected interface language immediately, including right-to-left layouts, navigation, update messages and the tray menu. Save keeps the choice across restarts; Discard restores the previous language.
 - Preserve edited fields, checkbox choices, timer state and active update downloads when previewing languages.

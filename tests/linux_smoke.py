@@ -38,6 +38,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert not hasattr(controller, "history_action")
     assert controller.settings.navigation.count() == 4
     assert controller.menu.actions()[:3] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
+    assert controller.menu.actions()[3] == controller.reset_timer_action
     controller.updater.state["daily_enabled"] = False
     controller.updater.save()
     controller.settings.daily.setChecked(False)
@@ -193,6 +194,32 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     controller.tick()
     assert not controller.breaking
     assert module.version_tuple("v1.2.0") == module.version_tuple("1.2")
+    for in_break in (False, True):
+        if in_break:
+            controller.start_action.trigger()
+        for running in (True, False):
+            if running:
+                controller.start_timer()
+            else:
+                controller.stop_timer()
+            clock_time = time.monotonic() if running else controller.paused_at
+            duration = controller.preferences["break_seconds" if in_break else "work_seconds"]
+            controller.deadline = clock_time + duration / 2
+            displays = controller.overlays.copy()
+            before = time.monotonic()
+            controller.reset_timer_action.trigger()
+            after = time.monotonic()
+            assert controller.breaking == in_break and controller.running == running
+            assert before + duration <= controller.deadline <= after + duration
+            if not running:
+                assert math.isclose(controller.deadline - controller.paused_at, duration, abs_tol=0.000001)
+            assert controller.overlays == displays
+            hours, tail = divmod(duration, 3600)
+            minutes, seconds = divmod(tail, 60)
+            expected = (f"{hours}:" if hours else "") + f"{minutes:02}:{seconds:02}"
+            assert controller.status.text().endswith(expected) and controller.tray.toolTip().endswith(expected)
+            assert all(overlay.countdown.text() == expected for overlay in displays)
+    controller.begin_work()
     assert module.version_tuple("v1.3.0") > module.version_tuple("1.2.0")
     module.set_startup(True)
     assert "--background" in module.startup_path().read_text()

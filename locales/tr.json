@@ -11,6 +11,7 @@
     "duration_note": "Süreleri değiştirmek çalışma sayacını yeniden başlatır.",
     "start": "Başlat",
     "stop": "Duraklat",
+    "reset_timer": "Zamanlayıcıyı sıfırla",
     "save": "Ayarları kaydet",
     "cancel": "İptal",
     "updates_title": "Güncellemeler ve değişiklikler",

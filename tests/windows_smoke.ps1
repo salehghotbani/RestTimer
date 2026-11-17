@@ -149,7 +149,9 @@ internal static class Smoke
                     || menu.Items[1] != type.GetField("stopTimer", flags).GetValue(context)
                     || menu.Items[2] != type.GetField("startBreak", flags).GetValue(context))
                     throw new Exception("Start, stop and break must be the first menu entries.");
-                if (menu.Items.OfType<ToolStripMenuItem>().Count() != 8) throw new Exception("Release history must only appear in the settings sidebar.");
+                if (menu.Items[3] != type.GetField("resetTimer", flags).GetValue(context))
+                    throw new Exception("Reset timer must follow the start, stop and break actions.");
+                if (menu.Items.OfType<ToolStripMenuItem>().Count() != 9) throw new Exception("Release history must only appear in the settings sidebar.");
                 if (tray.ContextMenuStrip != menu || !menu.AutoClose) throw new Exception("Native right-click menu or auto-close missing.");
                 type.GetMethod("TrayMouseUp", flags).Invoke(context, new object[] { null, new MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0) });
                 Application.DoEvents();
@@ -217,6 +219,39 @@ internal static class Smoke
                 if (Application.OpenForms.Count != 0) throw new Exception("Skip failed.");
                 if (clock.IsRunning || clock.Elapsed != TimeSpan.Zero)
                     throw new Exception("Skip unexpectedly resumed a stopped timer.");
+                var resetTimer = (ToolStripMenuItem)type.GetField("resetTimer", flags).GetValue(context);
+                var status = (ToolStripMenuItem)type.GetField("status", flags).GetValue(context);
+                type.GetField("preferences", flags).SetValue(context, Activator.CreateInstance(preferencesType, 60, 90));
+                foreach (bool inBreak in new[] { false, true })
+                {
+                    if (inBreak)
+                    {
+                        ((ToolStripMenuItem)type.GetField("startBreak", flags).GetValue(context)).PerformClick();
+                        update.Invoke(context, null);
+                    }
+                    startTimer.PerformClick();
+                    foreach (bool running in new[] { true, false })
+                    {
+                        Thread.Sleep(80);
+                        if (!running) stopTimer.PerformClick();
+                        var displays = Application.OpenForms.Cast<Form>().ToArray();
+                        resetTimer.PerformClick();
+                        string expected = inBreak ? "01:30" : "01:00";
+                        if (clock.IsRunning != running || (bool)type.GetField("breaking", flags).GetValue(context) != inBreak
+                            || !status.Text.EndsWith(expected) || !tray.Text.EndsWith(expected)
+                            || (!running && clock.Elapsed != TimeSpan.Zero))
+                            throw new Exception("Reset did not restore the full current period while preserving its state.");
+                        if (!Application.OpenForms.Cast<Form>().SequenceEqual(displays))
+                            throw new Exception("Reset unnecessarily replaced the break displays.");
+                        foreach (Form display in displays)
+                        {
+                            var remaining = (Control)display.GetType().GetField("countdown", flags).GetValue(display);
+                            if (remaining.Text != expected) throw new Exception("Reset did not refresh a break display.");
+                        }
+                    }
+                }
+                type.GetMethod("BeginWork", flags).Invoke(context, null);
+                type.GetField("preferences", flags).SetValue(context, Activator.CreateInstance(preferencesType, 2, 2));
                 var start = (Action)Delegate.CreateDelegate(typeof(Action), context, type.GetMethod("StartTimer", flags));
                 var stop = (Action)Delegate.CreateDelegate(typeof(Action), context, type.GetMethod("StopTimer", flags));
                 using (var dialog = (Form)Activator.CreateInstance(app.GetType("RestTimer.SettingsDialog", true),

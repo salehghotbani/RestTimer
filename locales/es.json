@@ -11,6 +11,7 @@
     "duration_note": "Cambiar la duración reinicia el tiempo de trabajo.",
     "start": "Iniciar",
     "stop": "Pausar",
+    "reset_timer": "Reiniciar temporizador",
     "save": "Guardar ajustes",
     "cancel": "Cancelar",
     "updates_title": "Actualizaciones y cambios",

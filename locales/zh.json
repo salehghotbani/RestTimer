@@ -11,6 +11,7 @@
     "duration_note": "更改时长会重新开始工作计时。",
     "start": "开始",
     "stop": "暂停",
+    "reset_timer": "重置计时器",
     "save": "保存设置",
     "cancel": "取消",
     "updates_title": "更新与变更",
