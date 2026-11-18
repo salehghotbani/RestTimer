@@ -103,7 +103,7 @@ namespace RestTimer
             for (int i = 0; i < 5; i++) tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
             tabs.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-            var toggleRow = new Panel { Dock = DockStyle.Fill, RightToLeft = RightToLeft.No };
+            var toggleRow = new Panel { Dock = DockStyle.Fill, RightToLeft = RightToLeft.No, Margin=Padding.Empty };
             sidebarToggle = new RoundedButton { Name = "sidebar_toggle", Glyph = "menu", IconOnly = true, Quiet = true, Width = 40, Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left };
             sidebarToggle.Click += (_, __) => AnimateSidebar(!SidebarCollapsed);
             toggleRow.Controls.Add(sidebarToggle); tabs.Controls.Add(toggleRow,0,0);
@@ -167,6 +167,7 @@ namespace RestTimer
             sidebarToggle.Text=I18n.T(SidebarCollapsed?"expand_sidebar":"collapse_sidebar");
             sidebarToggle.AccessibleName=sidebarToggle.Text;
             sidebarToggle.Dock=I18n.IsRtl?DockStyle.Right:DockStyle.Left;
+            sidebarToggle.Width=(int)(40*z);
             sidebarHints.SetToolTip(sidebarToggle,sidebarToggle.Text);
             foreach(var button in navigation.Values)
             {

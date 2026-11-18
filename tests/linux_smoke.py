@@ -8,6 +8,7 @@ import tempfile
 import time
 import sys
 import threading
+from unittest.mock import patch
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
@@ -233,7 +234,10 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
             controller.deadline = clock_time + duration / 2
             displays = controller.overlays.copy()
             before = time.monotonic()
-            controller.reset_timer_action.trigger()
+            # Verify the reset snapshot at a fixed instant. Real elapsed-time
+            # transitions are exercised above; UI layout may cross a second here.
+            with patch.object(module.time, "monotonic", return_value=before):
+                controller.reset_timer_action.trigger()
             after = time.monotonic()
             assert controller.breaking == in_break and controller.running == running
             assert before + duration <= controller.deadline <= after + duration
@@ -243,7 +247,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
             hours, tail = divmod(duration, 3600)
             minutes, seconds = divmod(tail, 60)
             expected = (f"{hours}:" if hours else "") + f"{minutes:02}:{seconds:02}"
-            assert controller.status.text().endswith(expected) and controller.tray.toolTip().endswith(expected)
+            assert controller.status.text().endswith(expected) and controller.tray.toolTip().endswith(expected), (expected, controller.status.text(), controller.tray.toolTip(), after-before)
             assert all(overlay.countdown.text() == expected for overlay in displays)
     controller.begin_work()
     assert module.version_tuple("v1.3.0") > module.version_tuple("1.2.0")
