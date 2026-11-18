@@ -142,7 +142,7 @@ namespace RestTimer
         public void SetSidebarCollapsed(bool collapsed)
         {
             SidebarCollapsed = collapsed;
-            float scale = DeviceDpi / 96f;
+            float scale = AutoScaleDimensions.Width / 96f;
             rootLayout.ColumnStyles[0].Width = (collapsed ? 58 : 190) * scale;
             sidebar.Padding = new Padding((int)((collapsed ? 4 : 8) * scale));
             sidebarTabs.RowStyles[1].Height = collapsed ? 0 : 76 * scale;
