@@ -128,6 +128,8 @@
     "chart_minutes": "Minuten",
     "legacy_hours": "Alte Einträge ohne Startzeit fehlen im Stundendiagramm.",
     "other_tasks": "Andere Aufgaben",
-    "task_count": "Aufgaben"
+    "task_count": "Aufgaben",
+    "collapse_sidebar": "Seitenleiste einklappen",
+    "expand_sidebar": "Seitenleiste ausklappen"
   }
 }

@@ -83,6 +83,7 @@ jobs:
           QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
           QT_QPA_PLATFORM=offscreen python tests/work_tracking.py
           QT_QPA_PLATFORM=offscreen python tests/dashboard.py
+          QT_QPA_PLATFORM=offscreen python tests/sidebar.py
           test "$(pdfinfo build/dashboard-linux/many.pdf | awk '/Pages:/ {print $2}')" = 4
           pdftoppm -scale-to 1300 -f 1 -singlefile -png build/dashboard-linux/fa-2.pdf build/dashboard-linux/fa-pdf-preview
           QT_QPA_PLATFORM=offscreen python tests/linux_localization.py
@@ -94,6 +95,7 @@ jobs:
           path: |
             build/*.png
             build/dashboard-linux/**
+            build/sidebar/**
       - name: Build Debian and RPM installers
         run: bash tools/build_linux.sh
       - name: Test frozen desktop on X11

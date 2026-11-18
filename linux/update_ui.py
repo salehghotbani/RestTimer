@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel
 import update_core as core
 import i18n
 import ui_icons
+import rtl_ui
 from i18n import tr
 
 
@@ -153,6 +154,7 @@ class UpdatePanel(QWidget):
             buttons.addWidget(button)
         layout.addLayout(buttons)
         self.show_latest()
+        rtl_ui.right_scrollbars(self)
 
     def ensure_loaded(self):
         if self.check_on_show and not self.initially_checked and not self.closed:
@@ -181,6 +183,7 @@ class UpdatePanel(QWidget):
             self.status.setText(i18n.translate_text(self.status.text(), previous))
         self.show_latest()
         self.select_history()
+        rtl_ui.right_scrollbars(self)
 
     def bundled_history(self):
         return (self.controller.root / ("CHANGELOG.fa.md" if i18n.code == "fa" else "CHANGELOG.md")).read_text(encoding="utf-8")

@@ -128,6 +128,8 @@
     "chart_minutes": "मिनट",
     "legacy_hours": "बिना आरंभ समय के पुराने रिकॉर्ड प्रति घंटे के चार्ट में शामिल नहीं हैं।",
     "other_tasks": "अन्य कार्य",
-    "task_count": "कार्य"
+    "task_count": "कार्य",
+    "collapse_sidebar": "साइडबार समेटें",
+    "expand_sidebar": "साइडबार फैलाएँ"
   }
 }

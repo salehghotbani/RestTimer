@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication, QPushButton
 from i18n import tr
 
 PATHS = {
+ 'menu': '<path d="M4 6h16M4 12h16M4 18h16"/>',
  'play': '<path d="m8 5 12 7-12 7Z" fill="COLOR" stroke="none"/>',
  'pause': '<path d="M6 5h4v14H6zm8 0h4v14h-4z" fill="COLOR" stroke="none"/>',
  'reset': '<path d="M4 9a8 8 0 1 1 0 7M3 3v6h6"/>',

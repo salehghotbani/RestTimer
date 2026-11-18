@@ -128,6 +128,8 @@
     "chart_minutes": "분",
     "legacy_hours": "시작 시간이 없는 이전 기록은 시간대별 차트에서 제외됩니다.",
     "other_tasks": "기타 작업",
-    "task_count": "작업 수"
+    "task_count": "작업 수",
+    "collapse_sidebar": "사이드바 접기",
+    "expand_sidebar": "사이드바 펼치기"
   }
 }

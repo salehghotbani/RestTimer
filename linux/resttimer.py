@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 import update_core
 import i18n
 import ui_icons
+import rtl_ui
 from i18n import tr
 from update_ui import UpdatePanel, Worker
 
@@ -319,23 +320,38 @@ class SettingsDialog(QDialog):
         outer.setContentsMargins(12, 12, 12, 12)
         outer.setSpacing(10)
         sidebar = QFrame()
+        self.sidebar = sidebar
+        self.sidebar_collapsed = False
         sidebar.setObjectName("settingsSidebar")
         sidebar.setFixedWidth(180)
         side = QVBoxLayout(sidebar)
         side.setContentsMargins(8, 12, 8, 8)
+        self.sidebar_toggle = QPushButton()
+        self.sidebar_toggle.setObjectName("sidebar_toggle")
+        self.sidebar_toggle.setProperty("ui_glyph", "menu")
+        self.sidebar_toggle.setFixedSize(32,32)
+        self.sidebar_toggle.setStyleSheet("padding:4px; min-height:0;")
+        self.sidebar_toggle.clicked.connect(lambda: self.set_sidebar_collapsed(not self.sidebar_collapsed))
+        side.addWidget(self.sidebar_toggle,0,Qt.AlignAbsolute | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft))
+        self.sidebar_brand = QWidget()
+        brand_layout = QVBoxLayout(self.sidebar_brand)
+        brand_layout.setContentsMargins(0,0,0,0)
         icon = label("", center=True)
         icon.setPixmap(controller.icon.pixmap(36, 36))
-        side.addWidget(icon)
-        side.addWidget(label("RestTimer", center=True))
+        brand_layout.addWidget(icon)
+        brand_layout.addWidget(label("RestTimer", center=True))
+        side.addWidget(self.sidebar_brand)
         self.navigation = QListWidget()
         self.navigation.setObjectName("settingsNav")
         self.navigation.setWordWrap(True)
+        self.navigation.setItemDelegate(rtl_ui.NavigationDelegate(self.navigation))
         self.navigation.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.navigation.setAccessibleName(tr("settings_navigation"))
         for key in ("dashboard", "general", "updates_tab", "version_history", "about"):
             self.navigation.addItem(tr(key))
         side.addWidget(self.navigation, 1)
-        side.addWidget(label("v" + controller.version, "muted", center=True))
+        self.sidebar_version = label("v" + controller.version, "muted", center=True)
+        side.addWidget(self.sidebar_version)
         outer.addWidget(sidebar)
         self.pages = QStackedWidget()
         outer.addWidget(self.pages, 1)
@@ -421,10 +437,28 @@ class SettingsDialog(QDialog):
         self.remember_saved_settings()
         screen = controller.app.primaryScreen()
         self.resize(min(1020, screen.availableGeometry().width() - 40), min(800, screen.availableGeometry().height() - 48))
+        self.set_sidebar_collapsed(False)
         if draft:
             self.restore_draft(draft)
         self.language.currentIndexChanged.connect(self.preview_language)
         ui_icons.apply(self)
+        rtl_ui.right_scrollbars(self)
+
+    def set_sidebar_collapsed(self, collapsed):
+        self.sidebar_collapsed = collapsed
+        self.sidebar.setFixedWidth(56 if collapsed else 180)
+        self.sidebar.layout().setContentsMargins(4 if collapsed else 8,8,4 if collapsed else 8,8)
+        self.sidebar_brand.setVisible(not collapsed)
+        self.sidebar_version.setVisible(not collapsed)
+        action = tr("expand_sidebar" if collapsed else "collapse_sidebar")
+        self.sidebar_toggle.setToolTip(action)
+        self.sidebar_toggle.setAccessibleName(action)
+        for index,key in enumerate(("dashboard","general","updates_tab","version_history","about")):
+            item = self.navigation.item(index)
+            item.setText("" if collapsed else tr(key))
+            item.setToolTip(tr(key))
+            item.setData(Qt.AccessibleTextRole,tr(key))
+            item.setTextAlignment(Qt.AlignAbsolute | Qt.AlignVCenter | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft))
 
     def preview_language(self, index):
         if index >= 0 and self.controller.settings is self and not self.controller.quitting:
@@ -435,7 +469,7 @@ class SettingsDialog(QDialog):
                 "language": self.language.currentData(), "daily": self.daily.isChecked(), "startup": self.startup.isChecked(),
                 "saved_preferences": self.saved_preferences.copy(), "saved_daily": self.saved_daily, "saved_startup": self.saved_startup,
                 "note": self.note.text(), "source_language": previous, "page": self.current_page,
-                "geometry": self.geometry(), "report_date": self.report.day.date(), "chart_type": self.report.chart_type.currentIndex(), "scroll": self.pages.widget(0).verticalScrollBar().value()}
+                "geometry": self.geometry(), "sidebar_collapsed": self.sidebar_collapsed, "report_date": self.report.day.date(), "chart_type": self.report.chart_type.currentIndex(), "scroll": self.pages.widget(0).verticalScrollBar().value()}
 
     def restore_draft(self, draft):
         self.saved_preferences = draft["saved_preferences"]
@@ -451,6 +485,7 @@ class SettingsDialog(QDialog):
         self.setGeometry(draft["geometry"])
         self.report.day.setDate(draft["report_date"])
         self.report.chart_type.setCurrentIndex(draft["chart_type"])
+        self.set_sidebar_collapsed(draft["sidebar_collapsed"])
         self.select_page(draft["page"])
 
     def about_page(self):

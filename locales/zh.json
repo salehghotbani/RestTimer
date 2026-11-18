@@ -128,6 +128,8 @@
     "chart_minutes": "分钟",
     "legacy_hours": "没有开始时间的旧记录不计入每小时图表。",
     "other_tasks": "其他任务",
-    "task_count": "任务数"
+    "task_count": "任务数",
+    "collapse_sidebar": "收起侧边栏",
+    "expand_sidebar": "展开侧边栏"
   }
 }

@@ -570,6 +570,7 @@ internal static class Smoke
                 var syncScroll = scrollFrame.GetType().GetMethod("Synchronize", fields);
                 syncScroll.Invoke(scrollFrame, null);
                 var scrollThumb = (Control)scrollFrame.GetType().GetField("scrollbar", fields).GetValue(scrollFrame);
+                if (scrollThumb.Dock!=DockStyle.Right || scrollThumb.Left<=scrollFrame.Width/2) throw new Exception("Scrollbars must stay on the physical right.");
                 if (!scrollThumb.Visible || notes.Right - SystemInformation.VerticalScrollBarWidth != notes.Parent.ClientSize.Width)
                     throw new Exception("Long release notes must expose the themed thumb and clip only the native scrollbar.");
                 int initialTop = notes.GetCharIndexFromPosition(new Point(4, 4));

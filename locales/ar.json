@@ -128,6 +128,8 @@
     "chart_minutes": "دقائق",
     "legacy_hours": "السجلات القديمة دون وقت بدء غير مدرجة في الرسم بالساعة.",
     "other_tasks": "مهام أخرى",
-    "task_count": "المهام"
+    "task_count": "المهام",
+    "collapse_sidebar": "طي الشريط الجانبي",
+    "expand_sidebar": "توسيع الشريط الجانبي"
   }
 }

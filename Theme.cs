@@ -141,6 +141,7 @@ namespace RestTimer
         public bool Selected { get; set; }
         public string Glyph { get; set; }
         public bool IconOnly { get; set; }
+        public bool StartAligned { get; set; }
 
         public RoundedButton(bool primary = false)
         {
@@ -220,7 +221,8 @@ namespace RestTimer
                 e.Graphics.FillPath(brush, path);
                 e.Graphics.DrawPath(border, path);
             }
-            var flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix;
+            var flags = (StartAligned && !IconOnly ? (RightToLeft == RightToLeft.Yes ? TextFormatFlags.Right : TextFormatFlags.Left) : TextFormatFlags.HorizontalCenter)
+                | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix;
             if (RightToLeft == RightToLeft.Yes)
                 flags |= TextFormatFlags.RightToLeft;
             var glyph = Glyph ?? UiIcons.ForText(Name, Text);
@@ -230,8 +232,8 @@ namespace RestTimer
             {
                 int textWidth = IconOnly ? 0 : TextRenderer.MeasureText(Text, Font, Size.Empty, flags).Width;
                 int groupWidth = Math.Min(Width - 12, textWidth + imageSize + (IconOnly ? 0 : imageGap));
-                int left = (Width - groupWidth) / 2;
                 bool rtl = RightToLeft == RightToLeft.Yes;
+                int left = StartAligned && !IconOnly ? (rtl ? Width - 12 - groupWidth : 12) : (Width - groupWidth) / 2;
                 int imageX = rtl ? left + groupWidth - imageSize : left;
                 var imageBounds = new Rectangle(imageX, (Height-imageSize)/2, imageSize, imageSize);
                 if(Image != null) e.Graphics.DrawImage(Image, imageBounds);

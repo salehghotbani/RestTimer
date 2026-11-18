@@ -45,6 +45,7 @@ namespace RestTimer
         private DateTime nextThemeCheck;
         private string paletteKey;
         private SettingsDialog settingsDialog;
+        private bool sidebarCollapsed;
 
         public RestTimerContext() : this(true) { }
 
@@ -319,6 +320,7 @@ namespace RestTimer
                 using (var dialog = new SettingsDialog(preferences, icon, StartTimer, StopTimer, updater, page, true))
                 {
                     settingsDialog = dialog;
+                    dialog.SetSidebarCollapsed(sidebarCollapsed);
                     dialog.LanguagePreviewChanged += RefreshLanguage;
                     dialog.RestartRequested += ResetTimer;
                     dialog.SetRunning(clock.IsRunning);
@@ -343,6 +345,7 @@ namespace RestTimer
             finally
             {
                 if (!disposed) ApplyLanguage();
+                if (settingsDialog != null) sidebarCollapsed = settingsDialog.SidebarCollapsed;
                 settingsDialog = null;
                 editingSettings = false;
             }

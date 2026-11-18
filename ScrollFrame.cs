@@ -22,14 +22,15 @@ namespace RestTimer
         private bool syncing;
         public void ApplyDirection()
         {
-            RightToLeft = I18n.Flow;
-            scrollbar.Dock = I18n.IsRtl ? DockStyle.Left : DockStyle.Right;
+            RightToLeft = RightToLeft.No;
+            scrollbar.Dock = DockStyle.Right;
             Synchronize();
         }
 
         public ScrollFrame(Control editor)
         {
             this.editor = editor;
+            RightToLeft = RightToLeft.No;
             Dock = DockStyle.Fill;
             Margin = Padding.Empty;
             editor.Dock = DockStyle.None;
@@ -37,7 +38,7 @@ namespace RestTimer
             // of scrollbar placement. Keep the clipped native bar on the right.
             editor.RightToLeft = RightToLeft.No;
             viewport = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty, RightToLeft = RightToLeft.No };
-            scrollbar = new SlimScrollBar { Dock = I18n.IsRtl ? DockStyle.Left : DockStyle.Right,
+            scrollbar = new SlimScrollBar { Dock = DockStyle.Right,
                 Visible = false, AccessibleName = editor.AccessibleName };
             viewport.Controls.Add(editor);
             Controls.Add(viewport);

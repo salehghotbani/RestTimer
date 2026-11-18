@@ -128,6 +128,8 @@
     "chart_minutes": "Dakika",
     "legacy_hours": "Başlangıç saati olmayan eski kayıtlar saatlik grafikte yer almaz.",
     "other_tasks": "Diğer görevler",
-    "task_count": "Görevler"
+    "task_count": "Görevler",
+    "collapse_sidebar": "Kenar çubuğunu daralt",
+    "expand_sidebar": "Kenar çubuğunu genişlet"
   }
 }

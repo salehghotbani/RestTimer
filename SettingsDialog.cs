@@ -25,6 +25,12 @@ namespace RestTimer
         private readonly Timer themeTimer;
         private string paletteKey;
         private RoundedPanel sidebar;
+        private TableLayoutPanel rootLayout, sidebarTabs;
+        private Panel sidebarBrand;
+        private Label sidebarVersion;
+        private RoundedButton sidebarToggle;
+        private readonly ToolTip sidebarHints = new ToolTip();
+        public bool SidebarCollapsed { get; private set; }
         private Panel generalBody;
         private bool relocalizing;
         public event Action LanguagePreviewChanged;
@@ -76,34 +82,43 @@ namespace RestTimer
             MinimumSize = new Size(780, 500);
             MinimizeBox = false;
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 1 };
+            rootLayout = layout;
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             sidebar = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(8),
                 Margin = I18n.IsRtl ? new Padding(10, 0, 0, 0) : new Padding(0, 0, 10, 0) };
-            var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8, AccessibleName = I18n.T("settings_navigation") };
+            var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 9, AccessibleName = I18n.T("settings_navigation") };
+            sidebarTabs = tabs;
             tabs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 76));
             for (int i = 0; i < 5; i++) tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
             tabs.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+            var toggleRow = new Panel { Dock = DockStyle.Fill, RightToLeft = RightToLeft.No };
+            sidebarToggle = new RoundedButton { Name = "sidebar_toggle", Glyph = "menu", IconOnly = true, Width = 32, Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left };
+            sidebarToggle.Click += (_, __) => SetSidebarCollapsed(!SidebarCollapsed);
+            toggleRow.Controls.Add(sidebarToggle); tabs.Controls.Add(toggleRow,0,0);
             var brand = new Panel { Dock = DockStyle.Fill };
+            sidebarBrand = brand;
             brand.Controls.Add(new PictureBox { Image = logo, SizeMode = PictureBoxSizeMode.Zoom, Bounds = new Rectangle(56, 0, 36, 36) });
             brand.Controls.Add(new Label { Text = "RestTimer", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleCenter,
                 Bounds = new Rectangle(0, 40, 148, 30) });
-            tabs.Controls.Add(brand, 0, 0);
+            tabs.Controls.Add(brand, 0, 1);
             string[] pages = { "report", "general", "updates", "history", "about" };
             string[] keys = { "dashboard", "general", "updates_tab", "version_history", "about" };
             for (int i = 0; i < pages.Length; i++)
             {
                 string page = pages[i];
-                var button = new RoundedButton { Text = I18n.T(keys[i]), Dock = DockStyle.Fill, Margin = new Padding(0, 3, 0, 3), TabIndex = i };
+                var button = new RoundedButton { Text = I18n.T(keys[i]), Dock = DockStyle.Fill, Margin = new Padding(0, 3, 0, 3), TabIndex = i + 1, StartAligned = true, RightToLeft = I18n.Flow, TextAlign = I18n.IsRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft };
                 button.Click += (_, __) => SelectPage(page);
                 navigation.Add(page, button);
-                tabs.Controls.Add(button, 0, i + 1);
+                tabs.Controls.Add(button, 0, i + 2);
             }
-            tabs.Controls.Add(new Label { Text = "v" + UpdateClient.CurrentVersion.ToString(3), Font = Theme.SmallFont,
-                Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, RightToLeft = RightToLeft.No }, 0, 7);
+            sidebarVersion = new Label { Text = "v" + UpdateClient.CurrentVersion.ToString(3), Font = Theme.SmallFont,
+                Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, RightToLeft = RightToLeft.No };
+            tabs.Controls.Add(sidebarVersion,0,8);
             sidebar.Controls.Add(tabs);
             content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
             generalPage = CreateGeneralPage(preferences, start, stop);
@@ -115,12 +130,38 @@ namespace RestTimer
             layout.Controls.Add(sidebar, 0, 0);
             layout.Controls.Add(content, 1, 0);
             Controls.Add(layout);
+            SetSidebarCollapsed(false);
             language.SelectedIndexChanged += (_, __) => PreviewLanguage();
             SelectPage(initialPage);
             ApplyTheme();
             themeTimer = new Timer { Interval = 750 };
             themeTimer.Tick += (_, __) => { Theme.Refresh(); if (paletteKey != Theme.PaletteKey) ApplyTheme(); };
             themeTimer.Start();
+        }
+
+        public void SetSidebarCollapsed(bool collapsed)
+        {
+            SidebarCollapsed = collapsed;
+            float scale = DeviceDpi / 96f;
+            rootLayout.ColumnStyles[0].Width = (collapsed ? 58 : 190) * scale;
+            sidebar.Padding = new Padding((int)((collapsed ? 4 : 8) * scale));
+            sidebarTabs.RowStyles[1].Height = collapsed ? 0 : 76 * scale;
+            sidebarTabs.RowStyles[8].Height = collapsed ? 0 : 28 * scale;
+            sidebarBrand.Visible = sidebarVersion.Visible = !collapsed;
+            sidebarToggle.Text = I18n.T(collapsed ? "expand_sidebar" : "collapse_sidebar");
+            sidebarToggle.AccessibleName = sidebarToggle.Text;
+            sidebarToggle.Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left;
+            sidebarHints.SetToolTip(sidebarToggle, sidebarToggle.Text);
+            foreach (var pair in navigation)
+            {
+                pair.Value.IconOnly = collapsed;
+                pair.Value.StartAligned = true;
+                pair.Value.RightToLeft = I18n.Flow;
+                pair.Value.TextAlign = I18n.IsRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
+                pair.Value.AccessibleName = pair.Value.Text;
+                sidebarHints.SetToolTip(pair.Value, pair.Value.Text);
+                pair.Value.Invalidate();
+            }
         }
 
         private Control CreateGeneralPage(Preferences preferences, Action start, Action stop)
@@ -312,6 +353,7 @@ namespace RestTimer
                 string[] pages = { "report", "general", "updates", "history", "about" };
                 string[] keys = { "dashboard", "general", "updates_tab", "version_history", "about" };
                 for (int i = 0; i < pages.Length; i++) navigation[pages[i]].Text = I18n.T(keys[i]);
+                SetSidebarCollapsed(SidebarCollapsed);
                 int selected = language.SelectedIndex;
                 language.Items[0] = new LanguageItem("auto", I18n.T("system_language"));
                 language.SelectedIndex = selected;
@@ -365,7 +407,7 @@ namespace RestTimer
         }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) themeTimer?.Dispose();
+            if (disposing) { themeTimer?.Dispose(); sidebarHints.Dispose(); }
             base.Dispose(disposing);
             if (disposing) { logo?.Dispose(); gitLogo?.Dispose(); }
         }

@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QDateEdit, QFileDialog, 
 from i18n import tr, is_rtl
 import work_tracking
 import ui_icons
+import rtl_ui
 
 COLORS = ['#189c81', '#4285e0', '#e3a03a', '#a06ede', '#da647b', '#319ebb', '#99a639', '#838e9f']
 
@@ -197,6 +198,8 @@ class WorkReport(QWidget):
         self.rows.setHorizontalHeaderLabels([tr('task_name'), tr('time_spent')])
         self.rows.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.rows.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        if is_rtl():
+            self.rows.horizontalHeader().moveSection(0,1)
         self.rows.verticalHeader().hide()
         self.rows.setEditTriggers(QTableWidget.NoEditTriggers)
         layout.addWidget(self.rows, 2)
@@ -205,6 +208,7 @@ class WorkReport(QWidget):
         self.png.clicked.connect(lambda: self.choose_export(False))
         self.pdf.clicked.connect(lambda: self.choose_export(True))
         ui_icons.apply(self)
+        rtl_ui.right_scrollbars(self)
 
     def refresh(self):
         self.rows.setRowCount(0)
@@ -214,7 +218,9 @@ class WorkReport(QWidget):
             for task, seconds in entries:
                 row = self.rows.rowCount()
                 self.rows.insertRow(row)
-                self.rows.setItem(row, 0, QTableWidgetItem(task))
+                item = QTableWidgetItem(task)
+                item.setTextAlignment(Qt.AlignVCenter | (Qt.AlignRight if is_rtl() else Qt.AlignLeft))
+                self.rows.setItem(row, 0, item)
                 self.rows.setItem(row, 1, QTableWidgetItem(work_tracking.format_time(seconds)))
             self.total.setText(tr('total_time')+'  '+work_tracking.format_time(sum(seconds for _, seconds in entries))+'    ·    '+tr('task_count')+' '+str(len(entries)) if entries else tr('no_work'))
             self.png.setEnabled(True)

@@ -128,6 +128,8 @@
     "chart_minutes": "分",
     "legacy_hours": "開始時刻のない古い記録は時間帯別グラフに含まれません。",
     "other_tasks": "その他のタスク",
-    "task_count": "タスク数"
+    "task_count": "タスク数",
+    "collapse_sidebar": "サイドバーを折りたたむ",
+    "expand_sidebar": "サイドバーを展開"
   }
 }

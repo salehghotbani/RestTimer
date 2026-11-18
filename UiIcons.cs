@@ -27,6 +27,7 @@ namespace RestTimer
                 Action<float,float,float,float> rect=(a,b,c,d)=>graphics.DrawRectangle(pen,a,b,c,d);
                 switch(icon)
                 {
+                    case "menu": line(4,6,20,6);line(4,12,20,12);line(4,18,20,18);break;
                     case "play": graphics.FillPolygon(brush,new[]{new PointF(8,5),new PointF(20,12),new PointF(8,19)});break;
                     case "pause": graphics.FillRectangle(brush,6,5,4,14);graphics.FillRectangle(brush,14,5,4,14);break;
                     case "reset": graphics.DrawArc(pen,4,4,16,16,215,300);line(3,3,3,9);line(3,9,9,9);break;

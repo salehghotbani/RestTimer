@@ -171,7 +171,7 @@ namespace RestTimer
             actions.Controls.Add(chartType,0,0);actions.Controls.Add(png,1,0);actions.Controls.Add(pdf,2,0);layout.Controls.Add(actions,0,2);
             total=new Label{Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleLeft};layout.Controls.Add(total,0,3);
             chart=new DashboardChart();layout.Controls.Add(chart,0,4);
-            rows=new ListView{Dock=DockStyle.Fill,View=View.Details,FullRowSelect=true,BorderStyle=BorderStyle.None,HeaderStyle=ColumnHeaderStyle.Nonclickable};
+            rows=new ListView{RightToLeft=RightToLeft.No,Dock=DockStyle.Fill,View=View.Details,FullRowSelect=true,BorderStyle=BorderStyle.None,HeaderStyle=ColumnHeaderStyle.Nonclickable};
             rows.Columns.Add(I18n.T("task_name"),300);rows.Columns.Add(I18n.T("time_spent"),150);layout.Controls.Add(rows,0,5);Controls.Add(layout);
             chartType.SelectedIndexChanged+=(_,__)=>{chart.Mode=chartType.SelectedIndex;chart.Invalidate();};
             day.ValueChanged+=(_,__)=>RefreshReport();VisibleChanged+=(_,__)=>{if(Visible) RefreshReport();};
@@ -181,7 +181,7 @@ namespace RestTimer
         {
             int selected=chartType.SelectedIndex;
             string[] keys={"pie_chart","bar_chart","line_chart"}; for(int i=0;i<3;i++) chartType.Items[i]=I18n.T(keys[i]); chartType.SelectedIndex=selected;
-            rows.Columns[0].Text=I18n.T("task_name");rows.Columns[1].Text=I18n.T("time_spent");rows.BackColor=Theme.Surface;rows.ForeColor=Theme.Text;rows.Items.Clear();
+            rows.Columns[0].TextAlign=I18n.IsRtl?HorizontalAlignment.Right:HorizontalAlignment.Left;rows.Columns[0].Text=I18n.T("task_name");rows.Columns[1].Text=I18n.T("time_spent");rows.BackColor=Theme.Surface;rows.ForeColor=Theme.Text;rows.Items.Clear();
             try {
                 entries=new WorkJournal().ReadRaw(day.Value);var totals=WorkJournal.Totals(entries);
                 foreach(var entry in totals) rows.Items.Add(new ListViewItem(new[]{entry.Task,WorkJournal.Format(entry.Seconds)}));

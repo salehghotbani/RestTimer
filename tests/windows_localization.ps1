@@ -88,6 +88,30 @@ internal static class LocalizationSmoke
                             throw new Exception("Start, stop and reset must share one non-overlapping row.");
                         var nav=(System.Collections.IDictionary)settings.GetField("navigation",flags).GetValue(dialog);
                         if(((Control)nav["report"]).Top>=((Control)nav["general"]).Top) throw new Exception("Dashboard must precede General.");
+                        foreach(System.Collections.DictionaryEntry pair in nav)
+                        {
+                            var button=(Button)pair.Value;
+                            if(button.TextAlign!=(code=="fa"||code=="ar"?ContentAlignment.MiddleRight:ContentAlignment.MiddleLeft))
+                                throw new Exception("Sidebar text must follow the language direction.");
+                        }
+                        var toggle=(Button)settings.GetField("sidebarToggle",flags).GetValue(dialog);
+                        var side=(Control)settings.GetField("sidebar",flags).GetValue(dialog);
+                        int expandedWidth=side.Width;
+                        string beforePage=(string)settings.GetProperty("CurrentPage").GetValue(dialog);
+                        bool pending=(bool)settings.GetProperty("HasPendingChanges").GetValue(dialog);
+                        toggle.PerformClick();Application.DoEvents();
+                        if(!(bool)settings.GetProperty("SidebarCollapsed").GetValue(dialog) || side.Width>=expandedWidth
+                            || beforePage!=(string)settings.GetProperty("CurrentPage").GetValue(dialog)
+                            || pending!=(bool)settings.GetProperty("HasPendingChanges").GetValue(dialog))
+                            throw new Exception("Sidebar collapse changed the page or pending settings.");
+                        if(code=="en" || code=="fa")
+                            using(var image=new Bitmap(dialog.Width,dialog.Height)) {dialog.DrawToBitmap(image,new Rectangle(Point.Empty,dialog.Size));image.Save("obj/localization/sidebar-"+code+"-"+(mode?"light":"dark")+".png");}
+                        ((Button)nav["report"]).PerformClick();
+                        if((string)settings.GetProperty("CurrentPage").GetValue(dialog)!="report") throw new Exception("Collapsed icon navigation failed.");
+                        settings.GetMethod("SelectPage").Invoke(dialog,new object[]{beforePage});
+                        toggle.PerformClick();Application.DoEvents();
+                        if((bool)settings.GetProperty("SidebarCollapsed").GetValue(dialog) || side.Width!=expandedWidth)
+                            throw new Exception("Sidebar did not expand again.");
                         var licenseBox=(RichTextBox)dialog.Controls.Find("license_text",true).Single();
                         if(!licenseBox.ReadOnly || licenseBox.Text.Replace("\r", "").Trim()!=System.IO.File.ReadAllText("LICENSE").Replace("\r", "").Trim())
                             throw new Exception("The complete canonical MIT license must be visible as read-only text.");
@@ -133,6 +157,7 @@ internal static class LocalizationSmoke
                 var token=(System.Threading.CancellationTokenSource)panel.GetType().GetField("cancellation",flags).GetValue(panel);
                 panel.GetType().GetField("working",flags).SetValue(panel,true);
                 var combo=(ComboBox)settings.GetField("language",flags).GetValue(dialog);
+                settings.GetMethod("SetSidebarCollapsed").Invoke(dialog,new object[]{true});
                 foreach(string code in codes)
                 {
                     for(int index=0;index<combo.Items.Count;index++)
@@ -140,6 +165,7 @@ internal static class LocalizationSmoke
                     Application.DoEvents();
                     if((string)i18n.GetProperty("Code").GetValue(null)!=code || dialog.RightToLeft!=(code=="fa"||code=="ar"?RightToLeft.Yes:RightToLeft.No))
                         throw new Exception("Language did not change immediately for "+code);
+                    if(!(bool)settings.GetProperty("SidebarCollapsed").GetValue(dialog)) throw new Exception("Language preview expanded a collapsed sidebar.");
                     if(seconds.Text!="23" || !checkbox.Checked || daily.Checked!=draftDaily || token.IsCancellationRequested
                         || panel!=(Control)settings.GetField("updatePanel",flags).GetValue(dialog))
                         throw new Exception("Live language changes lost pending settings or the active update panel.");

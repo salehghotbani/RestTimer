@@ -1,5 +1,10 @@
 # RestTimer changelog
 
+## 1.13.0
+- Keep scrollbars on the physical right of each box, including Persian and Arabic, while preserving paragraph direction.
+- Add a collapsible icon sidebar with an always-available menu button and accessible labels/tooltips. Preserve the current page, pending edits and downloads when toggling or previewing languages.
+- Align expanded sidebar labels consistently to the language start edge: right in RTL languages and left in LTR languages.
+
 ## 1.12.0
 - Place Reset next to Start and Stop in both General and the break box.
 - Order sidebar sections as Dashboard, General, Updates, Version history and About, preserving correct routing and language previews.

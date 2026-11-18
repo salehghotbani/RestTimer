@@ -128,6 +128,8 @@
     "chart_minutes": "Minutes",
     "legacy_hours": "Older records without start times are excluded from this hourly chart.",
     "other_tasks": "Other tasks",
-    "task_count": "Tasks"
+    "task_count": "Tasks",
+    "collapse_sidebar": "Collapse sidebar",
+    "expand_sidebar": "Expand sidebar"
   }
 }

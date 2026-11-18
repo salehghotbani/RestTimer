@@ -128,6 +128,8 @@
     "chart_minutes": "Minutos",
     "legacy_hours": "Los registros antiguos sin hora de inicio no aparecen en el gráfico horario.",
     "other_tasks": "Otras tareas",
-    "task_count": "Tareas"
+    "task_count": "Tareas",
+    "collapse_sidebar": "Contraer barra lateral",
+    "expand_sidebar": "Expandir barra lateral"
   }
 }
