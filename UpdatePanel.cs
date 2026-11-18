@@ -47,7 +47,7 @@ namespace RestTimer
             AutoScaleMode = AutoScaleMode.Dpi;
             AutoScaleDimensions = new SizeF(96, 96);
             ClientSize = new Size(760, 700);
-            layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(24), ColumnCount = 1, RowCount = 8 };
+            layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 1, RowCount = 8 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 86));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
@@ -72,7 +72,7 @@ namespace RestTimer
                 DailyPreferenceChanged?.Invoke();
             };
             layout.Controls.Add(daily, 0, 1);
-            var content = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(18), Margin = Padding.Empty };
+            var content = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(12), Margin = Padding.Empty };
             latestPanel = new Panel { Dock = DockStyle.Fill };
             latestNotes = new ReleaseNotesBox();
             latestPanel.Controls.Add(new ScrollFrame(latestNotes));

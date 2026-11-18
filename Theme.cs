@@ -139,6 +139,8 @@ namespace RestTimer
         private bool hovered;
         private bool pressed;
         public bool Selected { get; set; }
+        public string Glyph { get; set; }
+        public bool IconOnly { get; set; }
 
         public RoundedButton(bool primary = false)
         {
@@ -221,17 +223,23 @@ namespace RestTimer
             var flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix;
             if (RightToLeft == RightToLeft.Yes)
                 flags |= TextFormatFlags.RightToLeft;
-            var textBounds = ClientRectangle;
-            if (Image != null)
+            var glyph = Glyph ?? UiIcons.ForText(Name, Text);
+            int imageSize = Math.Min(Height - 10, (int)(18 * DeviceDpi / 96f));
+            int imageGap = (int)(6 * DeviceDpi / 96f);
+            if (Image != null || glyph != null)
             {
-                int size = Math.Min(Height - 12, (int)(22 * DeviceDpi / 96f));
-                int gap = (int)(12 * DeviceDpi / 96f);
-                int x = RightToLeft == RightToLeft.Yes ? Width - gap - size : gap;
-                e.Graphics.DrawImage(Image, new Rectangle(x, (Height - size) / 2, size, size));
-                if (RightToLeft != RightToLeft.Yes) textBounds.X += size + gap;
-                textBounds.Width -= size + gap;
+                int textWidth = IconOnly ? 0 : TextRenderer.MeasureText(Text, Font, Size.Empty, flags).Width;
+                int groupWidth = Math.Min(Width - 12, textWidth + imageSize + (IconOnly ? 0 : imageGap));
+                int left = (Width - groupWidth) / 2;
+                bool rtl = RightToLeft == RightToLeft.Yes;
+                int imageX = rtl ? left + groupWidth - imageSize : left;
+                var imageBounds = new Rectangle(imageX, (Height-imageSize)/2, imageSize, imageSize);
+                if(Image != null) e.Graphics.DrawImage(Image, imageBounds);
+                else UiIcons.Draw(e.Graphics, imageBounds, glyph, text);
+                var labelBounds = new Rectangle(rtl ? left : left + imageSize + imageGap, 0, Math.Max(1,groupWidth-imageSize-imageGap), Height);
+                if (!IconOnly) TextRenderer.DrawText(e.Graphics, Text, Font, labelBounds, text, flags | TextFormatFlags.EndEllipsis);
             }
-            TextRenderer.DrawText(e.Graphics, Text, Font, textBounds, text, flags);
+            else TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, text, flags);
             if (Focused && ShowFocusCues)
                 ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -5, -5), ForeColor, fill);
         }

@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QDateEdit, QFileDialog, 
     QHBoxLayout, QLabel, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 from i18n import tr, is_rtl
 import work_tracking
+import ui_icons
 
 COLORS = ['#189c81', '#4285e0', '#e3a03a', '#a06ede', '#da647b', '#319ebb', '#99a639', '#838e9f']
 
@@ -166,7 +167,7 @@ class WorkReport(QWidget):
         self.controller = controller
         self.entries = []
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(12)
         heading = QLabel(tr('dashboard'))
         heading.setObjectName('title')
@@ -203,6 +204,7 @@ class WorkReport(QWidget):
         self.chart_type.currentIndexChanged.connect(self.chart.update)
         self.png.clicked.connect(lambda: self.choose_export(False))
         self.pdf.clicked.connect(lambda: self.choose_export(True))
+        ui_icons.apply(self)
 
     def refresh(self):
         self.rows.setRowCount(0)

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 import update_core
 import i18n
+import ui_icons
 from i18n import tr
 from update_ui import UpdatePanel, Worker
 
@@ -99,6 +100,8 @@ def apply_color_scheme(app, scheme):
         style = style.replace("check-dark.svg", "check-light.svg")
         style += "\nQPushButton#primary { color: white; } QProgressBar { color: #11705b; } QProgressBar::chunk { background: #dbeee8; }"
     app.setStyleSheet(style)
+    for widget in app.topLevelWidgets():
+        ui_icons.apply(widget)
 
 
 def verify_ui_assets():
@@ -194,7 +197,7 @@ class DurationEditor(QFrame):
         super().__init__()
         self.setObjectName("section")
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 14, 20, 14)
+        layout.setContentsMargins(12, 10, 12, 10)
         heading = label(title)
         heading.setFont(QFont("DejaVu Sans", 11, QFont.Bold))
         layout.addWidget(heading)
@@ -247,7 +250,7 @@ class UnsavedChangesDialog(QDialog):
         self.setMinimumWidth(480)
         self.resize(520, 220)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setContentsMargins(12, 12, 12, 12)
         heading = label(tr("unsaved_title"), "title")
         heading.setWordWrap(True)
         layout.addWidget(heading)
@@ -264,6 +267,7 @@ class UnsavedChangesDialog(QDialog):
         actions.addWidget(self.save)
         actions.addWidget(self.discard)
         layout.addLayout(actions)
+        ui_icons.apply(self)
 
 
 class WorkStartDialog(QDialog):
@@ -272,8 +276,8 @@ class WorkStartDialog(QDialog):
         self.setWindowTitle(tr("new_session"))
         self.setMinimumWidth(540)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
         layout.addWidget(label(tr("new_session"), "title"))
         layout.addWidget(label(tr("task_name")))
         self.task = QLineEdit(controller.task_name or "")
@@ -288,6 +292,7 @@ class WorkStartDialog(QDialog):
         begin.setObjectName("primary")
         begin.clicked.connect(self.begin)
         layout.addWidget(begin)
+        ui_icons.apply(self)
 
     def begin(self):
         if not self.task.text().strip():
@@ -302,6 +307,7 @@ from dashboard import WorkReport
 
 
 class SettingsDialog(QDialog):
+    NAV_PAGES = ("report", "general", "updates", "history", "about")
     def __init__(self, controller, update_panel=None, draft=None):
         super().__init__()
         self.controller = controller
@@ -310,13 +316,13 @@ class SettingsDialog(QDialog):
         self.setMinimumSize(780, 440)
         self.current_page = "general"
         outer = QHBoxLayout(self)
-        outer.setContentsMargins(16, 16, 16, 16)
-        outer.setSpacing(16)
+        outer.setContentsMargins(12, 12, 12, 12)
+        outer.setSpacing(10)
         sidebar = QFrame()
         sidebar.setObjectName("settingsSidebar")
         sidebar.setFixedWidth(180)
         side = QVBoxLayout(sidebar)
-        side.setContentsMargins(10, 18, 10, 12)
+        side.setContentsMargins(8, 12, 8, 8)
         icon = label("", center=True)
         icon.setPixmap(controller.icon.pixmap(36, 36))
         side.addWidget(icon)
@@ -326,7 +332,7 @@ class SettingsDialog(QDialog):
         self.navigation.setWordWrap(True)
         self.navigation.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.navigation.setAccessibleName(tr("settings_navigation"))
-        for key in ("general", "updates_tab", "version_history", "dashboard", "about"):
+        for key in ("dashboard", "general", "updates_tab", "version_history", "about"):
             self.navigation.addItem(tr(key))
         side.addWidget(self.navigation, 1)
         side.addWidget(label("v" + controller.version, "muted", center=True))
@@ -340,8 +346,8 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(body)
         scroll.setWidget(body)
         self.pages.addWidget(scroll)
-        layout.setContentsMargins(26, 24, 26, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
         layout.addWidget(label(tr("settings_title"), "title"))
         layout.addWidget(label(tr("settings_subtitle"), "muted"))
         self.work = DurationEditor(tr("work_duration"), controller.preferences["work_seconds"], 24)
@@ -418,6 +424,7 @@ class SettingsDialog(QDialog):
         if draft:
             self.restore_draft(draft)
         self.language.currentIndexChanged.connect(self.preview_language)
+        ui_icons.apply(self)
 
     def preview_language(self, index):
         if index >= 0 and self.controller.settings is self and not self.controller.quitting:
@@ -453,7 +460,7 @@ class SettingsDialog(QDialog):
         page = QFrame()
         page.setObjectName("section")
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(12)
         logo = label("", center=True)
         logo.setPixmap(self.controller.icon.pixmap(48, 48))
@@ -510,18 +517,18 @@ class SettingsDialog(QDialog):
         self.pages.insertWidget(1, self.update_panel)
 
     def select_index(self, index):
-        self.current_page = ("general", "updates", "history", "report", "about")[index]
-        self.pages.setCurrentIndex(0 if index == 0 else 2 if index == 3 else 3 if index == 4 else 1)
-        if index == 3:
+        self.current_page = self.NAV_PAGES[index]
+        self.pages.setCurrentIndex({"general":0,"updates":1,"history":1,"report":2,"about":3}[self.current_page])
+        if self.current_page == "report":
             self.report.refresh()
-        if index in (1, 2):
-            self.update_panel.set_page(index == 2)
+        if self.current_page in ("updates", "history"):
+            self.update_panel.set_page(self.current_page == "history")
             if self.isVisible():
                 self.update_panel.ensure_loaded()
 
     def select_page(self, page):
         self.ensure_update_panel()
-        self.navigation.setCurrentRow(("general", "updates", "history", "report", "about").index(page))
+        self.navigation.setCurrentRow(self.NAV_PAGES.index(page))
         self.select_index(self.navigation.currentRow())
 
     def showEvent(self, event):
@@ -642,15 +649,15 @@ class BreakOverlay(QWidget):
         self.card.setObjectName("breakCard")
         self.card.setLayoutDirection(Qt.LeftToRight)
         row = QHBoxLayout(self.card)
-        row.setContentsMargins(20, 14, 20, 14)
-        row.setSpacing(20)
+        row.setContentsMargins(12, 12, 12, 12)
+        row.setSpacing(12)
         controls = QWidget()
-        controls.setFixedWidth(172)
+        self.controls = controls
         controls_column = QVBoxLayout(controls)
         controls_column.setContentsMargins(0, 0, 0, 0)
         controls_column.setSpacing(6)
         timer_controls = QHBoxLayout()
-        timer_controls.setSpacing(8)
+        timer_controls.setSpacing(6)
         self.start = QPushButton(tr("start"))
         self.start.setObjectName("primary")
         self.start.clicked.connect(start)
@@ -658,14 +665,16 @@ class BreakOverlay(QWidget):
         self.stop.clicked.connect(stop)
         timer_controls.addWidget(self.start)
         timer_controls.addWidget(self.stop)
+        self.reset = QPushButton(tr("reset_timer"))
+        timer_controls.addWidget(self.reset)
         controls_column.addLayout(timer_controls)
         self.skip = QPushButton(tr("skip"))
-        self.skip.setStyleSheet("font-size: 12px;")
         self.skip.clicked.connect(finish)
         controls_column.addWidget(self.skip)
-        self.reset = QPushButton(tr("reset_timer"))
-        self.reset.setStyleSheet("font-size: 12px;")
-        controls_column.addWidget(self.reset)
+        for button,key in ((self.start,"start"),(self.stop,"stop"),(self.reset,"reset_timer"),(self.skip,"skip")):
+            button.setStyleSheet("font-size:12px; padding:5px 8px;")
+            button.setAccessibleName(tr(key))
+            button.setToolTip(tr(key))
         row.addWidget(controls)
         timer_column = QVBoxLayout()
         timer_column.setSpacing(0)
@@ -685,12 +694,18 @@ class BreakOverlay(QWidget):
         self.caption.setWordWrap(True)
         text.addWidget(self.caption)
         row.addLayout(text, 1)
+        ui_icons.apply(self)
 
     def resizeEvent(self, event):
-        width = min(820, self.width() - 32)
-        self.card.setGeometry((self.width() - width) // 2, 24, width, 150)
-        self.caption.setVisible(width >= 620)
-        self.timer_caption.setVisible(width >= 620)
+        width = min(920, self.width() - 24)
+        compact = width < 680
+        for button,key in ((self.start,"start"),(self.stop,"stop"),(self.reset,"reset_timer")):
+            button.setText("" if compact else tr(key))
+        self.controls.setFixedWidth(sum(button.sizeHint().width() for button in (self.start,self.stop,self.reset))+12)
+        self.card.setGeometry((self.width()-width)//2,16,width,96)
+        self.caption.setVisible(not compact)
+        self.heading.setVisible(width >= 420)
+        self.timer_caption.setVisible(not compact)
         super().resizeEvent(event)
 
     def set_running(self, running):
@@ -904,6 +919,7 @@ class Controller:
             actions.addWidget(yes)
             actions.addWidget(no)
             layout.addLayout(actions)
+            ui_icons.apply(prompt)
             result = prompt.exec()
             if result not in (1, 2):
                 return False

@@ -10,7 +10,7 @@ namespace RestTimer
     {
         private DurationEditor workDuration, breakDuration;
         private Label note, timerStatus;
-        private Button startTimer, stopTimer, savePreferences;
+        private Button startTimer, stopTimer, resetTimer, savePreferences;
         private CheckBox showTaskbarCountdown, startupPreference, daily;
         private ComboBox language;
         private readonly UpdateService service;
@@ -75,15 +75,15 @@ namespace RestTimer
             ClientSize = new Size(960, 780);
             MinimumSize = new Size(780, 500);
             MinimizeBox = false;
-            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), ColumnCount = 2, RowCount = 1 };
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 1 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            sidebar = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(10),
-                Margin = I18n.IsRtl ? new Padding(16, 0, 0, 0) : new Padding(0, 0, 16, 0) };
+            sidebar = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(8),
+                Margin = I18n.IsRtl ? new Padding(10, 0, 0, 0) : new Padding(0, 0, 10, 0) };
             var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8, AccessibleName = I18n.T("settings_navigation") };
             tabs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
+            tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 76));
             for (int i = 0; i < 5; i++) tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
             tabs.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
@@ -92,8 +92,8 @@ namespace RestTimer
             brand.Controls.Add(new Label { Text = "RestTimer", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleCenter,
                 Bounds = new Rectangle(0, 40, 148, 30) });
             tabs.Controls.Add(brand, 0, 0);
-            string[] pages = { "general", "updates", "history", "report", "about" };
-            string[] keys = { "general", "updates_tab", "version_history", "dashboard", "about" };
+            string[] pages = { "report", "general", "updates", "history", "about" };
+            string[] keys = { "dashboard", "general", "updates_tab", "version_history", "about" };
             for (int i = 0; i < pages.Length; i++)
             {
                 string page = pages[i];
@@ -126,13 +126,13 @@ namespace RestTimer
         private Control CreateGeneralPage(Preferences preferences, Action start, Action stop)
         {
             var viewport = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-            var body = new Panel { Size = new Size(536, 730), RightToLeft = I18n.Flow };
+            var body = new Panel { Size = new Size(512, 762), RightToLeft = I18n.Flow };
             generalBody = body;
             viewport.Controls.Add(body);
             viewport.AutoScrollMinSize = body.Size;
             viewport.Resize += (_, __) =>
             {
-                body.Width = Math.Max(508, Math.Min(536, viewport.ClientSize.Width));
+                body.Width = (int)(512 * DeviceDpi / 96f);
                 viewport.AutoScrollMinSize = body.Size;
                 body.Left = Math.Max(0, (viewport.ClientSize.Width - body.Width) / 2);
             };
@@ -163,26 +163,26 @@ namespace RestTimer
             };
             startTimer = new RoundedButton(primary: true) { Name = "i18n:start", Text = I18n.T("start"), Bounds = new Rectangle(408, 388, 100, 34), TabIndex = 2 };
             stopTimer = new RoundedButton { Name = "i18n:stop", Text = I18n.T("stop"), Bounds = new Rectangle(296, 388, 100, 34), TabIndex = 3 };
-            var reset = new RoundedButton { Name = "i18n:reset_timer", Text = I18n.T("reset_timer"), Bounds = new Rectangle(28, 716, 240, 34) };
-            reset.Click += (_, __) => RestartRequested?.Invoke();
-            body.Height = 770; body.Controls.Add(reset);
+            resetTimer = new RoundedButton { Name = "i18n:reset_timer", Text = I18n.T("reset_timer"), Bounds = new Rectangle(16, 388, 152, 34), TabIndex = 4 };
+            resetTimer.Click += (_, __) => RestartRequested?.Invoke();
+            body.Controls.Add(resetTimer);
             startTimer.Click += (_, __) => start();
             stopTimer.Click += (_, __) => stop();
             timerStatus = new Label
             {
                 Font = Theme.SmallFont, ForeColor = Theme.Muted, Tag = "muted",
-                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(28, 388, 244, 34)
+                TextAlign = ContentAlignment.MiddleLeft, Bounds = new Rectangle(16, 426, 480, 28)
             };
             var save = new RoundedButton(primary: true)
             {
-                Name = "i18n:save", Text = I18n.T("save"), Bounds = new Rectangle(366, 678, 142, 38), TabIndex = 6
+                Name = "i18n:save", Text = I18n.T("save"), Bounds = new Rectangle(354, 678, 142, 38), TabIndex = 6
             };
             save.Click += (_, __) => SaveDurations();
             showTaskbarCountdown = new ThemedCheckBox { Name = "i18n:show_countdown", Text = I18n.T("show_countdown"), Checked = preferences.ShowTaskbarCountdown,
                 Bounds = new Rectangle(28, 584, 480, 30), TabIndex = 5 };
             var languageTitle = new Label { Name = "i18n:language", Text = I18n.T("language"), TextAlign = ContentAlignment.MiddleLeft,
                 Bounds = new Rectangle(28, 434, 130, 32) };
-            language = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Bounds = new Rectangle(170, 434, 338, 32),
+            language = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Bounds = new Rectangle(158, 434, 338, 32),
                 TabIndex = 4, AccessibleName = I18n.T("language"), RightToLeft = RightToLeft.No, DropDownHeight = 320,
                 FlatStyle = FlatStyle.Flat, BackColor = Theme.Input, ForeColor = Theme.Text,
                 DrawMode = DrawMode.OwnerDrawFixed, ItemHeight = Font.Height + 6 };
@@ -217,6 +217,12 @@ namespace RestTimer
             body.Controls.AddRange(new Control[] { title, subtitle, workDuration, breakDuration,
                 startTimer, stopTimer, timerStatus, languageTitle, language, languageHint, daily, startupPreference, showTaskbarCountdown, note, save });
             savePreferences = save;
+            foreach (Control control in body.Controls)
+            {
+                if (control.Left == 28) control.Left = 16;
+                if (control.Top >= 434) control.Top += 32;
+            }
+            LayoutTimerControls();
             return new ScrollFrame(viewport);
         }
 
@@ -227,9 +233,16 @@ namespace RestTimer
             timerStatus.Text = running ? I18n.T("timer_running") : I18n.T("timer_paused");
         }
 
+        private void LayoutTimerControls()
+        {
+            startTimer.SetBounds(I18n.IsRtl ? 344 : 16, 388, 152, 34);
+            stopTimer.SetBounds(180, 388, 152, 34);
+            resetTimer.SetBounds(I18n.IsRtl ? 16 : 344, 388, 152, 34);
+        }
+
         private Control CreateAboutPage()
         {
-            var page = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(28) };
+            var page = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(16) };
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             foreach (int height in new[] { 64, 40, 30, 50, 30, 30, 46 }) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
@@ -241,7 +254,7 @@ namespace RestTimer
             layout.Controls.Add(new Label { Name = "i18n:about_description", Text = I18n.T("about_description"), Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 3);
             layout.Controls.Add(new Label { Name = "about_author", Text = I18n.T("author") + ": \u200eSaleh Ghotbani", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 4);
             layout.Controls.Add(new Label { Name = "about_license", Text = I18n.T("license") + ": MIT", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 5);
-            var project = new RoundedButton { Name = "i18n:project_site", Text = I18n.T("project_site"), Image = gitLogo, Dock = DockStyle.Fill, Margin = new Padding(20, 4, 20, 4) };
+            var project = new RoundedButton { Name = "i18n:project_site", Text = I18n.T("project_site"), Image = gitLogo, Dock = DockStyle.Fill, Margin = new Padding(8, 4, 8, 4) };
             project.Click += (_, __) =>
             {
                 try { Process.Start(new ProcessStartInfo("https://github.com/salehghotbani/RestTimer") { UseShellExecute = true }); }
@@ -289,12 +302,15 @@ namespace RestTimer
                 I18n.RelocalizeControls(this, previous);
                 Text = "RestTimer — " + I18n.T("preferences_title");
                 RightToLeft = generalBody.RightToLeft = I18n.Flow;
-                int gap = (int)(16 * DeviceDpi / 96f);
+                int gap = (int)(10 * DeviceDpi / 96f);
                 sidebar.Margin = I18n.IsRtl ? new Padding(gap, 0, 0, 0) : new Padding(0, 0, gap, 0);
+                float scale = DeviceDpi / 96f;
+                startTimer.Left = (int)((I18n.IsRtl ? 344 : 16) * scale);
+                resetTimer.Left = (int)((I18n.IsRtl ? 16 : 344) * scale);
                 workDuration.Relocalize(I18n.T("work_duration"), I18n.T("work_hint"));
                 breakDuration.Relocalize(I18n.T("break_duration"), I18n.T("break_hint"));
-                string[] pages = { "general", "updates", "history", "report", "about" };
-                string[] keys = { "general", "updates_tab", "version_history", "dashboard", "about" };
+                string[] pages = { "report", "general", "updates", "history", "about" };
+                string[] keys = { "dashboard", "general", "updates_tab", "version_history", "about" };
                 for (int i = 0; i < pages.Length; i++) navigation[pages[i]].Text = I18n.T(keys[i]);
                 int selected = language.SelectedIndex;
                 language.Items[0] = new LanguageItem("auto", I18n.T("system_language"));

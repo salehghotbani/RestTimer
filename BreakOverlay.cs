@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace RestTimer
@@ -16,6 +17,7 @@ namespace RestTimer
         private readonly Label countdown;
         private readonly Label countdownCaption;
         private readonly Label caption;
+        private readonly ToolTip hints = new ToolTip();
         private readonly Font headingFont = new Font("Segoe UI", 14, FontStyle.Bold);
         private readonly Font countdownFont = new Font("Segoe UI", 30, FontStyle.Bold);
 
@@ -60,6 +62,7 @@ namespace RestTimer
             Start = new RoundedButton(primary: true) { Text = I18n.T("start"), Font = Theme.SmallFont, RightToLeft = I18n.Flow };
             Stop = new RoundedButton { Text = I18n.T("stop"), Font = Theme.SmallFont, RightToLeft = I18n.Flow };
             Reset = new RoundedButton { Text = I18n.T("reset_timer"), Font = Theme.SmallFont, RightToLeft = I18n.Flow };
+            foreach (var button in new[] {Start,Stop,Reset,Skip}) hints.SetToolTip(button,button.Text);
             card.Controls.AddRange(new Control[] { separator, heading, countdown, countdownCaption, caption, Skip, Start, Stop, Reset });
             Controls.Add(card);
             SizeChanged += (_, __) => LayoutCard();
@@ -116,29 +119,33 @@ namespace RestTimer
         {
             int Scale(int units) => (units * DeviceDpi + 48) / 96;
 
-            int width = Math.Max(1, Math.Min(Scale(820), ClientSize.Width - Scale(32)));
-            int top = Math.Max(0, Math.Min(Scale(24), ClientSize.Height - Scale(108)));
-            int padding = Scale(20);
-            int buttonWidth = Math.Min(Scale(168), width / 3);
-            int timerWidth = Math.Min(Scale(168), width / 3);
-            int timerLeft = padding + buttonWidth + Scale(32);
-            int textLeft = timerLeft + timerWidth + Scale(24);
+            int width = Math.Max(1, Math.Min(Scale(920), ClientSize.Width - Scale(24)));
+            int top = Math.Max(0, Math.Min(Scale(16), ClientSize.Height - Scale(96)));
+            int padding = Scale(12), gap = Scale(6);
+            bool compact = width < Scale(680);
+            var buttons = new[] { Start, Stop, Reset };
+            var sizes = buttons.Select(button => compact ? Scale(32) : Math.Max(Scale(76), TextRenderer.MeasureText(button.Text, button.Font).Width + Scale(38))).ToArray();
+            int buttonWidth = sizes.Sum() + 2 * gap;
+            int timerWidth = Math.Min(Scale(148), width / 3);
+            int timerLeft = padding + buttonWidth + Scale(24);
+            int textLeft = timerLeft + timerWidth + Scale(16);
             int textWidth = Math.Max(1, width - textLeft - padding);
-            bool compact = width < Scale(600);
+            card.SetBounds((ClientSize.Width-width)/2, top, width, Scale(96));
+            int x=padding;
+            for(int i=0;i<buttons.Length;i++)
+            {
+                ((RoundedButton)buttons[i]).IconOnly=compact;
+                buttons[i].SetBounds(x,Scale(12),sizes[i],Scale(30));x+=sizes[i]+gap;
+            }
+            Skip.SetBounds(padding,Scale(50),buttonWidth,Scale(32));
+            separator.SetBounds(padding+buttonWidth+Scale(12),Scale(22),Scale(1),Scale(50));
+            countdown.SetBounds(timerLeft,Scale(compact?18:8),timerWidth,Scale(54));
+            countdownCaption.SetBounds(timerLeft,Scale(62),timerWidth,Scale(22));
+            countdownCaption.Visible=!compact;
+            heading.SetBounds(textLeft,Scale(compact?18:14),textWidth,Scale(compact?58:32));
+            heading.Visible=width>=Scale(420);
+            caption.SetBounds(textLeft,Scale(50),textWidth,Scale(28));caption.Visible=!compact;
 
-            card.SetBounds((ClientSize.Width - width) / 2, top, width, Scale(144));
-            int halfButton = Math.Max(1, (buttonWidth - Scale(8)) / 2);
-            Start.SetBounds(padding, Scale(18), halfButton, Scale(30));
-            Stop.SetBounds(padding + halfButton + Scale(8), Scale(18), halfButton, Scale(30));
-            Skip.SetBounds(padding, Scale(58), buttonWidth, Scale(32));
-            Reset.SetBounds(padding, Scale(98), buttonWidth, Scale(30));
-            separator.SetBounds(padding + buttonWidth + Scale(16), Scale(32), Scale(1), Scale(44));
-            countdown.SetBounds(timerLeft, Scale(compact ? 24 : 15), timerWidth, Scale(54));
-            countdownCaption.SetBounds(timerLeft, Scale(69), timerWidth, Scale(22));
-            countdownCaption.Visible = !compact;
-            heading.SetBounds(textLeft, Scale(compact ? 21 : 22), textWidth, Scale(compact ? 66 : 32));
-            caption.SetBounds(textLeft, Scale(57), textWidth, Scale(28));
-            caption.Visible = !compact;
         }
 
         private static Label CenteredLabel(string text, Font font, Color color, RightToLeft direction) =>
@@ -181,6 +188,7 @@ namespace RestTimer
                 background?.Dispose();
                 headingFont.Dispose();
                 countdownFont.Dispose();
+                hints.Dispose();
             }
         }
     }

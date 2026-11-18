@@ -81,6 +81,13 @@ internal static class LocalizationSmoke
                         if ((int)preferences.GetProperty("WorkSeconds").GetValue(saved) != 3723
                             || (string)preferences.GetProperty("Language").GetValue(saved) != code)
                             throw new Exception("Saving a language changed duration or lost the language.");
+                        var run=(Button)settings.GetField("startTimer",flags).GetValue(dialog);
+                        var pause=(Button)settings.GetField("stopTimer",flags).GetValue(dialog);
+                        var reset=(Button)settings.GetField("resetTimer",flags).GetValue(dialog);
+                        if(run.Top!=pause.Top || pause.Top!=reset.Top || run.Bounds.IntersectsWith(pause.Bounds) || pause.Bounds.IntersectsWith(reset.Bounds) || run.Bounds.IntersectsWith(reset.Bounds))
+                            throw new Exception("Start, stop and reset must share one non-overlapping row.");
+                        var nav=(System.Collections.IDictionary)settings.GetField("navigation",flags).GetValue(dialog);
+                        if(((Control)nav["report"]).Top>=((Control)nav["general"]).Top) throw new Exception("Dashboard must precede General.");
                         var licenseBox=(RichTextBox)dialog.Controls.Find("license_text",true).Single();
                         if(!licenseBox.ReadOnly || licenseBox.Text.Replace("\r", "").Trim()!=System.IO.File.ReadAllText("LICENSE").Replace("\r", "").Trim())
                             throw new Exception("The complete canonical MIT license must be visible as read-only text.");

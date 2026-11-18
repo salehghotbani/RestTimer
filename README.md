@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.11.2-linux-amd64.deb
+sudo apt install ./RestTimer-v1.12.0-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.11.2-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.11.2-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.12.0-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -62,6 +62,7 @@ Launch RestTimer from the application menu or with `resttimer`. The Linux packag
 
 - Left-click the tray icon to open **Dashboard** directly. Right-click opens the menu with **Dashboard** first, followed by Start, Stop, Start a break now, and Reset timer. General settings, updates and release history remain available in the panel sidebar. An already open panel is reused.
 - The application launches with the countdown paused, including at sign-in and after an update. Press **Start** when you are ready. Skipping a break resets the next work period.
+- Start, Stop and Reset are adjacent in General settings and the break box. Main buttons and sidebar tabs use theme-aware vector icons, with compact padding. Narrow break boxes use accessible icon-only timer controls with tooltips.
 - Start and Stop are available in the tray menu, settings, and break reminder. Stop pauses the current period; Start resumes from its remaining time. During a paused break, reminders stay open and can be resumed from any monitor. Skipping a break or changing durations preserves the paused state.
 - **Reset timer** is available in the tray menu, General settings and break box. During work, it opens **Start from beginning**: enter a task name and a duration for this session. During a break, it resets the break countdown and preserves its paused/running state.
 - On Windows, the update window and menu follow the Windows **application** color mode and support high contrast. Theme changes apply while the window is open. Linux follows the desktop color scheme reported by Qt.
@@ -83,7 +84,7 @@ Only this small box floats above application windows, hiding automatically while
 
 ### Settings and startup
 
-Settings opens one window with vertical tabs for **General**, **Updates**, **Version history**, and **About**. Browse releases and application details without opening extra windows. Version history is available here instead of in the tray menu.
+Settings opens one window with vertical tabs ordered **Dashboard**, **General**, **Updates**, **Version history**, and **About**. Browse releases and application details without opening extra windows. Version history is available here instead of in the tray menu.
 
 In **General**, change durations, language, launch at sign-in, the floating timer, or daily update checks, then select **Save settings**. The daily-check switch on Updates stays synchronized with General. Changes remain pending until saved. If you close the window with unsaved changes, choose **Save changes** or **Discard changes**; close that dialog to continue editing. Unchanged settings close without a prompt.
 
@@ -153,9 +154,9 @@ Logs stay on this computer in `%LOCALAPPDATA%/RestTimer/work-log` on Windows or 
 The **About** section includes a Git-icon button to open this GitHub repository and the complete, selectable MIT license text, available offline.
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.2/RestTimer-v1.11.2-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.2/RestTimer-v1.11.2-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.2/RestTimer-v1.11.2-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.12.0/RestTimer-v1.12.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.12.0/RestTimer-v1.12.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.12.0/RestTimer-v1.12.0-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

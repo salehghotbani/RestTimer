@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel
 
 import update_core as core
 import i18n
+import ui_icons
 from i18n import tr
 
 
@@ -99,8 +100,8 @@ class UpdatePanel(QWidget):
         self.setWindowTitle("RestTimer — " + tr("updates_title"))
         self.setWindowIcon(controller.icon)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 22, 24, 22)
-        layout.setSpacing(14)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
         title = QLabel(tr("updates_title"))
         self.heading = title
         title.setObjectName("title")

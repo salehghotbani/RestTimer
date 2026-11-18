@@ -1,5 +1,11 @@
 # RestTimer changelog
 
+## 1.12.0
+- Place Reset next to Start and Stop in both General and the break box.
+- Order sidebar sections as Dashboard, General, Updates, Version history and About, preserving correct routing and language previews.
+- Add theme-aware vector icons to primary actions, exports and navigation; retain accessible labels and tooltips for narrow break boxes.
+- Reduce padding and gaps in settings, dashboard, update panels and break reminders. Fit the reminder into a shorter horizontal box and improve DPI-aware control spacing.
+
 ## 1.11.2
 - Show a Git icon on the GitHub project button in About.
 - Display the complete canonical MIT license as selectable, read-only, scrollable text, available offline on Windows and Linux. Keep the license text left-to-right in every UI language and support light/dark themes.

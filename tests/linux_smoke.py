@@ -46,6 +46,13 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     project_button = controller.settings.findChild(module.QPushButton, "project_site")
     assert project_button is not None and not project_button.icon().isNull()
     assert controller.settings.navigation.count() == 5
+    assert controller.settings.navigation.item(0).text() == module.tr("dashboard")
+    assert controller.settings.navigation.item(1).text() == module.tr("general")
+    assert not controller.settings.start_timer.icon().isNull() and not controller.settings.reset_timer.icon().isNull()
+    controller.settings.navigation.setCurrentRow(0)
+    assert controller.settings.current_page == "report" and controller.settings.pages.currentWidget() is controller.settings.report
+    controller.settings.navigation.setCurrentRow(1)
+    assert controller.settings.current_page == "general" and controller.settings.pages.currentWidget() is controller.settings.pages.widget(0)
     assert controller.menu.actions()[2:5] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
     assert controller.menu.actions()[5] == controller.reset_timer_action
     assert controller.menu.actions()[0] == controller.settings_action

@@ -157,7 +157,7 @@ namespace RestTimer
         private WorkEntry[] entries=new WorkEntry[0];
         public WorkReportPanel()
         {
-            Dock=DockStyle.Fill; Padding=new Padding(20);
+            Dock=DockStyle.Fill; Padding=new Padding(12);
             var layout=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=6};
             foreach(int height in new[]{48,42,42,40}) layout.RowStyles.Add(new RowStyle(SizeType.Absolute,height));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent,62));layout.RowStyles.Add(new RowStyle(SizeType.Percent,38));
