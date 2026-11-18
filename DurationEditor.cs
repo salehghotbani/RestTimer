@@ -14,13 +14,24 @@ namespace RestTimer
         private readonly Label titleLabel, hintLabel;
         private readonly List<Label> captions=new List<Label>(), colons=new List<Label>();
         private bool compact;
+        private readonly Dictionary<float,Font> titleFonts=new Dictionary<float,Font>();
         private readonly Font digitsFont = new Font("Segoe UI", 20);
         private readonly Font compactDigitsFont = new Font("Segoe UI", 17);
         public void CompactLayout()
         {
-            compact=true;float z=DeviceDpi/96f;
+            compact=true;float z=Theme.ScaleFor(this);
             var title=titleLabel;var hint=hintLabel;
-            title.Bounds=new Rectangle((int)(12*z),(int)(4*z),Width-(int)(24*z),(int)(25*z));
+            float pointSize=12*z;
+            Font candidate=null;
+            while(true)
+            {
+                if(!titleFonts.TryGetValue(pointSize,out candidate))
+                { candidate=new Font("Segoe UI",pointSize,FontStyle.Bold);titleFonts.Add(pointSize,candidate); }
+                if(TextRenderer.MeasureText(title.Text,candidate).Width<=Width-(int)(24*z) || pointSize<=10*z) break;
+                pointSize-=0.5f*z;
+            }
+            title.Font=candidate;
+            title.Bounds=new Rectangle((int)(12*z),(int)(4*z),Width-(int)(24*z),(int)(28*z));
             hint.Visible=false;
             int gap=(int)((Width<360*z?8:20)*z);
             int fieldWidth=Math.Min((int)(96*z),(Width-(int)(24*z)-2*gap)/3);
@@ -29,16 +40,16 @@ namespace RestTimer
             for(int i=0;i<3;i++)
             {
                 if(inputs[i].Font!=compactDigitsFont) inputs[i].Font=compactDigitsFont;
-                var field=inputs[i].Parent;field.SetBounds(left+i*(fieldWidth+gap),(int)(30*z),fieldWidth,Math.Max((int)(30*z),Height-(int)(55*z)));
+                var field=inputs[i].Parent;field.SetBounds(left+i*(fieldWidth+gap),(int)(34*z),fieldWidth,Math.Max((int)(34*z),Height-(int)(58*z)));
                 inputs[i].SetBounds((int)(4*z),Math.Max(0,(field.Height-inputs[i].PreferredHeight)/2),fieldWidth-(int)(8*z),inputs[i].PreferredHeight);
                 var caption=captions[i];
                 if(caption!=null) caption.SetBounds(field.Left,field.Bottom,field.Width,(int)(20*z));
             }
-            int colon=0;foreach(var label in colons) { label.SetBounds(left+(++colon)*fieldWidth+(colon-1)*gap,(int)(30*z),gap,hours.Parent.Height); }
+            int colon=0;foreach(var label in colons) { label.SetBounds(left+(++colon)*fieldWidth+(colon-1)*gap,(int)(34*z),gap,hours.Parent.Height); }
         }
         public void Relocalize(string title, string hint)
         {
-            float scale = DeviceDpi / 96f;
+            float scale = Theme.ScaleFor(this);
             titleLabel.Text = title; hintLabel.Text = hint;
             titleLabel.RightToLeft = hintLabel.RightToLeft = I18n.Flow;
             var titleBounds = I18n.IsRtl ? new Rectangle(300, 10, 160, 27) : new Rectangle(20, 10, 230, 27);
@@ -128,6 +139,9 @@ namespace RestTimer
                     input.Text = number.ToString("00", CultureInfo.InvariantCulture);
             };
             field.Controls.Add(input);
+            Action centerInput=()=>input.Top=Math.Max(0,(field.ClientSize.Height-input.PreferredHeight)/2);
+            field.Resize+=(_,__)=>centerInput();input.FontChanged+=(_,__)=>centerInput();
+            centerInput();
             Controls.Add(field);
             var caption=new Label
             {
@@ -166,7 +180,7 @@ namespace RestTimer
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if (disposing) { digitsFont.Dispose(); compactDigitsFont.Dispose(); }
+            if (disposing) { digitsFont.Dispose(); compactDigitsFont.Dispose(); foreach(var font in titleFonts.Values) font.Dispose(); }
         }
     }
 }

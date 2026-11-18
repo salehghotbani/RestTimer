@@ -33,6 +33,7 @@ python tests/test_update_core.py
 python tests/test_localization.py
 QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
 QT_QPA_PLATFORM=offscreen python tests/linux_localization.py
+QT_QPA_PLATFORM=offscreen python tests/visual_audit.py
 bash tools/build_linux.sh
 ```
 
@@ -41,17 +42,17 @@ Building packages requires Linux x86-64, `dpkg-deb`, `rpmbuild`, and `desktop-fi
 ## Reviewing changes
 
 - Try one-second work and break periods, skipping a break, and starting the next period.
-- Check that both left-click and right-click open the tray menu, and that clicking outside it or pressing Esc closes it.
+- Check that left-click opens Dashboard and right-click opens the tray menu, and that clicking outside it or pressing Esc closes it.
 - Verify synchronized reminders across monitors and the hour, minute, and second controls.
 - Check floating-timer placement with bottom, top, left, and right taskbars, display scaling, and monitors at negative coordinates. Showing, pausing, hiding or closing the box must not change the desktop work area. Verify topmost behavior, click-through and light/dark backgrounds.
 - Preserve compatibility with previous settings when changing their format.
 - Treat `VERSION` as the shared Windows and Linux version source. Each application release should include an EXE installer, a DEB package, and an RPM package.
 - Add release changes to `CHANGELOG.md` and the GitHub release notes. The application uses release notes to explain new versions.
 - Check updates with a disconnected network, cancelled downloads, incomplete files, declined installation authorization, and restarting after an upgrade. Download checks must not launch a real installer.
-- Check all four settings sections in both layout directions and color modes. Daily update switches must stay synchronized and persist. Navigating between sections must preserve active downloads; closing must cancel downloads and wait for active installers.
+- Check Dashboard, General, Updates, Version history and About, including all four General cards, in both layout directions and color modes. Daily update switches must stay synchronized and persist. Navigating between sections must preserve active downloads; closing must cancel downloads and wait for active installers.
 - Check Save, Discard, and closing the unsaved-changes prompt. Duration, language, floating-timer, startup and daily-check drafts must not apply on Discard. Invalid settings must keep General open; closing an unchanged window must not prompt.
 - Change languages before saving and verify immediate text and direction updates, retained field edits and downloads, and restoration of the original language on Discard. Compare every checkbox in checked, unchecked, focused, light and dark states.
-- Verify that the floating countdown hides for a foreground fullscreen window on its own monitor, returns afterward without taking focus, and remains visible over ordinary windows. Check minute/second limits with typed and pasted digits, and scrollbar dragging, wheel scrolling and keyboard navigation in long notes and compact settings.
+- Verify that the floating countdown hides for a foreground fullscreen window on its own monitor, returns afterward without taking focus, and remains visible over ordinary windows. Check minute/second limits with typed and pasted digits, and scrollbar dragging, wheel scrolling and keyboard navigation in long notes. General must fit without scrolling.
 
 ## Documentation languages
 
@@ -67,3 +68,5 @@ Interface translations live in the shared `locales/*.json` catalogs. Use the key
 Update both language versions when changing documented behavior or instructions. Keep the language selectors, installation commands, release links, and technology badges consistent. Use English by default for new documentation.
 
 See the [README](README.md) for installation and usage. By submitting changes, you agree to contribute them under the repository's [MIT license](LICENSE).
+
+Run `./tests/windows_visual.ps1` for the Windows visual audit. It and `tests/visual_audit.py` cover every page and dialog in all 13 languages, both themes, normal/minimum sizes and both sidebar states. Reports and contact sheets are written to `obj/visual-audit` and `build/visual-audit`. The audits also exercise interrupted/reversed sidebar animations.

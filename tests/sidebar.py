@@ -57,7 +57,7 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build') as folder:
         assert settings.sidebar_collapsed
         settings.sidebar_toggle.click()
         QTest.qWait(260)
-        assert not settings.sidebar_collapsed and settings.sidebar.width()==180
+        assert not settings.sidebar_collapsed and settings.sidebar.width()>=180
         assert settings.work.parts[2].value()==17
         option=QStyleOptionViewItem()
         settings.navigation.itemDelegate().initStyleOption(option,settings.navigation.model().index(0,0))

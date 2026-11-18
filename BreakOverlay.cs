@@ -90,6 +90,7 @@ namespace RestTimer
             Stop.Enabled = running;
             heading.Text = running ? I18n.T("break_heading") : I18n.T("break_paused");
             countdownCaption.Text = running ? I18n.T("remaining") : I18n.T("timer_paused");
+            LayoutCard();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -124,27 +125,33 @@ namespace RestTimer
             int padding = Scale(12), gap = Scale(6);
             bool compact = width < Scale(680);
             var buttons = new[] { Start, Stop, Reset };
-            var sizes = buttons.Select(button => compact ? Scale(32) : Math.Max(Scale(76), TextRenderer.MeasureText(button.Text, button.Font).Width + Scale(38))).ToArray();
+            var sizes = buttons.Select(button => compact ? Scale(32) : Math.Max(Scale(76), ((RoundedButton)button).LabeledWidth)).ToArray();
             int buttonWidth = sizes.Sum() + 2 * gap;
-            int timerWidth = Math.Min(Scale(148), width / 3);
+            int timerWidth = Math.Min(Math.Max(Scale(148),TextRenderer.MeasureText("00:00",countdown.Font).Width+Scale(8)), width / 3);
             int timerLeft = padding + buttonWidth + Scale(24);
             int textLeft = timerLeft + timerWidth + Scale(16);
             int textWidth = Math.Max(1, width - textLeft - padding);
-            card.SetBounds((ClientSize.Width-width)/2, top, width, Scale(96));
+            int countHeight=Math.Max(Scale(54),TextRenderer.MeasureText("00:00",countdown.Font).Height+Scale(2));
+            int timerCaptionHeight=Math.Max(Scale(22),TextRenderer.MeasureText(countdownCaption.Text,countdownCaption.Font,new Size(timerWidth,32767),TextFormatFlags.WordBreak).Height+Scale(2));
+            int headingHeight=Math.Max(Scale(32),TextRenderer.MeasureText(heading.Text,heading.Font,new Size(textWidth,32767),TextFormatFlags.WordBreak).Height+Scale(2));
+            int captionHeight=Math.Max(Scale(28),TextRenderer.MeasureText(caption.Text,caption.Font,new Size(textWidth,32767),TextFormatFlags.WordBreak).Height+Scale(2));
+            int height=Math.Max(Scale(96),Math.Max(Scale(8)+countHeight+(compact?0:timerCaptionHeight)+padding,Scale(14)+headingHeight+(compact?0:Scale(4)+captionHeight)+padding));
+            card.SetBounds((ClientSize.Width-width)/2, top, width, height);
             int x=padding;
             for(int i=0;i<buttons.Length;i++)
             {
                 ((RoundedButton)buttons[i]).IconOnly=compact;
                 buttons[i].SetBounds(x,Scale(12),sizes[i],Scale(30));x+=sizes[i]+gap;
             }
+            ((RoundedButton)Skip).IconOnly=((RoundedButton)Skip).LabeledWidth>buttonWidth;
             Skip.SetBounds(padding,Scale(50),buttonWidth,Scale(32));
             separator.SetBounds(padding+buttonWidth+Scale(12),Scale(22),Scale(1),Scale(50));
-            countdown.SetBounds(timerLeft,Scale(compact?18:8),timerWidth,Scale(54));
-            countdownCaption.SetBounds(timerLeft,Scale(62),timerWidth,Scale(22));
+            countdown.SetBounds(timerLeft,Scale(8),timerWidth,countHeight);
+            countdownCaption.SetBounds(timerLeft,Scale(8)+countHeight,timerWidth,timerCaptionHeight);
             countdownCaption.Visible=!compact;
-            heading.SetBounds(textLeft,Scale(compact?18:14),textWidth,Scale(compact?58:32));
+            heading.SetBounds(textLeft,Scale(14),textWidth,headingHeight);
             heading.Visible=width>=Scale(420);
-            caption.SetBounds(textLeft,Scale(50),textWidth,Scale(28));caption.Visible=!compact;
+            caption.SetBounds(textLeft,Scale(14)+headingHeight+Scale(4),textWidth,captionHeight);caption.Visible=!compact;
 
         }
 

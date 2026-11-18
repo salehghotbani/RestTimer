@@ -12,6 +12,11 @@ namespace RestTimer
     internal static class Theme
     {
         internal static bool? LightOverride { get; set; }
+        public static float ScaleFor(Control control)
+        {
+            var form=control.FindForm();
+            return form!=null && form.AutoScaleMode==AutoScaleMode.Dpi ? form.AutoScaleDimensions.Width/96f : control.DeviceDpi/96f;
+        }
         public static void Use(string mode) { LightOverride = mode == "light" ? (bool?)true : mode == "dark" ? (bool?)false : null; Refresh(); }
         public static bool IsLight { get; private set; } = ReadLightMode();
         private static bool highContrast = SystemInformation.HighContrast;
@@ -105,6 +110,11 @@ namespace RestTimer
         }
     }
 
+    internal sealed class BufferedTableLayoutPanel : TableLayoutPanel
+    {
+        public BufferedTableLayoutPanel() { DoubleBuffered=true;SetStyle(ControlStyles.ResizeRedraw,true); }
+    }
+
     internal class RoundedPanel : Panel
     {
         public Color FillColor { get; set; } = Theme.Surface;
@@ -126,7 +136,7 @@ namespace RestTimer
 
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             using (var path = Theme.RoundedRectangle(new RectangleF(0.5f, 0.5f, Width - 1, Height - 1),
-                CornerRadius * DeviceDpi / 96f))
+                CornerRadius * Theme.ScaleFor(this)))
             using (var fill = new SolidBrush(FillColor))
             using (var border = new Pen(BorderColor))
             {
@@ -146,6 +156,8 @@ namespace RestTimer
         public bool IconOnly { get; set; }
         public bool Quiet { get; set; }
         public bool StartAligned { get; set; }
+        public bool KeepIconAtStart { get; set; }
+        internal int LabeledWidth => TextRenderer.MeasureText(Text,Font).Width+(int)(48*Theme.ScaleFor(this));
 
         public RoundedButton(bool primary = false)
         {
@@ -205,6 +217,7 @@ namespace RestTimer
             if (Width < 2 || Height < 2)
                 return;
 
+            float scale=Theme.ScaleFor(this);
             Color fill = primary ? Theme.Mint : Selected ? Theme.Selection : Quiet ? Theme.Surface : Theme.ButtonFill;
             Color text = primary ? Theme.OnAccent : Selected ? Theme.OnSelection : Theme.Text;
             Color borderColor = Quiet ? fill : primary || Selected ? Theme.Mint : Theme.Border;
@@ -218,7 +231,7 @@ namespace RestTimer
                 fill = ControlPaint.Light(fill, pressed ? 0.08f : 0.16f);
 
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            using (var path = Theme.RoundedRectangle(new RectangleF(0.5f, 0.5f, Width - 1, Height - 1), 9 * DeviceDpi / 96f))
+            using (var path = Theme.RoundedRectangle(new RectangleF(0.5f, 0.5f, Width - 1, Height - 1), 9 * scale))
             using (var brush = new SolidBrush(fill))
             using (var border = new Pen(borderColor))
             {
@@ -230,14 +243,14 @@ namespace RestTimer
             if (RightToLeft == RightToLeft.Yes)
                 flags |= TextFormatFlags.RightToLeft;
             var glyph = Glyph ?? UiIcons.ForText(Name, Text);
-            int imageSize = Math.Min(Height - 10, (int)(18 * DeviceDpi / 96f));
-            int imageGap = (int)(6 * DeviceDpi / 96f);
+            int imageSize = Math.Min(Height - 10, (int)(18 * scale));
+            int imageGap = (int)(6 * scale);
             if (Image != null || glyph != null)
             {
                 int textWidth = IconOnly ? 0 : TextRenderer.MeasureText(Text, Font, Size.Empty, flags).Width;
-                int groupWidth = Math.Min(Width - 12, textWidth + imageSize + (IconOnly ? 0 : imageGap));
+                int groupWidth = Math.Min(Math.Max(imageSize, Width - (int)(24*scale)), textWidth + imageSize + (IconOnly ? 0 : imageGap));
                 bool rtl = RightToLeft == RightToLeft.Yes;
-                int left = StartAligned && !IconOnly ? (rtl ? Width - 12 - groupWidth : 12) : (Width - groupWidth) / 2;
+                int left = StartAligned && (!IconOnly || KeepIconAtStart) ? (rtl ? Width - (int)(12*scale) - groupWidth : (int)(12*scale)) : (Width - groupWidth) / 2;
                 int imageX = rtl ? left + groupWidth - imageSize : left;
                 var imageBounds = new Rectangle(imageX, (Height-imageSize)/2, imageSize, imageSize);
                 if(Image != null) e.Graphics.DrawImage(Image, imageBounds);

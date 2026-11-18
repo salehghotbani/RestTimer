@@ -171,8 +171,9 @@ namespace RestTimer
             actions.Controls.Add(chartType,0,0);actions.Controls.Add(png,1,0);actions.Controls.Add(pdf,2,0);layout.Controls.Add(actions,0,2);
             total=new Label{Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleLeft};layout.Controls.Add(total,0,3);
             chart=new DashboardChart();layout.Controls.Add(chart,0,4);
-            rows=new ListView{RightToLeft=RightToLeft.No,Dock=DockStyle.Fill,View=View.Details,FullRowSelect=true,BorderStyle=BorderStyle.None,HeaderStyle=ColumnHeaderStyle.Nonclickable};
+            rows=new ListView{RightToLeft=RightToLeft.No,Dock=DockStyle.Fill,View=View.Details,FullRowSelect=true,BorderStyle=BorderStyle.None,HeaderStyle=ColumnHeaderStyle.Nonclickable,ShowItemToolTips=true};
             rows.Columns.Add(I18n.T("task_name"),300);rows.Columns.Add(I18n.T("time_spent"),150);layout.Controls.Add(rows,0,5);Controls.Add(layout);
+            rows.Resize+=(_,__)=> { FitColumns();if(rows.IsHandleCreated) rows.BeginInvoke((Action)FitColumns); };
             chartType.SelectedIndexChanged+=(_,__)=>{chart.Mode=chartType.SelectedIndex;chart.Invalidate();};
             day.ValueChanged+=(_,__)=>RefreshReport();VisibleChanged+=(_,__)=>{if(Visible) RefreshReport();};
             png.Click+=(_,__)=>ChooseExport(false);pdf.Click+=(_,__)=>ChooseExport(true);
@@ -180,16 +181,27 @@ namespace RestTimer
         public void RefreshReport()
         {
             day.RefreshCaption();
+            chartType.RightToLeft=I18n.Flow;
+            rows.Columns[0].DisplayIndex=I18n.IsRtl?1:0;
+            rows.Columns[1].DisplayIndex=I18n.IsRtl?0:1;
+            FitColumns();
             int selected=chartType.SelectedIndex;
             string[] keys={"pie_chart","bar_chart","line_chart"}; for(int i=0;i<3;i++) chartType.Items[i]=I18n.T(keys[i]); chartType.SelectedIndex=selected;
             rows.Columns[0].TextAlign=I18n.IsRtl?HorizontalAlignment.Right:HorizontalAlignment.Left;rows.Columns[0].Text=I18n.T("task_name");rows.Columns[1].Text=I18n.T("time_spent");rows.BackColor=Theme.Surface;rows.ForeColor=Theme.Text;rows.Items.Clear();
             try {
                 entries=new WorkJournal().ReadRaw(day.Value);var totals=WorkJournal.Totals(entries);
-                foreach(var entry in totals) rows.Items.Add(new ListViewItem(new[]{entry.Task,WorkJournal.Format(entry.Seconds)}));
+                foreach(var entry in totals) rows.Items.Add(new ListViewItem(new[]{entry.Task,WorkJournal.Format(entry.Seconds)}) { ToolTipText=entry.Task });
                 total.Text=totals.Length==0?I18n.T("no_work"):I18n.T("total_time")+"  "+WorkJournal.Format(totals.Sum(e=>e.Seconds))+"    ·    "+I18n.T("task_count")+" "+totals.Length;
                 png.Enabled=pdf.Enabled=true;
             } catch(Exception ex) when(ex is IOException || ex is UnauthorizedAccessException || ex is System.Runtime.Serialization.SerializationException) { entries=new WorkEntry[0];total.Text=I18n.T("log_error");png.Enabled=pdf.Enabled=false; }
             chart.Entries=entries;chart.Invalidate();
+        }
+        private void FitColumns()
+        {
+            if(rows.IsDisposed) return;
+            int available=Math.Max(1,rows.ClientSize.Width-SystemInformation.VerticalScrollBarWidth-4);
+            int time=Math.Min(available/2,Math.Max((int)(112*Theme.ScaleFor(this)),TextRenderer.MeasureText(I18n.T("time_spent"),rows.Font).Width+16));
+            rows.Columns[1].Width=time;rows.Columns[0].Width=Math.Max(1,available-time);
         }
         private IEnumerable<Bitmap> Pages()
         {

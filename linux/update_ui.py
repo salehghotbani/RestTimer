@@ -12,6 +12,7 @@ import update_core as core
 import i18n
 import ui_icons
 import rtl_ui
+from ui_controls import CheckBox as QCheckBox
 from i18n import tr
 
 
@@ -106,6 +107,7 @@ class UpdatePanel(QWidget):
         title = QLabel(tr("updates_title"))
         self.heading = title
         title.setObjectName("title")
+        title.setWordWrap(True)
         layout.addWidget(title)
         self.description = QLabel()
         self.description.setWordWrap(True)
@@ -165,6 +167,7 @@ class UpdatePanel(QWidget):
         self.current_history = history
         self.tabs.setCurrentIndex(1 if history else 0)
         self.heading.setText(tr("version_history" if history else "updates_title"))
+        self.daily.setVisible(not history)
         self.consent.setVisible(not history)
         self.install.setVisible(not history)
         self.show_latest()

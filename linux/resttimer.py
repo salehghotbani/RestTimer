@@ -21,6 +21,7 @@ import update_core
 import i18n
 import ui_icons
 import rtl_ui
+from ui_controls import CheckBox as QCheckBox
 from i18n import tr
 from update_ui import UpdatePanel, Worker
 
@@ -50,6 +51,7 @@ QProgressBar { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; b
 QProgressBar::chunk { background: #16836b; border-radius: 5px; }
 QLabel { color: #edf4fa; background: transparent; }
 QLabel#muted { color: #9bb0c3; }
+QLabel#error { color: #ffa49b; }
 QLabel#title { font-size: 23px; font-weight: bold; }
 QLabel#sectionTitle { font-size: 14px; font-weight: bold; color: #83e6c4; }
 QLabel#timer { font-size: 38px; font-weight: bold; color: #83e6c4; }
@@ -105,7 +107,7 @@ def apply_color_scheme(app, scheme):
     if scheme == Qt.ColorScheme.Light:
         colors = {"#0d1521": "#f4f7fa", "#edf4fa": "#1a2838", "#141f2e": "#ffffff",
                   "#2c3e52": "#cdd8e2", "#1e2e40": "#e7edf3", "#223a48": "#dbeee8",
-                  "#83e6c4": "#11705b", "#a4f2d8": "#16836b", "#9bb0c3": "#536778", "#0c1623": "#eaf0f5", "#102c30": "#dbeee8"}
+                  "#ffa49b": "#ae2a2a", "#83e6c4": "#11705b", "#a4f2d8": "#16836b", "#9bb0c3": "#536778", "#0c1623": "#eaf0f5", "#102c30": "#dbeee8"}
         style = re.sub(r"#[a-fA-F0-9]{6}", lambda match: colors.get(match.group(), match.group()), style)
         style = style.replace("check-dark.svg", "check-light.svg")
         style += "\nQPushButton#primary { color: white; } QProgressBar { color: #11705b; } QProgressBar::chunk { background: #dbeee8; }"
@@ -201,6 +203,8 @@ def label(text, name="", center=False):
     widget.setObjectName(name)
     widget.setAlignment(Qt.AlignCenter if center else Qt.AlignAbsolute | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft) | Qt.AlignVCenter)
     widget.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
+    if name in ("title","sectionTitle"):
+        widget.setWordWrap(True)
     return widget
 
 
@@ -298,7 +302,8 @@ class WorkStartDialog(QDialog):
         layout.addWidget(self.task)
         self.duration = DurationEditor(tr("work_duration"), controller.session_seconds or controller.preferences["work_seconds"], 24)
         layout.addWidget(self.duration)
-        self.error = label("", "muted")
+        self.error = label("", "error")
+        self.error.setWordWrap(True)
         layout.addWidget(self.error)
         begin = QPushButton(tr("new_session"))
         begin.setObjectName("primary")
@@ -345,16 +350,20 @@ class SettingsDialog(QDialog):
         self.sidebar_toggle.clicked.connect(lambda: self.set_sidebar_collapsed(not self.sidebar_collapsed, animate=True))
         side.addWidget(self.sidebar_toggle,0,Qt.AlignAbsolute | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft))
         self.sidebar_brand = QWidget()
+        self.sidebar_brand.setFixedHeight(76)
         brand_layout = QVBoxLayout(self.sidebar_brand)
         brand_layout.setContentsMargins(0,0,0,0)
         icon = label("", center=True)
         icon.setPixmap(controller.icon.pixmap(36, 36))
+        icon.setFixedHeight(36)
         brand_layout.addWidget(icon)
-        brand_layout.addWidget(label("RestTimer", center=True))
+        self.sidebar_name=label("RestTimer", center=True)
+        brand_layout.addWidget(self.sidebar_name)
+        brand_layout.addStretch(1)
         side.addWidget(self.sidebar_brand)
         self.navigation = QListWidget()
         self.navigation.setObjectName("settingsNav")
-        self.navigation.setWordWrap(True)
+        self.navigation.setWordWrap(False)
         self.navigation.setItemDelegate(rtl_ui.NavigationDelegate(self.navigation))
         self.navigation.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.navigation.setAccessibleName(tr("settings_navigation"))
@@ -362,6 +371,7 @@ class SettingsDialog(QDialog):
             self.navigation.addItem(tr(key))
         side.addWidget(self.navigation, 1)
         self.sidebar_version = label("v" + controller.version, "muted", center=True)
+        self.sidebar_version.setFixedHeight(28)
         side.addWidget(self.sidebar_version)
         outer.addWidget(sidebar)
         self.pages = QStackedWidget()
@@ -399,8 +409,8 @@ class SettingsDialog(QDialog):
         middle.addWidget(appearance_section,2)
         layout.addLayout(middle)
         layout.addWidget(behavior_section)
-        self.work = DurationEditor(tr("work_duration"), controller.preferences["work_seconds"], 24)
-        self.rest = DurationEditor(tr("break_duration"), controller.preferences["break_seconds"], 2)
+        self.work = DurationEditor(tr("work_short"), controller.preferences["work_seconds"], 24)
+        self.rest = DurationEditor(tr("break_short"), controller.preferences["break_seconds"], 2)
         durations=QHBoxLayout()
         durations.setSpacing(6)
         durations.addWidget(self.work,1)
@@ -500,37 +510,49 @@ class SettingsDialog(QDialog):
         ui_icons.apply(self)
         rtl_ui.right_scrollbars(self)
 
+    def render_sidebar(self, icons_only):
+        self.sidebar_name.setVisible(not icons_only)
+        # Reserve the same brand and footer heights in both states.
+        self.sidebar_brand.setVisible(True)
+        self.sidebar_version.setVisible(True)
+        self.sidebar_version.setText("" if icons_only else "v"+self.controller.version)
+        action=tr("expand_sidebar" if self.sidebar_collapsed else "collapse_sidebar")
+        self.sidebar_toggle.setToolTip(action)
+        self.sidebar_toggle.setAccessibleName(action)
+        for index,key in enumerate(("dashboard","general","updates_tab","version_history","about")):
+            item=self.navigation.item(index)
+            item.setText("" if icons_only else tr(key))
+            item.setToolTip(tr(key))
+            item.setData(Qt.AccessibleTextRole,tr(key))
+            item.setTextAlignment(Qt.AlignAbsolute | Qt.AlignVCenter | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft))
+        self.navigation.viewport().update()
+
     def set_sidebar_collapsed(self, collapsed, animate=False):
-        self.sidebar_collapsed = collapsed
         current=self.sidebar.width()
         if hasattr(self,"sidebar_animation"):
             self.sidebar_animation.stop()
             self.sidebar_animation.deleteLater()
-        target=56 if collapsed else 180
+        self.sidebar_collapsed=collapsed
+        target=56 if collapsed else max(180,min(260,max(self.navigation.fontMetrics().horizontalAdvance(tr(key)) for key in ("dashboard","general","updates_tab","version_history","about"))+64))
+        self.sidebar.layout().setContentsMargins(4,12,4,8)
         self.sidebar.setMinimumWidth(0)
         self.sidebar.setMaximumWidth(16777215)
-        self.sidebar.setFixedWidth(target)
-        if animate:
-            self.sidebar_animation=QPropertyAnimation(self.sidebar,b"maximumWidth",self)
-            self.sidebar.setMinimumWidth(0)
-            self.sidebar_animation.setDuration(190)
-            self.sidebar_animation.setStartValue(current)
-            self.sidebar_animation.setEndValue(target)
-            self.sidebar_animation.setEasingCurve(QEasingCurve.OutCubic)
-            self.sidebar_animation.finished.connect(lambda: self.sidebar.setFixedWidth(target))
-            self.sidebar_animation.start()
-        self.sidebar.layout().setContentsMargins(4 if collapsed else 8,8,4 if collapsed else 8,8)
-        self.sidebar_brand.setVisible(not collapsed)
-        self.sidebar_version.setVisible(not collapsed)
-        action = tr("expand_sidebar" if collapsed else "collapse_sidebar")
-        self.sidebar_toggle.setToolTip(action)
-        self.sidebar_toggle.setAccessibleName(action)
-        for index,key in enumerate(("dashboard","general","updates_tab","version_history","about")):
-            item = self.navigation.item(index)
-            item.setText("" if collapsed else tr(key))
-            item.setToolTip(tr(key))
-            item.setData(Qt.AccessibleTextRole,tr(key))
-            item.setTextAlignment(Qt.AlignAbsolute | Qt.AlignVCenter | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft))
+        if not animate:
+            self.sidebar.setFixedWidth(target)
+            self.render_sidebar(collapsed)
+            return
+        self.render_sidebar(True)
+        self.sidebar.setMaximumWidth(current)
+        self.sidebar_animation=QPropertyAnimation(self.sidebar,b"maximumWidth",self)
+        self.sidebar_animation.setDuration(190)
+        self.sidebar_animation.setStartValue(current)
+        self.sidebar_animation.setEndValue(target)
+        self.sidebar_animation.setEasingCurve(QEasingCurve.OutCubic)
+        def finish():
+            self.sidebar.setFixedWidth(target)
+            self.render_sidebar(self.sidebar_collapsed)
+        self.sidebar_animation.finished.connect(finish)
+        self.sidebar_animation.start()
 
     def preview_calendar(self):
         if hasattr(self,"report"):
@@ -806,6 +828,7 @@ class BreakOverlay(QWidget):
         self.countdown.setMinimumWidth(160)
         timer_column.addWidget(self.countdown)
         self.timer_caption = label(tr("remaining"), "muted", center=True)
+        self.timer_caption.setWordWrap(True)
         timer_column.addWidget(self.timer_caption)
         row.addLayout(timer_column)
         text = QVBoxLayout()
@@ -819,16 +842,21 @@ class BreakOverlay(QWidget):
         row.addLayout(text, 1)
         ui_icons.apply(self)
 
-    def resizeEvent(self, event):
+    def layout_card(self):
         width = min(920, self.width() - 24)
         compact = width < 680
         for button,key in ((self.start,"start"),(self.stop,"stop"),(self.reset,"reset_timer")):
             button.setText("" if compact else tr(key))
         self.controls.setFixedWidth(sum(button.sizeHint().width() for button in (self.start,self.stop,self.reset))+12)
-        self.card.setGeometry((self.width()-width)//2,16,width,96)
         self.caption.setVisible(not compact)
         self.heading.setVisible(width >= 420)
         self.timer_caption.setVisible(not compact)
+        needed=self.card.layout().totalHeightForWidth(width)
+        height=max(96,needed,self.card.layout().minimumSize().height())
+        self.card.setGeometry((self.width()-width)//2,16,width,height)
+
+    def resizeEvent(self,event):
+        self.layout_card()
         super().resizeEvent(event)
 
     def set_running(self, running):
@@ -836,6 +864,7 @@ class BreakOverlay(QWidget):
         self.stop.setEnabled(running)
         self.heading.setText(tr("break_heading") if running else tr("break_paused"))
         self.timer_caption.setText(tr("remaining") if running else tr("timer_paused"))
+        self.layout_card()
 
     def paintEvent(self, event):
         painter = QPainter(self)

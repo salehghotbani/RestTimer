@@ -69,6 +69,10 @@ namespace RestTimer
 
         protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
         {
+            var bounds=e.TextRectangle;
+            bounds.Intersect(new Rectangle(Point.Empty,e.Item.Size));
+            e.TextRectangle=bounds;
+            e.TextFormat|=TextFormatFlags.EndEllipsis|TextFormatFlags.SingleLine;
             e.TextColor = e.Item.Enabled ? (e.Item.Selected ? Theme.OnSelection : Theme.Text) : Theme.Muted;
             base.OnRenderItemText(e);
         }

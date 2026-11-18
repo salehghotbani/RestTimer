@@ -1,5 +1,12 @@
 # RestTimer changelog
 
+## 1.14.2
+- Fix sidebar animation: reserve brand/navigation positions, anchor icons, reveal labels at the final width, and handle interrupted/reversed transitions without losing state.
+- Adapt sidebar width to translated labels; keep tooltips and keyboard navigation in the collapsed rail.
+- Fix text clipping across General, Updates, Version history and work-session dialogs at display scaling and narrow widths. Wrap checkbox text while preserving native mouse/keyboard behavior.
+- Fit dashboard table columns to the viewport, put task columns on the correct RTL side, and adapt reminder height to localized captions/countdowns.
+- Add automated audits of all five pages in all 13 languages, light/dark themes, normal/minimum sizes and expanded/collapsed sidebars, plus dialogs, reminders and animation frames.
+
 ## 1.14.1
 - Organize General into four titled cards: Timer, Language and calendar, Appearance, and App behavior. Keep timer actions beside their duration settings and startup/update switches together.
 - Preserve the compact, scroll-free layout, reading direction, live language/theme previews, pending edits and timer state.

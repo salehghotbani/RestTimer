@@ -86,12 +86,19 @@ namespace RestTimer
             Text = I18n.T("new_session"); Font = Theme.BodyFont; RightToLeft = I18n.Flow;
             StartPosition = FormStartPosition.CenterScreen; FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false; ShowInTaskbar = false; AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new SizeF(96,96);
             ClientSize = new Size(536, 328);
             var title = new Label { Text = I18n.T("task_name"), Bounds = new Rectangle(28, 20, 480, 30) };
             var name = new TextBox { Text = task ?? "", MaxLength = 120, Bounds = new Rectangle(28, 56, 480, 32), AccessibleName = title.Text };
             var duration = new DurationEditor(I18n.T("work_duration"), I18n.T("session_hint"), seconds) { Location = new Point(28, 104) };
-            var error = new Label { Bounds = new Rectangle(28, 238, 480, 32), ForeColor = Theme.Error };
+            var error = new Label { Bounds = new Rectangle(28, 238, 480, 32), ForeColor = Theme.Error, Tag="error" };
             var begin = new RoundedButton(true) { Text = I18n.T("new_session"), Bounds = new Rectangle(268, 280, 240, 34) };
+            error.TextChanged+=(_,__)=>
+            {
+                float z=Theme.ScaleFor(this);
+                error.Height=Math.Max((int)(32*z),TextRenderer.MeasureText(error.Text,error.Font,new Size(Math.Max(1,error.Width),32767),TextFormatFlags.WordBreak).Height+(int)(4*z));
+                begin.Top=error.Bottom+(int)(10*z);ClientSize=new Size(ClientSize.Width,Math.Max((int)(328*z),begin.Bottom+(int)(14*z)));
+            };
             begin.Click += (_, __) => {
                 if (string.IsNullOrWhiteSpace(name.Text)) { error.Text = I18n.T("task_required"); name.Focus(); return; }
                 if (!duration.TryGetSeconds(out int value) || value < 1 || value > Preferences.MaxWorkSeconds) { error.Text = I18n.T("work_validation"); return; }

@@ -44,6 +44,9 @@ jobs:
       - name: Verify compact layout, calendars and appearance
         shell: pwsh
         run: ./tests/windows_appearance.ps1
+      - name: Audit every page and sidebar animation in all languages
+        shell: pwsh
+        run: ./tests/windows_visual.ps1
       - name: Test installation, automatic close/restart, upgrade and removal in both languages
         shell: pwsh
         run: |
@@ -65,6 +68,8 @@ jobs:
             obj/dashboard/*.png
             obj/dashboard/*.pdf
             obj/appearance/*.png
+            obj/visual-audit/*.png
+            obj/visual-audit/issues.txt
 
   linux:
     runs-on: ubuntu-22.04
@@ -90,6 +95,7 @@ jobs:
           QT_QPA_PLATFORM=offscreen python tests/sidebar.py
           QT_QPA_PLATFORM=offscreen python tests/tray_menu.py
           QT_QPA_PLATFORM=offscreen python tests/appearance.py
+          QT_QPA_PLATFORM=offscreen python tests/visual_audit.py
           test "$(pdfinfo build/dashboard-linux/many.pdf | awk '/Pages:/ {print $2}')" = 4
           pdftoppm -scale-to 1300 -f 1 -singlefile -png build/dashboard-linux/fa-2.pdf build/dashboard-linux/fa-pdf-preview
           QT_QPA_PLATFORM=offscreen python tests/linux_localization.py
@@ -103,6 +109,7 @@ jobs:
             build/dashboard-linux/**
             build/sidebar/**
             build/appearance/**
+            build/visual-audit/**
       - name: Build Debian and RPM installers
         run: bash tools/build_linux.sh
       - name: Test frozen desktop on X11

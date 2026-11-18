@@ -90,10 +90,15 @@ namespace RestTimer
             SetStyle(ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
             Cursor = Cursors.Hand;
         }
+        public int HeightForWidth(int width)
+        {
+            float z=Theme.ScaleFor(this);
+            return Math.Max((int)(24*z),TextRenderer.MeasureText(Text,Font,new Size(Math.Max(1,width-(int)(28*z)),32767),TextFormatFlags.WordBreak|TextFormatFlags.NoPrefix).Height+(int)(4*z));
+        }
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaintBackground(e);
-            float scale = DeviceDpi / 96f;
+            float scale = Theme.ScaleFor(this);
             int side = (int)(16 * scale), gap = (int)(10 * scale);
             bool rtl = RightToLeft == RightToLeft.Yes;
             var box = new Rectangle(rtl ? Width - side - 1 : 1, (Height - side) / 2, side, side);
@@ -111,7 +116,7 @@ namespace RestTimer
                         new PointF(box.Left + 7 * scale, box.Top + 12 * scale), new PointF(box.Left + 13 * scale, box.Top + 4 * scale) });
             var text = rtl ? new Rectangle(0, 0, Width - side - gap, Height) : new Rectangle(side + gap, 0, Width - side - gap, Height);
             TextRenderer.DrawText(e.Graphics, Text, Font, text, Enabled ? Theme.Text : Theme.Muted,
-                TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | (rtl ? TextFormatFlags.Right | TextFormatFlags.RightToLeft : TextFormatFlags.Left));
+                TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak | (rtl ? TextFormatFlags.Right | TextFormatFlags.RightToLeft : TextFormatFlags.Left));
             if (Focused && ShowFocusCues) ControlPaint.DrawFocusRectangle(e.Graphics, text, Theme.Text, Theme.Background);
         }
     }

@@ -26,6 +26,8 @@ namespace RestTimer
         private readonly Panel latestPanel, historyPanel;
         private readonly Label historyTitle;
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
+        private bool fitting;
+        private bool historyMode;
         private bool working;
         private bool installing;
         private ReleaseInfo displayedRelease;
@@ -93,8 +95,8 @@ namespace RestTimer
                 if (e.Index < 0) return;
                 bool selected = (e.State & DrawItemState.Selected) != 0;
                 using (var brush = new SolidBrush(selected ? Theme.Selection : Theme.Surface)) e.Graphics.FillRectangle(brush, e.Bounds);
-                string title = versions.Items[e.Index] is ReleaseInfo release ? I18n.T("version_label", release.Version.ToString(3)) : I18n.T("bundled_versions");
-                TextRenderer.DrawText(e.Graphics, title, Theme.BodyFont, Rectangle.Inflate(e.Bounds, -10, 0),
+                string title = versions.Items[e.Index] is ReleaseInfo release ? "\u200ev"+release.Version.ToString(3) : I18n.T("bundled_versions");
+                TextRenderer.DrawText(e.Graphics, title, versions.Font, Rectangle.Inflate(e.Bounds, -10, 0),
                     selected ? Theme.OnSelection : Theme.Text, (I18n.IsRtl ? TextFormatFlags.RightToLeft | TextFormatFlags.Right : TextFormatFlags.Left) | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
                 if ((e.State & DrawItemState.Focus) != 0) e.DrawFocusRectangle();
             };
@@ -133,6 +135,44 @@ namespace RestTimer
             SelectPage(false);
             ShowLatest();
             ApplyTheme();
+            Resize+=(_,__)=>FitText();
+            foreach(var label in new[]{heading,description,consent,historyTitle,progressText}) label.TextChanged+=(_,__)=>FitText();
+            progress.VisibleChanged+=(_,__)=>FitText();
+            FitText();
+        }
+        private int TextHeight(Label label,int width)
+        {
+            return TextRenderer.MeasureText(label.Text,label.Font,new Size(Math.Max(1,width),32767),TextFormatFlags.WordBreak|TextFormatFlags.NoPrefix).Height;
+        }
+        private void FitText()
+        {
+            if(fitting || actions==null || IsDisposed) return;
+            fitting=true;
+            try
+            {
+                float z=Theme.ScaleFor(this);int gap=(int)(6*z);
+                int width=Math.Max(1,ClientSize.Width-layout.Padding.Horizontal);
+                heading.Height=Math.Max((int)(40*z),TextHeight(heading,width)+(int)(4*z));
+                description.Height=Math.Max((int)(32*z),TextHeight(description,width)+(int)(4*z));
+                layout.RowStyles[0].Height=heading.Height+description.Height+gap;
+                layout.RowStyles[1].Height=historyMode?0:((ThemedCheckBox)daily).HeightForWidth(width)+(int)(6*z);
+                layout.RowStyles[4].Height=historyMode?0:Math.Max((int)(44*z),TextHeight(consent,width)+(int)(18*z));
+                layout.RowStyles[5].Height=progress.Visible?10*z:0;
+                layout.RowStyles[6].Height=string.IsNullOrEmpty(progressText.Text)?0:Math.Max(28*z,TextHeight(progressText,width)+8*z);
+                historyTitle.Height=Math.Max((int)(36*z),TextHeight(historyTitle,Math.Max((int)(80*z),width-(int)(24*z)-versions.Parent.Parent.Width))+gap);
+                int needed=TextRenderer.MeasureText(install.Text,install.Font).Width+TextRenderer.MeasureText(check.Text,check.Font).Width+(int)(110*z);
+                bool stack=!historyMode && needed>width;
+                actions.SuspendLayout();
+                actions.RowCount=stack?2:1;actions.RowStyles.Clear();
+                actions.RowStyles.Add(new RowStyle(SizeType.Percent,stack?50:100));if(stack) actions.RowStyles.Add(new RowStyle(SizeType.Percent,50));
+                actions.SetCellPosition(install,new TableLayoutPanelCellPosition(0,0));
+                actions.SetColumnSpan(install,stack?2:1);
+                actions.SetCellPosition(check,new TableLayoutPanelCellPosition(stack?0:1,stack?1:0));actions.SetColumnSpan(check,stack?2:1);
+                install.Margin=new Padding(0,0,stack?0:gap,stack?gap/2:0);check.Margin=new Padding(stack?0:gap,stack?gap/2:0,0,0);
+                layout.RowStyles[7].Height=(stack?86:44)*z;
+                actions.ResumeLayout(true);
+            }
+            finally {fitting=false;}
         }
         private void ApplyTheme() { Theme.Apply(this); }
         public void SyncDailyPreference(bool enabled) => daily.Checked = enabled;
@@ -151,6 +191,8 @@ namespace RestTimer
         }
         public void SelectPage(bool history)
         {
+            historyMode=history;
+            daily.Visible=!history;
             latestPanel.Visible = !history;
             historyPanel.Visible = history;
             heading.Text = I18n.T(history ? "version_history" : "updates_title");
@@ -160,6 +202,7 @@ namespace RestTimer
             actions.ColumnStyles[0].Width = history ? 0 : 60;
             actions.ColumnStyles[1].Width = history ? 100 : 40;
             ShowLatest();
+            FitText();
         }
         public void EnsureLoaded()
         {

@@ -30,7 +30,7 @@ namespace RestTimer
         private RoundedPanel sidebar;
         private TableLayoutPanel rootLayout, sidebarTabs;
         private Panel sidebarBrand;
-        private Label sidebarVersion;
+        private Label sidebarVersion, sidebarName;
         private RoundedButton sidebarToggle;
         private readonly ToolTip sidebarHints = new ToolTip();
         public bool SidebarCollapsed { get; private set; }
@@ -88,14 +88,14 @@ namespace RestTimer
             MinimumSize = new Size(780, 640);
             DoubleBuffered = true;
             MinimizeBox = false;
-            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 1 };
+            var layout = new BufferedTableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 2, RowCount = 1 };
             rootLayout = layout;
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             sidebar = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(8),
                 Margin = I18n.IsRtl ? new Padding(10, 0, 0, 0) : new Padding(0, 0, 10, 0) };
-            var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 9, AccessibleName = I18n.T("settings_navigation") };
+            var tabs = new BufferedTableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 9, AccessibleName = I18n.T("settings_navigation") };
             sidebarTabs = tabs;
             tabs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
@@ -104,13 +104,13 @@ namespace RestTimer
             tabs.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
             var toggleRow = new Panel { Dock = DockStyle.Fill, RightToLeft = RightToLeft.No };
-            sidebarToggle = new RoundedButton { Name = "sidebar_toggle", Glyph = "menu", IconOnly = true, Quiet = true, Width = 32, Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left };
+            sidebarToggle = new RoundedButton { Name = "sidebar_toggle", Glyph = "menu", IconOnly = true, Quiet = true, Width = 40, Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left };
             sidebarToggle.Click += (_, __) => AnimateSidebar(!SidebarCollapsed);
             toggleRow.Controls.Add(sidebarToggle); tabs.Controls.Add(toggleRow,0,0);
             var brand = new Panel { Dock = DockStyle.Fill };
             sidebarBrand = brand;
             brand.Controls.Add(new PictureBox { Image = logo, SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Top, Height = 36 });
-            brand.Controls.Add(new Label { Text = "RestTimer", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleCenter,
+            brand.Controls.Add(sidebarName=new Label { Text = "RestTimer", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleCenter,
                 Dock = DockStyle.Bottom, Height = 32 });
             tabs.Controls.Add(brand, 0, 1);
             string[] pages = { "report", "general", "updates", "history", "about" };
@@ -118,7 +118,7 @@ namespace RestTimer
             for (int i = 0; i < pages.Length; i++)
             {
                 string page = pages[i];
-                var button = new RoundedButton { Text = I18n.T(keys[i]), Dock = DockStyle.Fill, Margin = new Padding(0, 3, 0, 3), TabIndex = i + 1, Quiet = true, StartAligned = true, RightToLeft = I18n.Flow, TextAlign = I18n.IsRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft };
+                var button = new RoundedButton { Text = I18n.T(keys[i]), Dock = DockStyle.Fill, Margin = new Padding(0, 3, 0, 3), TabIndex = i + 1, Quiet = true, KeepIconAtStart = true, StartAligned = true, RightToLeft = I18n.Flow, TextAlign = I18n.IsRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft };
                 button.Click += (_, __) => SelectPage(page);
                 navigation.Add(page, button);
                 tabs.Controls.Add(button, 0, i + 2);
@@ -146,30 +146,41 @@ namespace RestTimer
             themeTimer.Start();
         }
 
+        private float SidebarWidth(bool collapsed)
+        {
+            float z=AutoScaleDimensions.Width/96f;
+            if(collapsed) return 66*z;
+            int text=0;foreach(var button in navigation.Values) text=Math.Max(text,TextRenderer.MeasureText(button.Text,button.Font).Width);
+            float desired=Math.Max(190*z,text+74*z);
+            float available=Math.Max(190*z,ClientSize.Width-24*z-480*z);
+            return Math.Min(Math.Min(280*z,available),desired);
+        }
+        private void RenderSidebar(bool iconsOnly)
+        {
+            float z=AutoScaleDimensions.Width/96f;
+            // Keep the brand/footer rows in place so navigation never jumps vertically.
+            sidebar.Padding=new Padding((int)(8*z));
+            sidebarTabs.RowStyles[1].Height=76*z;
+            sidebarTabs.RowStyles[8].Height=28*z;
+            sidebarBrand.Visible=true;
+            sidebarName.Visible=sidebarVersion.Visible=!iconsOnly;
+            sidebarToggle.Text=I18n.T(SidebarCollapsed?"expand_sidebar":"collapse_sidebar");
+            sidebarToggle.AccessibleName=sidebarToggle.Text;
+            sidebarToggle.Dock=I18n.IsRtl?DockStyle.Right:DockStyle.Left;
+            sidebarHints.SetToolTip(sidebarToggle,sidebarToggle.Text);
+            foreach(var button in navigation.Values)
+            {
+                button.IconOnly=iconsOnly;button.StartAligned=true;button.RightToLeft=I18n.Flow;
+                button.TextAlign=I18n.IsRtl?ContentAlignment.MiddleRight:ContentAlignment.MiddleLeft;
+                button.AccessibleName=button.Text;sidebarHints.SetToolTip(button,button.Text);button.Invalidate();
+            }
+        }
         public void SetSidebarCollapsed(bool collapsed)
         {
-            sidebarAnimation?.Stop();
-            SidebarCollapsed = collapsed;
-            float scale = AutoScaleDimensions.Width / 96f;
-            rootLayout.ColumnStyles[0].Width = (collapsed ? 58 : 190) * scale;
-            sidebar.Padding = new Padding((int)((collapsed ? 4 : 8) * scale));
-            sidebarTabs.RowStyles[1].Height = collapsed ? 0 : 76 * scale;
-            sidebarTabs.RowStyles[8].Height = collapsed ? 0 : 28 * scale;
-            sidebarBrand.Visible = sidebarVersion.Visible = !collapsed;
-            sidebarToggle.Text = I18n.T(collapsed ? "expand_sidebar" : "collapse_sidebar");
-            sidebarToggle.AccessibleName = sidebarToggle.Text;
-            sidebarToggle.Dock = I18n.IsRtl ? DockStyle.Right : DockStyle.Left;
-            sidebarHints.SetToolTip(sidebarToggle, sidebarToggle.Text);
-            foreach (var pair in navigation)
-            {
-                pair.Value.IconOnly = collapsed;
-                pair.Value.StartAligned = true;
-                pair.Value.RightToLeft = I18n.Flow;
-                pair.Value.TextAlign = I18n.IsRtl ? ContentAlignment.MiddleRight : ContentAlignment.MiddleLeft;
-                pair.Value.AccessibleName = pair.Value.Text;
-                sidebarHints.SetToolTip(pair.Value, pair.Value.Text);
-                pair.Value.Invalidate();
-            }
+            sidebarAnimation?.Stop();SidebarCollapsed=collapsed;
+            rootLayout.SuspendLayout();
+            RenderSidebar(collapsed);rootLayout.ColumnStyles[0].Width=SidebarWidth(collapsed);
+            rootLayout.ResumeLayout(true);
         }
 
         private Control CreateGeneralPage(Preferences preferences, Action start, Action stop)
@@ -180,8 +191,8 @@ namespace RestTimer
             var localeSection=CreateSection("language_region");
             var appearanceSection=CreateSection("appearance");
             var behaviorSection=CreateSection("app_behavior");
-            workDuration = new DurationEditor(I18n.T("work_duration"), I18n.T("work_hint"), preferences.WorkSeconds);
-            breakDuration = new DurationEditor(I18n.T("break_duration"), I18n.T("break_hint"), preferences.BreakSeconds);
+            workDuration = new DurationEditor(I18n.T("work_short"), I18n.T("work_hint"), preferences.WorkSeconds);
+            breakDuration = new DurationEditor(I18n.T("break_short"), I18n.T("break_hint"), preferences.BreakSeconds);
             startTimer = new RoundedButton(true) { Name="i18n:start", Text=I18n.T("start") };
             stopTimer = new RoundedButton { Name="i18n:stop", Text=I18n.T("stop") };
             resetTimer = new RoundedButton { Name="i18n:reset_timer", Text=I18n.T("reset_timer") };
@@ -233,22 +244,33 @@ namespace RestTimer
                 int h=body.ClientSize.Height, y=(int)(8*z);
                 bool compact=h<660*z;
                 int gap=(int)((compact?6:8)*z);
-                int inset=(int)((compact?6:12)*z), heading=(int)((compact?20:28)*z);
+                int inset=(int)((compact?6:12)*z), heading=(int)((compact?24:28)*z);
                 int row=(int)((compact?28:32)*z), checkHeight=(int)((compact?22:28)*z);
+                foreach(var check in new[]{daily,startupPreference,showTaskbarCountdown}) check.Font=compact?note.Font:Font;
                 int middleHeight=heading+2*row+gap+2*inset;
-                int behaviorHeight=heading+3*checkHeight+2*inset;
-                int footer=(int)((compact?38:42)*z), controls=(int)((compact?28:32)*z), status=(int)((compact?18:22)*z);
-                int card=Math.Max((int)(82*z),Math.Min((int)(120*z),h-y-middleHeight-behaviorHeight-footer-4*gap-heading-controls-status-2*inset-gap));
+                int behaviorHeight=heading+2*inset;
+                foreach(ThemedCheckBox item in new[]{daily,startupPreference,showTaskbarCountdown}) behaviorHeight+=Math.Max(checkHeight,item.HeightForWidth(w-2*inset));
+                int noteWidth=w-(int)(154*z)-gap;
+                int footer=Math.Max((int)((compact?38:42)*z),TextRenderer.MeasureText(note.Text,note.Font,new Size(Math.Max(1,noteWidth),32767),TextFormatFlags.WordBreak).Height+(int)(4*z));
+                int controls=(int)((compact?28:32)*z), status=(int)((compact?18:22)*z);
+                int card=Math.Max((int)(90*z),Math.Min((int)(120*z),h-y-middleHeight-behaviorHeight-footer-4*gap-heading-controls-status-2*inset-gap));
                 int timeHeight=heading+card+gap+controls+status+2*inset;
                 timeSection.SetBounds(x,y,w,timeHeight);y+=timeHeight+gap;
                 int inner=w-2*inset, half=(inner-gap)/2;
                 workDuration.SetBounds(I18n.IsRtl?inset+inner-half:inset,inset+heading,half,card);
                 breakDuration.SetBounds(I18n.IsRtl?inset:inset+inner-half,inset+heading,half,card);
                 workDuration.CompactLayout();breakDuration.CompactLayout();
-                int cy=inset+heading+card+gap, bw=(inner-2*gap)/3;
-                startTimer.SetBounds(I18n.IsRtl?inset+inner-bw:inset,cy,bw,controls);
-                stopTimer.SetBounds(inset+bw+gap,cy,bw,controls);
-                resetTimer.SetBounds(I18n.IsRtl?inset:inset+inner-bw,cy,bw,controls);
+                int cy=inset+heading+card+gap;
+                var timerButtons=new[]{(RoundedButton)startTimer,(RoundedButton)stopTimer,(RoundedButton)resetTimer};
+                int wanted=0;foreach(var button in timerButtons) wanted+=button.LabeledWidth;
+                bool iconActions=wanted>inner-2*gap;
+                int free=inner-2*gap-(iconActions?0:wanted), cursor=I18n.IsRtl?inset+inner:inset;
+                for(int i=0;i<timerButtons.Length;i++)
+                {
+                    var button=timerButtons[i];button.IconOnly=iconActions;button.AccessibleName=button.Text;sidebarHints.SetToolTip(button,button.Text);
+                    int bw=(iconActions?0:button.LabeledWidth)+free/3+(i==2?free%3:0);
+                    button.SetBounds(I18n.IsRtl?cursor-bw:cursor,cy,bw,controls);cursor+=(I18n.IsRtl?-1:1)*(bw+gap);
+                }
                 timerStatus.SetBounds(inset,cy+controls,inner,status);
                 int localeWidth=(int)((w-gap)*0.62), appearanceWidth=w-gap-localeWidth;
                 localeSection.SetBounds(I18n.IsRtl?x+w-localeWidth:x,y,localeWidth,middleHeight);
@@ -265,12 +287,12 @@ namespace RestTimer
                 themeChoice.SetBounds(inset,inset+heading,appearanceWidth-2*inset,row);
                 behaviorSection.SetBounds(x,y,w,behaviorHeight);y+=behaviorHeight+gap;
                 int iy=inset+heading;
-                foreach(var check in new[]{daily,startupPreference,showTaskbarCountdown}) { check.SetBounds(inset,iy,w-2*inset,checkHeight);iy+=checkHeight; }
+                foreach(var check in new[]{daily,startupPreference,showTaskbarCountdown}) { int ch=Math.Max(checkHeight,((ThemedCheckBox)check).HeightForWidth(w-2*inset));check.SetBounds(inset,iy,w-2*inset,ch);iy+=ch; }
                 foreach(var section in new[]{timeSection,localeSection,appearanceSection,behaviorSection})
                     section.Controls["section_heading"].SetBounds(inset,inset,section.Width-2*inset,heading);
                 int saveWidth=(int)(154*z), footerY=Math.Max(y,h-footer);
                 savePreferences.SetBounds(I18n.IsRtl?x+w-saveWidth:x,footerY,saveWidth,(int)(34*z));
-                note.SetBounds(I18n.IsRtl?x:x+saveWidth+gap,footerY,w-saveWidth-gap,(int)(38*z));
+                note.SetBounds(I18n.IsRtl?x:x+saveWidth+gap,footerY,w-saveWidth-gap,footer);
             };
             body.Resize+=(_,__)=>arrange(); body.Layout+=(_,__)=>{ if(!body.IsDisposed) arrange(); };
             calendarChoice.SelectedIndexChanged+=(_,__)=> { if(calendarChoice.SelectedItem==null) return;DateDisplay.Preference=((LanguageItem)calendarChoice.SelectedItem).Code;reportPage?.RefreshReport(); };
@@ -369,8 +391,8 @@ namespace RestTimer
                 int gap = (int)(10 * DeviceDpi / 96f);
                 sidebar.Margin = I18n.IsRtl ? new Padding(gap, 0, 0, 0) : new Padding(0, 0, gap, 0);
 
-                workDuration.Relocalize(I18n.T("work_duration"), I18n.T("work_hint"));
-                breakDuration.Relocalize(I18n.T("break_duration"), I18n.T("break_hint"));
+                workDuration.Relocalize(I18n.T("work_short"), I18n.T("work_hint"));
+                breakDuration.Relocalize(I18n.T("break_short"), I18n.T("break_hint"));
                 string[] pages = { "report", "general", "updates", "history", "about" };
                 string[] keys = { "dashboard", "general", "updates_tab", "version_history", "about" };
                 for (int i = 0; i < pages.Length; i++) navigation[pages[i]].Text = I18n.T(keys[i]);
@@ -400,13 +422,27 @@ namespace RestTimer
         }
         private void AnimateSidebar(bool collapsed)
         {
-            float current=rootLayout.ColumnStyles[0].Width;
-            SetSidebarCollapsed(collapsed);
-            sidebarTarget=rootLayout.ColumnStyles[0].Width;sidebarFrom=current;
-            rootLayout.ColumnStyles[0].Width=current;
-            if(sidebarAnimation==null) { sidebarAnimation=new Timer { Interval=15 };sidebarAnimation.Tick+=(_,__)=>
-                { double t=Math.Min(1,sidebarClock.Elapsed.TotalMilliseconds/190);double ease=1-Math.Pow(1-t,3);rootLayout.ColumnStyles[0].Width=sidebarFrom+(sidebarTarget-sidebarFrom)*(float)ease;if(t>=1) sidebarAnimation.Stop(); }; }
+            sidebarAnimation?.Stop();
+            sidebarFrom=rootLayout.ColumnStyles[0].Width;SidebarCollapsed=collapsed;sidebarTarget=SidebarWidth(collapsed);
+            // Draw only icons while resizing; labels are revealed at their final width.
+            RenderSidebar(true);
+            if(sidebarAnimation==null)
+            {
+                sidebarAnimation=new Timer { Interval=15 };
+                sidebarAnimation.Tick+=(_,__)=>
+                {
+                    double t=Math.Min(1,sidebarClock.Elapsed.TotalMilliseconds/190), ease=1-Math.Pow(1-t,3);
+                    rootLayout.ColumnStyles[0].Width=sidebarFrom+(sidebarTarget-sidebarFrom)*(float)ease;
+                    if(t>=1) { sidebarAnimation.Stop();RenderSidebar(SidebarCollapsed); }
+                };
+            }
             sidebarClock.Restart();sidebarAnimation.Start();
+        }
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if(rootLayout!=null && navigation.Count>0 && sidebarAnimation?.Enabled!=true)
+                rootLayout.ColumnStyles[0].Width=SidebarWidth(SidebarCollapsed);
         }
         private void ApplyTheme() { Theme.Apply(this); paletteKey = Theme.PaletteKey; }
         protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); Theme.ApplyWindowFrame(Handle); }
@@ -417,6 +453,7 @@ namespace RestTimer
             var area = Screen.FromControl(this).WorkingArea;
             if (Height > area.Height - 24) Height = area.Height - 24;
             if (Width > area.Width - 24) Width = area.Width - 24;
+            SetSidebarCollapsed(SidebarCollapsed);
             SelectPage(CurrentPage);
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -483,6 +520,7 @@ namespace RestTimer
             note.Text = message;
             note.Tag = "error";
             note.ForeColor = Theme.Error;
+            generalBody.PerformLayout();
         }
     }
 }
