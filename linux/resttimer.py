@@ -11,7 +11,7 @@ import uuid
 import work_tracking
 
 from PySide6.QtCore import QDate, QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QTextLayout, QDesktopServices
+from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QTextLayout, QDesktopServices
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QAbstractSpinBox, QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLabel,
@@ -724,6 +724,8 @@ class Controller:
         self.instance = None
         self.deadline = self.paused_at + self.preferences["work_seconds"]
         self.menu = QMenu()
+        self.settings_action = self.menu.addAction(tr("dashboard"), self.show_dashboard)
+        self.menu.addSeparator()
         self.start_timer_action = self.menu.addAction(tr("start"), self.start_timer)
         self.stop_timer_action = self.menu.addAction(tr("stop"), self.stop_timer)
         self.start_action = self.menu.addAction(tr("start_break"), self.begin_break)
@@ -732,7 +734,6 @@ class Controller:
         self.status = self.menu.addAction("RestTimer")
         self.status.setEnabled(False)
         self.menu.addSeparator()
-        self.settings_action = self.menu.addAction(tr("settings_menu"), self.show_settings)
         self.startup_action = QAction(tr("startup"), self.menu)
         self.startup_action.setCheckable(True)
         self.startup_action.setChecked(startup_path().exists())
@@ -763,7 +764,8 @@ class Controller:
 
     def tray_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
-            self.menu.popup(QCursor.pos())
+            self.menu.close()
+            self.show_dashboard()
 
     def apply_language(self, keep_visible=True):
         self.set_interface_language(self.preferences.get("language", "auto"), keep_visible)
@@ -779,7 +781,7 @@ class Controller:
         self.app.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
         for action, key in ((self.start_timer_action, "start"), (self.stop_timer_action, "stop"),
                             (self.start_action, "start_break"), (self.reset_timer_action, "reset_timer"),
-                            (self.settings_action, "settings_menu"),
+                            (self.settings_action, "dashboard"),
                             (self.startup_action, "startup"), (self.update_action, "updates_menu"),
                             (self.quit_action, "quit")):
             action.setText(tr(key))
@@ -803,9 +805,15 @@ class Controller:
             self.update_dialog.retranslate(previous)
         self.tick()
 
+    def show_dashboard(self):
+        self.show_page("report")
+
     def show_settings(self):
+        self.show_page("general")
+
+    def show_page(self, page):
         if not self.breaking:
-            self.settings.select_page("general")
+            self.settings.select_page(page)
             self.settings.show()
             self.settings.raise_()
             self.settings.activateWindow()

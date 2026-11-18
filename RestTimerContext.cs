@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Security;
 using System.Windows.Forms;
 
@@ -62,7 +61,7 @@ namespace RestTimer
             stopTimer = new ToolStripMenuItem(I18n.T("stop"), null, (_, __) => StopTimer());
             startBreak = new ToolStripMenuItem(I18n.T("start_break"), null, (_, __) => breakRequested = true);
             resetTimer = new ToolStripMenuItem(I18n.T("reset_timer"), null, (_, __) => ResetTimer());
-            settings = new ToolStripMenuItem(I18n.T("settings_menu"), null, (_, __) => EditSettings());
+            settings = new ToolStripMenuItem(I18n.T("dashboard"), null, (_, __) => ShowDashboard());
             startup = new ToolStripMenuItem(I18n.T("startup"), null, (_, __) => ToggleStartup());
             updates = new ToolStripMenuItem(I18n.T("updates_menu"), null, (_, __) => ShowUpdates());
             var exit = new ToolStripMenuItem(I18n.T("quit"), null, (_, __) => ExitThread());
@@ -79,8 +78,8 @@ namespace RestTimer
             };
             menu.Items.AddRange(new ToolStripItem[]
             {
-                startTimer, stopTimer, startBreak, resetTimer, new ToolStripSeparator(), status,
-                new ToolStripSeparator(), settings, startup, updates, new ToolStripSeparator(), exit
+                settings, new ToolStripSeparator(), startTimer, stopTimer, startBreak, resetTimer, new ToolStripSeparator(), status,
+                new ToolStripSeparator(), startup, updates, new ToolStripSeparator(), exit
             });
             foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
                 item.Padding = new Padding(6, 2, 6, 2);
@@ -110,17 +109,13 @@ namespace RestTimer
             timer.Start();
         }
 
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr window);
-
         private void TrayMouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left)
                 return;
 
-            menu.Show(Cursor.Position);
-            SetForegroundWindow(menu.Handle);
-            menu.Focus();
+            menu.Close();
+            ShowDashboard();
         }
 
         private void UpdateTimer()
@@ -300,13 +295,21 @@ namespace RestTimer
             overlays = Array.Empty<BreakOverlay>();
         }
 
-        private void EditSettings()
+        private void ShowDashboard()
         {
-            OpenPreferences("general");
+            OpenPreferences("report");
         }
 
         private void OpenPreferences(string page)
         {
+            if (settingsDialog != null && !settingsDialog.IsDisposed)
+            {
+                settingsDialog.SelectPage(page);
+                if (settingsDialog.WindowState == FormWindowState.Minimized) settingsDialog.WindowState = FormWindowState.Normal;
+                if (!settingsDialog.Visible) settingsDialog.Show();
+                settingsDialog.Activate();
+                return;
+            }
             if (breaking || editingSettings)
                 return;
 
@@ -353,7 +356,7 @@ namespace RestTimer
         private void RefreshLanguage()
         {
             menu.RightToLeft = I18n.Flow;
-            string[] keys = { "start", "stop", "start_break", "reset_timer", "settings_menu", "startup", "updates_menu", "quit" };
+            string[] keys = { "dashboard", "start", "stop", "start_break", "reset_timer", "startup", "updates_menu", "quit" };
             var items = menu.Items.OfType<ToolStripMenuItem>().Where(item => item != status).ToArray();
             for (int i = 0; i < keys.Length; i++) items[i].Text = I18n.T(keys[i]);
             if (UpdateClient.IsStable(updater.State.Latest) && updater.State.Latest.Version > UpdateClient.CurrentVersion)

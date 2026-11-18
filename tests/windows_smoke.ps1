@@ -145,17 +145,37 @@ internal static class Smoke
             {
                 var menu = (ContextMenuStrip)type.GetField("menu", flags).GetValue(context);
                 var tray = (NotifyIcon)type.GetField("trayIcon", flags).GetValue(context);
-                if (menu.Items[0] != type.GetField("startTimer", flags).GetValue(context)
-                    || menu.Items[1] != type.GetField("stopTimer", flags).GetValue(context)
-                    || menu.Items[2] != type.GetField("startBreak", flags).GetValue(context))
-                    throw new Exception("Start, stop and break must be the first menu entries.");
-                if (menu.Items[3] != type.GetField("resetTimer", flags).GetValue(context))
+                if (menu.Items[2] != type.GetField("startTimer", flags).GetValue(context)
+                    || menu.Items[3] != type.GetField("stopTimer", flags).GetValue(context)
+                    || menu.Items[4] != type.GetField("startBreak", flags).GetValue(context))
+                    throw new Exception("Timer controls must follow the dashboard entry.");
+                if (menu.Items[5] != type.GetField("resetTimer", flags).GetValue(context))
                     throw new Exception("Reset timer must follow the start, stop and break actions.");
                 if (menu.Items.OfType<ToolStripMenuItem>().Count() != 9) throw new Exception("Release history must only appear in the settings sidebar.");
                 if (tray.ContextMenuStrip != menu || !menu.AutoClose) throw new Exception("Native right-click menu or auto-close missing.");
-                type.GetMethod("TrayMouseUp", flags).Invoke(context, new object[] { null, new MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0) });
-                Application.DoEvents();
-                if (!menu.Visible || menu.Renderer.GetType().Name != "TrayMenuRenderer") throw new Exception("Styled left-click menu did not open.");
+                if(menu.Items[0] != type.GetField("settings",flags).GetValue(context)) throw new Exception("Dashboard must be the first menu entry.");
+                bool openedDashboard=false;
+                using(var closeDashboard=new System.Windows.Forms.Timer{Interval=20})
+                {
+                    closeDashboard.Tick+=delegate {
+                        var dialog=(Form)type.GetField("settingsDialog",flags).GetValue(context);
+                        if(dialog==null) return;
+                        closeDashboard.Stop();
+                        if((string)dialog.GetType().GetProperty("CurrentPage").GetValue(dialog)!="report" || menu.Visible)
+                            throw new Exception("Left-click must open the dashboard directly, without opening the menu.");
+                        dialog.GetType().GetMethod("SelectPage").Invoke(dialog,new object[]{"general"});
+                        type.GetMethod("TrayMouseUp",flags).Invoke(context,new object[]{null,new MouseEventArgs(MouseButtons.Left,1,0,0,0)});
+                        if(type.GetField("settingsDialog",flags).GetValue(context)!=dialog
+                            || (string)dialog.GetType().GetProperty("CurrentPage").GetValue(dialog)!="report")
+                            throw new Exception("Left-click must reuse the existing preferences window and select Dashboard.");
+                        openedDashboard=true;dialog.Close();
+                    };
+                    closeDashboard.Start();
+                    type.GetMethod("TrayMouseUp",flags).Invoke(context,new object[]{null,new MouseEventArgs(MouseButtons.Left,1,0,0,0)});
+                }
+                if(!openedDashboard) throw new Exception("Dashboard did not open from the tray icon.");
+                menu.Show(Cursor.Position);Application.DoEvents();
+                if(!menu.Visible || menu.Renderer.GetType().Name!="TrayMenuRenderer") throw new Exception("Styled right-click menu did not open.");
                 using (var bitmap = new Bitmap(menu.Width, menu.Height))
                 {
                     menu.DrawToBitmap(bitmap, new Rectangle(Point.Empty, menu.Size));

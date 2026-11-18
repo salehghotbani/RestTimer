@@ -1,5 +1,9 @@
 # RestTimer changelog
 
+## 1.11.1
+- Open Dashboard directly when left-clicking the tray icon on Windows and Linux; keep the compact context menu on right-click.
+- Rename the tray Settings action to Dashboard and move it to the top. Reuse and focus an existing panel instead of opening another window; keep General settings in the sidebar.
+
 ## 1.11.0
 - Launch paused on Windows and Linux, including sign-in and update restarts; counting begins only after a user action.
 - Add a date-filtered dashboard with pie, bar and hourly line charts, total work and task counts.

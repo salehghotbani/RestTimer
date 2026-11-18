@@ -42,13 +42,22 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     controller.settings.update_panel.check_on_show = False
     assert not hasattr(controller, "history_action")
     assert controller.settings.navigation.count() == 5
-    assert controller.menu.actions()[:3] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
-    assert controller.menu.actions()[3] == controller.reset_timer_action
+    assert controller.menu.actions()[2:5] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
+    assert controller.menu.actions()[5] == controller.reset_timer_action
+    assert controller.menu.actions()[0] == controller.settings_action
+    panel = controller.settings
+    controller.tray_activated(module.QSystemTrayIcon.Trigger)
+    assert controller.settings is panel and panel.current_page == "report" and panel.isVisible()
+    assert not controller.menu.isVisible()
+    controller.show_settings()
+    controller.settings_action.trigger()
+    assert controller.settings is panel and panel.current_page == "report"
+    assert controller.tray.contextMenu() is controller.menu
     controller.updater.state["daily_enabled"] = False
     controller.updater.save()
     controller.settings.daily.setChecked(False)
     controller.settings.remember_saved_settings()
-    controller.settings.show()
+    controller.show_settings()
     app.processEvents()
     for editor in (controller.settings.work, controller.settings.rest):
         for part in editor.parts:
