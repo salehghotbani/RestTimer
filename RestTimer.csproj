@@ -13,6 +13,8 @@
   <ItemGroup>
     <Compile Remove="tests/**/*.cs;build/**/*.cs;dist/**/*.cs" />
     <EmbeddedResource Include="CHANGELOG.md" />
+    <EmbeddedResource Include="LICENSE" LogicalName="RestTimer.LICENSE" />
+    <EmbeddedResource Include="assets/git.png" LogicalName="RestTimer.Git.png" />
     <EmbeddedResource Include="CHANGELOG.fa.md" WithCulture="false" LogicalName="RestTimer.CHANGELOG.fa.md" />
     <EmbeddedResource Include="locales/*.json" WithCulture="false" LogicalName="RestTimer.Locales.%(Filename)%(Extension)" />
     <Reference Include="System.Net.Http" />

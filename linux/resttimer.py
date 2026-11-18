@@ -10,12 +10,12 @@ import subprocess
 import uuid
 import work_tracking
 
-from PySide6.QtCore import QDate, QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QTextLayout, QDesktopServices
+from PySide6.QtCore import QDate, QIODevice, QSize, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QTextCursor, QTextLayout, QDesktopServices
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QAbstractSpinBox, QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLabel,
-    QDateEdit, QLineEdit, QTableWidget, QTableWidgetItem, QHeaderView, QMenu, QMessageBox, QPushButton, QListWidget, QStackedWidget, QScrollArea, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
+    QDateEdit, QLineEdit, QTableWidget, QTableWidgetItem, QHeaderView, QMenu, QMessageBox, QTextEdit, QPushButton, QListWidget, QStackedWidget, QScrollArea, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 import update_core
 import i18n
@@ -102,7 +102,7 @@ def apply_color_scheme(app, scheme):
 
 
 def verify_ui_assets():
-    for name in ("check-dark.svg", "check-light.svg"):
+    for name in ("check-dark.svg", "check-light.svg", "git.png"):
         if QIcon(str(ROOT / "assets" / name)).pixmap(16, 16).isNull():
             raise RuntimeError("Missing checkbox indicator or SVG support: " + name)
 
@@ -447,13 +447,16 @@ class SettingsDialog(QDialog):
         self.select_page(draft["page"])
 
     def about_page(self):
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
         page = QFrame()
         page.setObjectName("section")
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(18)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(12)
         logo = label("", center=True)
-        logo.setPixmap(self.controller.icon.pixmap(72, 72))
+        logo.setPixmap(self.controller.icon.pixmap(48, 48))
         layout.addWidget(logo)
         layout.addWidget(label("RestTimer", "title", center=True))
         layout.addWidget(label(tr("installed", self.controller.version), "muted", center=True))
@@ -463,10 +466,27 @@ class SettingsDialog(QDialog):
         layout.addWidget(label(tr("author") + ": Saleh Ghotbani", center=True))
         layout.addWidget(label(tr("license") + ": MIT", center=True))
         project = QPushButton(tr("project_site"))
+        project.setObjectName("project_site")
+        project.setIcon(QIcon(str(ROOT / "assets/git.png")))
+        project.setIconSize(QSize(22, 22))
         project.clicked.connect(self.open_project)
         layout.addWidget(project)
-        layout.addStretch(1)
-        return page
+        self.license_text = QTextEdit()
+        self.license_text.setObjectName("license_text")
+        self.license_text.setReadOnly(True)
+        self.license_text.setAcceptRichText(False)
+        self.license_text.setLayoutDirection(Qt.LeftToRight)
+        self.license_text.setAccessibleName("MIT License")
+        self.license_text.setPlainText((ROOT / "LICENSE").read_text(encoding="utf-8"))
+        self.license_text.selectAll()
+        self.license_text.setAlignment(Qt.AlignLeft | Qt.AlignAbsolute)
+        cursor = self.license_text.textCursor()
+        cursor.movePosition(QTextCursor.Start)
+        self.license_text.setTextCursor(cursor)
+        self.license_text.setMinimumHeight(180)
+        layout.addWidget(self.license_text, 1)
+        scroll.setWidget(page)
+        return scroll
 
     def open_project(self):
         if not QDesktopServices.openUrl(QUrl("https://github.com/salehghotbani/RestTimer")):

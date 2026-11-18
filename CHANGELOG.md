@@ -1,5 +1,9 @@
 # RestTimer changelog
 
+## 1.11.2
+- Show a Git icon on the GitHub project button in About.
+- Display the complete canonical MIT license as selectable, read-only, scrollable text, available offline on Windows and Linux. Keep the license text left-to-right in every UI language and support light/dark themes.
+
 ## 1.11.1
 - Open Dashboard directly when left-clicking the tray icon on Windows and Linux; keep the compact context menu on right-click.
 - Rename the tray Settings action to Dashboard and move it to the top. Reuse and focus an existing panel instead of opening another window; keep General settings in the sidebar.

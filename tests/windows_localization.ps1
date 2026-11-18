@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.Reflection;
+using System.Linq;
 using System.Windows.Forms;
 internal static class LocalizationSmoke
 {
@@ -80,6 +81,11 @@ internal static class LocalizationSmoke
                         if ((int)preferences.GetProperty("WorkSeconds").GetValue(saved) != 3723
                             || (string)preferences.GetProperty("Language").GetValue(saved) != code)
                             throw new Exception("Saving a language changed duration or lost the language.");
+                        var licenseBox=(RichTextBox)dialog.Controls.Find("license_text",true).Single();
+                        if(!licenseBox.ReadOnly || licenseBox.Text.Replace("\r", "").Trim()!=System.IO.File.ReadAllText("LICENSE").Replace("\r", "").Trim())
+                            throw new Exception("The complete canonical MIT license must be visible as read-only text.");
+                        var project=(Button)dialog.Controls.Find("i18n:project_site",true).Single();
+                        if(project.Image==null) throw new Exception("Project link must show the Git icon.");
                         foreach(string page in new[]{"general","updates","history","report","about"})
                         {
                             settings.GetMethod("SelectPage").Invoke(dialog,new object[]{page});

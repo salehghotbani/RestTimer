@@ -21,6 +21,7 @@ namespace RestTimer
         public event Action RestartRequested;
         private readonly Dictionary<string, RoundedButton> navigation = new Dictionary<string, RoundedButton>();
         private readonly Bitmap logo;
+        private readonly Bitmap gitLogo;
         private readonly Timer themeTimer;
         private string paletteKey;
         private RoundedPanel sidebar;
@@ -64,6 +65,8 @@ namespace RestTimer
             Text = "RestTimer — " + I18n.T("preferences_title");
             Icon = icon;
             logo = icon.ToBitmap();
+            using (var stream = typeof(SettingsDialog).Assembly.GetManifestResourceStream("RestTimer.Git.png"))
+            using (var image = Image.FromStream(stream)) gitLogo = new Bitmap(image);
             Font = Theme.BodyFont;
             RightToLeft = I18n.Flow;
             AutoScaleMode = AutoScaleMode.Dpi;
@@ -229,7 +232,7 @@ namespace RestTimer
             var page = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(28) };
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            foreach (int height in new[] { 84, 48, 36, 96, 38, 38, 46 }) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
+            foreach (int height in new[] { 64, 40, 30, 50, 30, 30, 46 }) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.Controls.Add(new PictureBox { Image = logo, SizeMode = PictureBoxSizeMode.Zoom, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 12) }, 0, 0);
             layout.Controls.Add(new Label { Text = "RestTimer", Font = Theme.HeadingFont, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 1);
@@ -238,7 +241,7 @@ namespace RestTimer
             layout.Controls.Add(new Label { Name = "i18n:about_description", Text = I18n.T("about_description"), Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 3);
             layout.Controls.Add(new Label { Name = "about_author", Text = I18n.T("author") + ": \u200eSaleh Ghotbani", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 4);
             layout.Controls.Add(new Label { Name = "about_license", Text = I18n.T("license") + ": MIT", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter }, 0, 5);
-            var project = new RoundedButton { Name = "i18n:project_site", Text = I18n.T("project_site"), Dock = DockStyle.Fill, Margin = new Padding(20, 4, 20, 4) };
+            var project = new RoundedButton { Name = "i18n:project_site", Text = I18n.T("project_site"), Image = gitLogo, Dock = DockStyle.Fill, Margin = new Padding(20, 4, 20, 4) };
             project.Click += (_, __) =>
             {
                 try { Process.Start(new ProcessStartInfo("https://github.com/salehghotbani/RestTimer") { UseShellExecute = true }); }
@@ -246,6 +249,14 @@ namespace RestTimer
                 { MessageBox.Show(this, I18n.T("open_link_error"), "RestTimer", MessageBoxButtons.OK, MessageBoxIcon.Information); }
             };
             layout.Controls.Add(project, 0, 6);
+            string licenseText;
+            using (var stream = typeof(SettingsDialog).Assembly.GetManifestResourceStream("RestTimer.LICENSE"))
+            using (var reader = new System.IO.StreamReader(stream)) licenseText = reader.ReadToEnd();
+            var license = new RichTextBox { Name = "license_text", Text = licenseText,
+                ReadOnly = true, BorderStyle = BorderStyle.None, DetectUrls = false,
+                ScrollBars = RichTextBoxScrollBars.Vertical, RightToLeft = RightToLeft.No,
+                Font = Theme.SmallFont, AccessibleName = "MIT License", WordWrap = true };
+            layout.Controls.Add(new ScrollFrame(license) { Margin = new Padding(0, 12, 0, 0) }, 0, 7);
             page.Controls.Add(layout);
             return page;
         }
@@ -340,7 +351,7 @@ namespace RestTimer
         {
             if (disposing) themeTimer?.Dispose();
             base.Dispose(disposing);
-            if (disposing) logo?.Dispose();
+            if (disposing) { logo?.Dispose(); gitLogo?.Dispose(); }
         }
 
         private void SaveDurations()

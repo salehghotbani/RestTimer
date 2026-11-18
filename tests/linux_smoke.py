@@ -41,6 +41,10 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert controller.deadline - controller.paused_at == initial_remaining
     controller.settings.update_panel.check_on_show = False
     assert not hasattr(controller, "history_action")
+    assert controller.settings.license_text.toPlainText().strip() == (ROOT / "LICENSE").read_text(encoding="utf-8").strip()
+    assert controller.settings.license_text.isReadOnly()
+    project_button = controller.settings.findChild(module.QPushButton, "project_site")
+    assert project_button is not None and not project_button.icon().isNull()
     assert controller.settings.navigation.count() == 5
     assert controller.menu.actions()[2:5] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
     assert controller.menu.actions()[5] == controller.reset_timer_action

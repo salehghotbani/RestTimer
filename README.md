@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.11.1-linux-amd64.deb
+sudo apt install ./RestTimer-v1.11.2-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.11.1-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.11.1-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.11.2-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -150,10 +150,12 @@ The dashboard offers **Pie**, **Bar**, and **Line** charts. Pie and bar charts c
 Logs stay on this computer in `%LOCALAPPDATA%/RestTimer/work-log` on Windows or `~/.config/resttimer/work-log` on Linux. Each segment is written atomically to its own JSON file. Unsaved time is kept in memory and can be lost if the process is killed.
 
 
+The **About** section includes a Git-icon button to open this GitHub repository and the complete, selectable MIT license text, available offline.
+
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.1/RestTimer-v1.11.1-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.1/RestTimer-v1.11.1-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.1/RestTimer-v1.11.1-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.2/RestTimer-v1.11.2-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.2/RestTimer-v1.11.2-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.11.2/RestTimer-v1.11.2-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

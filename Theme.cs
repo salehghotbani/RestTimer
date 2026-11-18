@@ -221,7 +221,17 @@ namespace RestTimer
             var flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix;
             if (RightToLeft == RightToLeft.Yes)
                 flags |= TextFormatFlags.RightToLeft;
-            TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, text, flags);
+            var textBounds = ClientRectangle;
+            if (Image != null)
+            {
+                int size = Math.Min(Height - 12, (int)(22 * DeviceDpi / 96f));
+                int gap = (int)(12 * DeviceDpi / 96f);
+                int x = RightToLeft == RightToLeft.Yes ? Width - gap - size : gap;
+                e.Graphics.DrawImage(Image, new Rectangle(x, (Height - size) / 2, size, size));
+                if (RightToLeft != RightToLeft.Yes) textBounds.X += size + gap;
+                textBounds.Width -= size + gap;
+            }
+            TextRenderer.DrawText(e.Graphics, Text, Font, textBounds, text, flags);
             if (Focused && ShowFocusCues)
                 ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -5, -5), ForeColor, fill);
         }
