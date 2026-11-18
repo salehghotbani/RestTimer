@@ -11,6 +11,7 @@ from i18n import tr, is_rtl
 import work_tracking
 import ui_icons
 import rtl_ui
+from date_picker import DatePicker
 
 COLORS = ['#189c81', '#4285e0', '#e3a03a', '#a06ede', '#da647b', '#319ebb', '#99a639', '#838e9f']
 
@@ -173,8 +174,7 @@ class WorkReport(QWidget):
         heading = QLabel(tr('dashboard'))
         heading.setObjectName('title')
         layout.addWidget(heading)
-        self.day = QDateEdit(QDate.currentDate())
-        self.day.setCalendarPopup(True)
+        self.day = DatePicker(controller.preferences.get("calendar", "auto"))
         self.day.setAccessibleName(tr('report_date'))
         layout.addWidget(self.day)
         actions = QHBoxLayout()
@@ -233,7 +233,7 @@ class WorkReport(QWidget):
         self.chart.update()
 
     def export(self, path, as_pdf):
-        export_report(path, self.entries, self.day.date().toString('yyyy-MM-dd'), self.chart_type.currentIndex(), as_pdf)
+        export_report(path, self.entries, self.day.text(), self.chart_type.currentIndex(), as_pdf)
 
     def choose_export(self, as_pdf):
         extension = 'pdf' if as_pdf else 'png'

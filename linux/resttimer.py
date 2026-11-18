@@ -10,7 +10,7 @@ import subprocess
 import uuid
 import work_tracking
 
-from PySide6.QtCore import QDate, QIODevice, QSize, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
+from PySide6.QtCore import QDate, QPropertyAnimation, QEasingCurve, QIODevice, QSize, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QTextCursor, QTextLayout, QDesktopServices
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
@@ -26,7 +26,7 @@ from update_ui import UpdatePanel, Worker
 
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-DEFAULTS = {"work_seconds": 3600, "break_seconds": 900, "language": "auto"}
+DEFAULTS = {"work_seconds": 3600, "break_seconds": 900, "language": "auto", "calendar": "auto", "color_mode": "system"}
 STYLE = """
 QDialog, QMenu { background: #0d1521; color: #edf4fa; }
 QScrollArea, QScrollArea > QWidget > QWidget { background: #0d1521; border: none; }
@@ -79,10 +79,15 @@ QCheckBox::indicator:hover { border-color: #83e6c4; }
 QCheckBox:disabled { color: #9bb0c3; }
 QCheckBox::indicator:disabled { border-color: #9bb0c3; }
 QMenu { border: 1px solid #2c3e52; padding: 3px; }
-QMenu::item { padding: 4px 12px; border-radius: 4px; }
+QMenu::item { padding: 3px 12px; border-radius: 4px; }
 QMenu::item:selected { background: #223a48; color: #83e6c4; }
 QMenu::item:disabled { color: #9bb0c3; }
 QMenu::separator { height: 1px; background: #2c3e52; margin: 2px 6px; }
+QFrame#datePopup { background:#141f2e; border:1px solid #2c3e52; border-radius:12px; }
+QCalendarWidget QWidget { background:#141f2e; color:#edf4fa; }
+QCalendarWidget QToolButton { border:none; padding:6px; border-radius:6px; color:#edf4fa; }
+QCalendarWidget QToolButton:hover { background:#223a48; }
+QCalendarWidget QAbstractItemView { background:#141f2e; color:#edf4fa; selection-background-color:#223a48; selection-color:#83e6c4; border:none; outline:0; }
 QFrame#settingsSidebar { background: #141f2e; border: 1px solid #2c3e52; border-radius: 14px; }
 QListWidget#settingsNav { background: transparent; color: #edf4fa; border: none; outline: 0; }
 QListWidget#settingsNav::item { padding: 12px 8px; margin: 3px 0; border-radius: 8px; }
@@ -92,6 +97,9 @@ STYLE = STYLE.replace("CHECK_ICON", (ROOT / "assets/check-dark.svg").as_posix())
 
 
 def apply_color_scheme(app, scheme):
+    mode = app.property("resttimer_color_mode") or "system"
+    if mode != "system":
+        scheme = Qt.ColorScheme.Light if mode == "light" else Qt.ColorScheme.Dark
     style = STYLE
     if scheme == Qt.ColorScheme.Light:
         colors = {"#0d1521": "#f4f7fa", "#edf4fa": "#1a2838", "#141f2e": "#ffffff",
@@ -135,7 +143,9 @@ def read_preferences():
                 and type(data.get("break_seconds")) is int
                 and 1 <= data["work_seconds"] <= 86400 and 1 <= data["break_seconds"] <= 7200):
             return {"work_seconds": data["work_seconds"], "break_seconds": data["break_seconds"],
-                    "language": i18n.preference(data.get("language"))}
+                    "language": i18n.preference(data.get("language")),
+                    "calendar": data.get("calendar") if data.get("calendar") in ("gregorian","persian","hijri") else "auto",
+                    "color_mode": data.get("color_mode") if data.get("color_mode") in ("light","dark") else "system"}
     except (OSError, ValueError):
         pass
     return DEFAULTS.copy()
@@ -314,7 +324,7 @@ class SettingsDialog(QDialog):
         self.controller = controller
         self.setWindowTitle("RestTimer — " + tr("preferences_title"))
         self.setWindowIcon(controller.icon)
-        self.setMinimumSize(780, 440)
+        self.setMinimumSize(780, 660)
         self.current_page = "general"
         outer = QHBoxLayout(self)
         outer.setContentsMargins(12, 12, 12, 12)
@@ -331,7 +341,7 @@ class SettingsDialog(QDialog):
         self.sidebar_toggle.setProperty("ui_glyph", "menu")
         self.sidebar_toggle.setFixedSize(32,32)
         self.sidebar_toggle.setStyleSheet("padding:4px; min-height:0;")
-        self.sidebar_toggle.clicked.connect(lambda: self.set_sidebar_collapsed(not self.sidebar_collapsed))
+        self.sidebar_toggle.clicked.connect(lambda: self.set_sidebar_collapsed(not self.sidebar_collapsed, animate=True))
         side.addWidget(self.sidebar_toggle,0,Qt.AlignAbsolute | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft))
         self.sidebar_brand = QWidget()
         brand_layout = QVBoxLayout(self.sidebar_brand)
@@ -363,13 +373,21 @@ class SettingsDialog(QDialog):
         scroll.setWidget(body)
         self.pages.addWidget(scroll)
         layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(12)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        layout.setSpacing(6)
         layout.addWidget(label(tr("settings_title"), "title"))
-        layout.addWidget(label(tr("settings_subtitle"), "muted"))
         self.work = DurationEditor(tr("work_duration"), controller.preferences["work_seconds"], 24)
         self.rest = DurationEditor(tr("break_duration"), controller.preferences["break_seconds"], 2)
         layout.addWidget(self.work)
         layout.addWidget(self.rest)
+        for editor in (self.work,self.rest):
+            editor.layout().setContentsMargins(10,4,10,4)
+            editor.layout().setSpacing(2)
+            for spin in editor.parts:
+                spin.setMinimumSize(60,26)
+                spin.setStyleSheet("font-size:22px;")
+                spin.parentWidget().layout().setContentsMargins(6,2,6,2)
         self.startup = QCheckBox(tr("startup"))
         self.startup.setChecked(startup_path().exists())
         layout.addWidget(self.startup)
@@ -390,8 +408,8 @@ class SettingsDialog(QDialog):
         self.reset_timer = QPushButton(tr("reset_timer"))
         self.reset_timer.clicked.connect(controller.reset_timer)
         timer_controls.addWidget(self.reset_timer)
-        timer_controls.addWidget(self.timer_status, 1)
         layout.addLayout(timer_controls)
+        layout.addWidget(self.timer_status)
         languages = QHBoxLayout()
         languages.addWidget(label(tr("language")))
         self.language = QComboBox()
@@ -405,7 +423,20 @@ class SettingsDialog(QDialog):
         layout.addLayout(languages)
         language_hint = label(tr("language_hint"), "muted")
         language_hint.setWordWrap(True)
-        layout.addWidget(language_hint)
+        language_hint.hide()
+        self.calendar_choice = QComboBox()
+        self.theme_choice = QComboBox()
+        for box,key,values,keys in (
+            (self.calendar_choice,"calendar",("auto","gregorian","persian","hijri"),("system_calendar","gregorian","persian","hijri")),
+            (self.theme_choice,"color_mode",("system","light","dark"),("system_theme","light_theme","dark_theme"))):
+            row=QHBoxLayout()
+            row.addWidget(label(tr("calendar" if key=="calendar" else "appearance")))
+            for value,text in zip(values,keys): box.addItem(tr(text),value)
+            box.setCurrentIndex(box.findData(controller.preferences.get(key,values[0])))
+            row.addWidget(box,1)
+            layout.addLayout(row)
+        self.calendar_choice.currentIndexChanged.connect(self.preview_calendar)
+        self.theme_choice.currentIndexChanged.connect(self.preview_theme)
         self.note = label(tr("duration_note"), "muted")
         self.note.setWordWrap(True)
         layout.addWidget(self.note)
@@ -418,13 +449,8 @@ class SettingsDialog(QDialog):
         self.save.setObjectName("primary")
         self.save.clicked.connect(self.save_durations)
         buttons.addWidget(self.save)
-        start = QPushButton(tr("break_short"))
-        start.clicked.connect(controller.begin_break)
-        buttons.addWidget(start)
         layout.addLayout(buttons)
-        exit_button = QPushButton(tr("quit_app"))
-        exit_button.clicked.connect(controller.quit)
-        layout.addWidget(exit_button)
+        layout.addStretch(1)
         self.update_panel = update_panel or UpdatePanel(controller)
         controller.update_dialog = self.update_panel
         self.pages.addWidget(self.update_panel)
@@ -444,9 +470,25 @@ class SettingsDialog(QDialog):
         ui_icons.apply(self)
         rtl_ui.right_scrollbars(self)
 
-    def set_sidebar_collapsed(self, collapsed):
+    def set_sidebar_collapsed(self, collapsed, animate=False):
         self.sidebar_collapsed = collapsed
-        self.sidebar.setFixedWidth(56 if collapsed else 180)
+        current=self.sidebar.width()
+        if hasattr(self,"sidebar_animation"):
+            self.sidebar_animation.stop()
+            self.sidebar_animation.deleteLater()
+        target=56 if collapsed else 180
+        self.sidebar.setMinimumWidth(0)
+        self.sidebar.setMaximumWidth(16777215)
+        self.sidebar.setFixedWidth(target)
+        if animate:
+            self.sidebar_animation=QPropertyAnimation(self.sidebar,b"maximumWidth",self)
+            self.sidebar.setMinimumWidth(0)
+            self.sidebar_animation.setDuration(190)
+            self.sidebar_animation.setStartValue(current)
+            self.sidebar_animation.setEndValue(target)
+            self.sidebar_animation.setEasingCurve(QEasingCurve.OutCubic)
+            self.sidebar_animation.finished.connect(lambda: self.sidebar.setFixedWidth(target))
+            self.sidebar_animation.start()
         self.sidebar.layout().setContentsMargins(4 if collapsed else 8,8,4 if collapsed else 8,8)
         self.sidebar_brand.setVisible(not collapsed)
         self.sidebar_version.setVisible(not collapsed)
@@ -460,13 +502,22 @@ class SettingsDialog(QDialog):
             item.setData(Qt.AccessibleTextRole,tr(key))
             item.setTextAlignment(Qt.AlignAbsolute | Qt.AlignVCenter | (Qt.AlignRight if i18n.is_rtl() else Qt.AlignLeft))
 
+    def preview_calendar(self):
+        if hasattr(self,"report"):
+            self.report.day.preference=self.calendar_choice.currentData()
+            self.report.day.refresh_caption()
+
+    def preview_theme(self):
+        self.controller.app.setProperty("resttimer_color_mode",self.theme_choice.currentData())
+        apply_color_scheme(self.controller.app,self.controller.app.styleHints().colorScheme())
+
     def preview_language(self, index):
         if index >= 0 and self.controller.settings is self and not self.controller.quitting:
             self.controller.preview_language(self.language.itemData(index))
 
     def capture_draft(self, previous):
         return {"parts": [[(part.value(), part.lineEdit().text()) for part in editor.parts] for editor in (self.work, self.rest)],
-                "language": self.language.currentData(), "daily": self.daily.isChecked(), "startup": self.startup.isChecked(),
+                "language": self.language.currentData(), "calendar": self.calendar_choice.currentData(), "color_mode": self.theme_choice.currentData(), "daily": self.daily.isChecked(), "startup": self.startup.isChecked(),
                 "saved_preferences": self.saved_preferences.copy(), "saved_daily": self.saved_daily, "saved_startup": self.saved_startup,
                 "note": self.note.text(), "source_language": previous, "page": self.current_page,
                 "geometry": self.geometry(), "sidebar_collapsed": self.sidebar_collapsed, "report_date": self.report.day.date(), "chart_type": self.report.chart_type.currentIndex(), "scroll": self.pages.widget(0).verticalScrollBar().value()}
@@ -479,6 +530,9 @@ class SettingsDialog(QDialog):
                 part.setValue(value)
                 part.lineEdit().setText(raw)
         self.language.setCurrentIndex(self.language.findData(draft["language"]))
+        self.calendar_choice.setCurrentIndex(self.calendar_choice.findData(draft["calendar"]))
+        self.theme_choice.setCurrentIndex(self.theme_choice.findData(draft["color_mode"]))
+        self.preview_calendar()
         self.daily.setChecked(draft["daily"])
         self.startup.setChecked(draft["startup"])
         self.note.setText(i18n.translate_text(draft["note"], draft["source_language"]))
@@ -585,6 +639,8 @@ class SettingsDialog(QDialog):
         return (self.work.seconds() != self.saved_preferences["work_seconds"]
                 or self.rest.seconds() != self.saved_preferences["break_seconds"]
                 or self.language.currentData() != self.saved_preferences.get("language", "auto")
+                or self.calendar_choice.currentData() != self.saved_preferences.get("calendar","auto")
+                or self.theme_choice.currentData() != self.saved_preferences.get("color_mode","system")
                 or self.daily.isChecked() != self.saved_daily
                 or self.startup.isChecked() != self.saved_startup)
 
@@ -597,6 +653,8 @@ class SettingsDialog(QDialog):
         self.language.blockSignals(True)
         self.language.setCurrentIndex(self.language.findData(self.saved_preferences.get("language", "auto")))
         self.language.blockSignals(False)
+        self.calendar_choice.setCurrentIndex(self.calendar_choice.findData(self.saved_preferences.get("calendar","auto")))
+        self.theme_choice.setCurrentIndex(self.theme_choice.findData(self.saved_preferences.get("color_mode","system")))
         self.daily.setChecked(self.saved_daily)
         self.startup.setChecked(self.saved_startup)
 
@@ -623,7 +681,7 @@ class SettingsDialog(QDialog):
         if self.controller.breaking:
             self.note.setText(tr("save_during_break"))
             return False
-        updated = {"work_seconds": work, "break_seconds": rest, "language": self.language.currentData()}
+        updated = {"work_seconds": work, "break_seconds": rest, "language": self.language.currentData(), "calendar": self.calendar_choice.currentData(), "color_mode": self.theme_choice.currentData()}
         try:
             if self.startup.isChecked() != self.saved_startup:
                 set_startup(self.startup.isChecked())
@@ -771,6 +829,8 @@ class Controller:
     def __init__(self, app):
         self.app = app
         self.preferences = read_preferences()
+        app.setProperty("resttimer_color_mode", self.preferences.get("color_mode","system"))
+        apply_color_scheme(app,app.styleHints().colorScheme())
         i18n.use(self.preferences.get("language", "auto"), QLocale.system().uiLanguages())
         app.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
         self.icon = QIcon(str(ROOT / "assets/RestTimer.png"))
@@ -803,14 +863,12 @@ class Controller:
         self.menu.addSeparator()
         self.status = self.menu.addAction("RestTimer")
         self.status.setEnabled(False)
-        self.menu.addSeparator()
         self.startup_action = QAction(tr("startup"), self.menu)
         self.startup_action.setCheckable(True)
         self.startup_action.setChecked(startup_path().exists())
         self.startup_action.triggered.connect(self.toggle_startup)
         self.menu.addAction(self.startup_action)
         self.update_action = self.menu.addAction(tr("updates_menu"), self.check_updates)
-        self.menu.addSeparator()
         self.quit_action = self.menu.addAction(tr("quit"), self.quit)
         self.menu_minimum_size = self.menu.minimumSize()
         self.menu_maximum_size = self.menu.maximumSize()

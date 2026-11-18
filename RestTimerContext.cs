@@ -56,6 +56,8 @@ namespace RestTimer
             this.enableAutomaticUpdates = enableAutomaticUpdates;
             preferences = Preferences.Load();
             I18n.Use(preferences.Language);
+            Theme.Use(preferences.ColorMode);
+            DateDisplay.Preference = preferences.Calendar;
             if (enableTaskbarCountdown) taskbarCountdown = new TaskbarCountdown();
             status = new ToolStripMenuItem { Enabled = false };
             startTimer = new ToolStripMenuItem(I18n.T("start"), null, (_, __) => StartTimer());
@@ -80,10 +82,10 @@ namespace RestTimer
             menu.Items.AddRange(new ToolStripItem[]
             {
                 settings, new ToolStripSeparator(), startTimer, stopTimer, startBreak, resetTimer, new ToolStripSeparator(), status,
-                new ToolStripSeparator(), startup, updates, new ToolStripSeparator(), exit
+                startup, updates, exit
             });
             foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
-                item.Padding = new Padding(6, 2, 6, 2);
+                item.Padding = new Padding(5, 1, 5, 1);
             menu.Opening += (_, __) =>
             {
                 menu.AutoSize = true;
@@ -369,6 +371,8 @@ namespace RestTimer
         private void ApplyLanguage()
         {
             I18n.Use(preferences.Language);
+            Theme.Use(preferences.ColorMode);
+            DateDisplay.Preference = preferences.Calendar;
             RefreshLanguage();
         }
         private void RefreshLanguage()

@@ -12,6 +12,7 @@ namespace RestTimer
     internal static class Theme
     {
         internal static bool? LightOverride { get; set; }
+        public static void Use(string mode) { LightOverride = mode == "light" ? (bool?)true : mode == "dark" ? (bool?)false : null; Refresh(); }
         public static bool IsLight { get; private set; } = ReadLightMode();
         private static bool highContrast = SystemInformation.HighContrast;
         public static string PaletteKey => IsLight + ":" + highContrast + ":" + SystemColors.WindowText.ToArgb();
@@ -56,7 +57,7 @@ namespace RestTimer
             if (control is Form) control.BackColor = Background;
             else if (control is UpdateProgress) control.BackColor = Input;
             else if (control is ToolStrip || control is ListBox || control is RichTextBox) control.BackColor = Surface;
-            else if (control is TextBoxBase || control is ComboBox) control.BackColor = Input;
+            else if (control is TextBoxBase || control is ComboBox || control is NumericUpDown) control.BackColor = Input;
             else if (control is DashboardChart || control is DateTimePicker || control is ListView) control.BackColor = Surface;
             else if (control.Tag as string == "border") control.BackColor = Border;
             else control.BackColor = Color.Transparent;
@@ -68,7 +69,9 @@ namespace RestTimer
                 if (control is Form) ApplyWindowFrame(control.Handle);
                 else if (control is RichTextBox || control is ListBox || control is ComboBox || control is ListView || control is DateTimePicker) SetWindowTheme(control.Handle, IsLight || highContrast ? null : "DarkMode_Explorer", null);
             }
-            foreach (Control child in control.Controls) Apply(child);
+            // The native up/down buttons do not support transparent backgrounds;
+            // NumericUpDown propagates its own palette to its editor.
+            if (!(control is NumericUpDown)) foreach (Control child in control.Controls) Apply(child);
             control.Invalidate();
         }
 
@@ -141,6 +144,7 @@ namespace RestTimer
         public bool Selected { get; set; }
         public string Glyph { get; set; }
         public bool IconOnly { get; set; }
+        public bool Quiet { get; set; }
         public bool StartAligned { get; set; }
 
         public RoundedButton(bool primary = false)
@@ -201,14 +205,14 @@ namespace RestTimer
             if (Width < 2 || Height < 2)
                 return;
 
-            Color fill = primary ? Theme.Mint : Selected ? Theme.Selection : Theme.ButtonFill;
+            Color fill = primary ? Theme.Mint : Selected ? Theme.Selection : Quiet ? Theme.Surface : Theme.ButtonFill;
             Color text = primary ? Theme.OnAccent : Selected ? Theme.OnSelection : Theme.Text;
-            Color borderColor = primary || Selected ? Theme.Mint : Theme.Border;
+            Color borderColor = Quiet ? fill : primary || Selected ? Theme.Mint : Theme.Border;
             if (!Enabled)
             {
-                fill = Theme.Input;
+                fill = Quiet ? Theme.Surface : Theme.Input;
                 text = Theme.Muted;
-                borderColor = Theme.Border;
+                borderColor = Quiet ? Theme.Surface : Theme.Border;
             }
             else if (hovered || pressed)
                 fill = ControlPaint.Light(fill, pressed ? 0.08f : 0.16f);

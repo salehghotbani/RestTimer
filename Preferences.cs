@@ -20,6 +20,8 @@ namespace RestTimer
         public int BreakSeconds { get; }
         public bool ShowTaskbarCountdown { get; }
         public string Language { get; }
+        public string Calendar { get; }
+        public string ColorMode { get; }
 
         public Preferences(int workSeconds = 3600, int breakSeconds = 900)
             : this(workSeconds, breakSeconds, true) { }
@@ -28,6 +30,9 @@ namespace RestTimer
             : this(workSeconds, breakSeconds, showTaskbarCountdown, "auto") { }
 
         public Preferences(int workSeconds, int breakSeconds, bool showTaskbarCountdown, string language)
+            : this(workSeconds,breakSeconds,showTaskbarCountdown,language,"auto","system") { }
+
+        public Preferences(int workSeconds, int breakSeconds, bool showTaskbarCountdown, string language, string calendar, string colorMode)
         {
             if (workSeconds < 1 || workSeconds > MaxWorkSeconds)
                 throw new ArgumentOutOfRangeException(nameof(workSeconds));
@@ -37,6 +42,8 @@ namespace RestTimer
             BreakSeconds = breakSeconds;
             ShowTaskbarCountdown = showTaskbarCountdown;
             Language = I18n.Preference(language);
+            Calendar = DateDisplay.Normalize(calendar);
+            ColorMode = colorMode == "light" || colorMode == "dark" ? colorMode : "system";
         }
 
         public static Preferences Load()
@@ -48,7 +55,7 @@ namespace RestTimer
                     ?? new Preferences();
                 return new Preferences(durations.WorkSeconds, durations.BreakSeconds,
                     !(key?.GetValue("ShowTaskbarCountdown") is int enabled) || enabled != 0,
-                    key?.GetValue("Language") as string);
+                    key?.GetValue("Language") as string, key?.GetValue("Calendar") as string, key?.GetValue("ColorMode") as string);
             }
         }
 
@@ -70,6 +77,8 @@ namespace RestTimer
             {
                 key.SetValue("ShowTaskbarCountdown", ShowTaskbarCountdown ? 1 : 0, RegistryValueKind.DWord);
                 key.SetValue("Language", Language, RegistryValueKind.String);
+                key.SetValue("Calendar", Calendar, RegistryValueKind.String);
+                key.SetValue("ColorMode", ColorMode, RegistryValueKind.String);
                 key.SetValue(DurationsSecondsName, new[]
                 {
                     WorkSeconds.ToString(CultureInfo.InvariantCulture),

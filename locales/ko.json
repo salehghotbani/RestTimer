@@ -130,6 +130,20 @@
     "other_tasks": "기타 작업",
     "task_count": "작업 수",
     "collapse_sidebar": "사이드바 접기",
-    "expand_sidebar": "사이드바 펼치기"
+    "expand_sidebar": "사이드바 펼치기",
+    "calendar": "달력",
+    "system_calendar": "자동",
+    "gregorian": "그레고리력",
+    "persian": "페르시아력",
+    "hijri": "이슬람 민간력",
+    "appearance": "모양",
+    "system_theme": "시스템",
+    "light_theme": "라이트",
+    "dark_theme": "다크",
+    "today": "오늘",
+    "previous_month": "이전 달",
+    "next_month": "다음 달",
+    "month": "월",
+    "year": "년"
   }
 }

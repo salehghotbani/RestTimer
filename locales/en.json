@@ -130,6 +130,20 @@
     "other_tasks": "Other tasks",
     "task_count": "Tasks",
     "collapse_sidebar": "Collapse sidebar",
-    "expand_sidebar": "Expand sidebar"
+    "expand_sidebar": "Expand sidebar",
+    "calendar": "Calendar",
+    "system_calendar": "Automatic",
+    "gregorian": "Gregorian",
+    "persian": "Solar Hijri (Persian)",
+    "hijri": "Islamic (civil)",
+    "appearance": "Appearance",
+    "system_theme": "System",
+    "light_theme": "Light",
+    "dark_theme": "Dark",
+    "today": "Today",
+    "previous_month": "Previous month",
+    "next_month": "Next month",
+    "month": "Month",
+    "year": "Year"
   }
 }

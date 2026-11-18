@@ -130,6 +130,20 @@
     "other_tasks": "Outras tarefas",
     "task_count": "Tarefas",
     "collapse_sidebar": "Recolher barra lateral",
-    "expand_sidebar": "Expandir barra lateral"
+    "expand_sidebar": "Expandir barra lateral",
+    "calendar": "Calendário",
+    "system_calendar": "Automático",
+    "gregorian": "Gregoriano",
+    "persian": "Persa solar",
+    "hijri": "Islâmico civil",
+    "appearance": "Aparência",
+    "system_theme": "Sistema",
+    "light_theme": "Claro",
+    "dark_theme": "Escuro",
+    "today": "Hoje",
+    "previous_month": "Mês anterior",
+    "next_month": "Próximo mês",
+    "month": "Mês",
+    "year": "Ano"
   }
 }

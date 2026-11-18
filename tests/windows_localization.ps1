@@ -72,6 +72,12 @@ internal static class LocalizationSmoke
                     {
                         settings.GetMethod("SetRunning").Invoke(dialog, new object[] { false });
                         dialog.Show(); Application.DoEvents();
+                        var body=(Panel)settings.GetField("generalBody",flags).GetValue(dialog);
+                        if(body.AutoScroll || body.Controls.Cast<Control>().Any(c=>c.Visible && (c.Left<0 || c.Top<0 || c.Right>body.ClientSize.Width || c.Bottom>body.ClientSize.Height)))
+                            throw new Exception("General settings must fit without scrolling: "+code+" "+body.ClientSize);
+                        var brand=(Panel)settings.GetField("sidebarBrand",flags).GetValue(dialog);
+                        var brandIcon=brand.Controls.OfType<PictureBox>().Single();
+                        if(Math.Abs((brandIcon.Left+brandIcon.Width/2)-brand.ClientSize.Width/2)>1) throw new Exception("Brand must be centered.");
                         var combo = (ComboBox)settings.GetField("language", flags).GetValue(dialog);
                         if (combo.Items.Count != codes.Length + 1 || combo.SelectedIndex < 1
                             || dialog.RightToLeft != (code == "fa" || code == "ar" ? RightToLeft.Yes : RightToLeft.No))
@@ -99,7 +105,7 @@ internal static class LocalizationSmoke
                         int expandedWidth=side.Width;
                         string beforePage=(string)settings.GetProperty("CurrentPage").GetValue(dialog);
                         bool pending=(bool)settings.GetProperty("HasPendingChanges").GetValue(dialog);
-                        toggle.PerformClick();Application.DoEvents();
+                        toggle.PerformClick();var animationWait=System.Diagnostics.Stopwatch.StartNew();while(animationWait.ElapsedMilliseconds<240){Application.DoEvents();System.Threading.Thread.Sleep(5);}
                         if(!(bool)settings.GetProperty("SidebarCollapsed").GetValue(dialog) || side.Width>=expandedWidth
                             || beforePage!=(string)settings.GetProperty("CurrentPage").GetValue(dialog)
                             || pending!=(bool)settings.GetProperty("HasPendingChanges").GetValue(dialog))
@@ -109,7 +115,7 @@ internal static class LocalizationSmoke
                         ((Button)nav["report"]).PerformClick();
                         if((string)settings.GetProperty("CurrentPage").GetValue(dialog)!="report") throw new Exception("Collapsed icon navigation failed.");
                         settings.GetMethod("SelectPage").Invoke(dialog,new object[]{beforePage});
-                        toggle.PerformClick();Application.DoEvents();
+                        toggle.PerformClick();animationWait.Restart();while(animationWait.ElapsedMilliseconds<240){Application.DoEvents();System.Threading.Thread.Sleep(5);}
                         if((bool)settings.GetProperty("SidebarCollapsed").GetValue(dialog) || side.Width!=expandedWidth)
                             throw new Exception("Sidebar did not expand again.");
                         var licenseBox=(RichTextBox)dialog.Controls.Find("license_text",true).Single();
@@ -191,7 +197,7 @@ internal static class LocalizationSmoke
             {
                 using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\RestTimer"))
                 {
-                    var names = new[] { "Language", "DurationsSeconds", "ShowTaskbarCountdown" };
+                    var names = new[] { "Language", "DurationsSeconds", "ShowTaskbarCountdown", "Calendar", "ColorMode" };
                     var values = new object[names.Length];
                     var kinds = new Microsoft.Win32.RegistryValueKind[names.Length];
                     for (int i=0;i<names.Length;i++) { values[i]=key.GetValue(names[i]); if(values[i]!=null) kinds[i]=key.GetValueKind(names[i]); }
@@ -199,12 +205,14 @@ internal static class LocalizationSmoke
                     {
                         foreach (string code in new[] {"auto","fa","en","ar","zh","es","fr","de","pt","ru","ja","ko","hi","tr"})
                         {
-                            var selected = Activator.CreateInstance(preferences,new object[]{3723,901,false,code});
+                            var selected = Activator.CreateInstance(preferences,new object[]{3723,901,false,code,"persian","dark"});
                             preferences.GetMethod("Save").Invoke(selected,null);
                             var loaded = preferences.GetMethod("Load").Invoke(null,null);
                             if((string)preferences.GetProperty("Language").GetValue(loaded)!=code
                                 ||(int)preferences.GetProperty("WorkSeconds").GetValue(loaded)!=3723
-                                ||(bool)preferences.GetProperty("ShowTaskbarCountdown").GetValue(loaded))
+                                ||(bool)preferences.GetProperty("ShowTaskbarCountdown").GetValue(loaded)
+                                ||(string)preferences.GetProperty("Calendar").GetValue(loaded)!="persian"
+                                ||(string)preferences.GetProperty("ColorMode").GetValue(loaded)!="dark")
                                 throw new Exception("Language or timer preferences did not persist.");
                         }
                         Console.WriteLine("Windows registry language and timer persistence passed.");

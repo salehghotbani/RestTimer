@@ -615,15 +615,10 @@ internal static class Smoke
                 selectPage.Invoke(dialog, new object[] { "general" });
                 dialog.Height = 550;
                 Application.DoEvents();
-                var generalFrame = (Control)dialog.GetType().GetField("generalPage", fields).GetValue(dialog);
-                syncScroll.Invoke(generalFrame, null);
-                var generalThumb = (Control)generalFrame.GetType().GetField("scrollbar", fields).GetValue(generalFrame);
-                if (!generalThumb.Visible) throw new Exception("Compact settings need a visible themed scrollbar.");
-                generalThumb.GetType().GetMethod("ChangeValue", fields).Invoke(generalThumb, new object[] { int.MaxValue });
-                Application.DoEvents();
-                var generalEditor = (ScrollableControl)generalFrame.GetType().GetField("editor", fields).GetValue(generalFrame);
-                if (generalEditor.AutoScrollPosition.Y >= 0 || generalEditor.HorizontalScroll.Visible)
-                    throw new Exception("Settings scrollbar failed to reach lower controls or introduced horizontal scrolling.");
+                var generalEditor = (Panel)dialog.GetType().GetField("generalBody", fields).GetValue(dialog);
+                if (generalEditor.AutoScroll || generalEditor.HorizontalScroll.Visible || generalEditor.VerticalScroll.Visible
+                    || generalEditor.Controls.Cast<Control>().Any(c=>c.Visible && !generalEditor.ClientRectangle.Contains(c.Bounds)))
+                    throw new Exception("General settings must fit without scrolling. Body="+generalEditor.ClientSize+" Scale="+dialog.AutoScaleDimensions+" Overflow="+string.Join(";",generalEditor.Controls.Cast<Control>().Where(c=>c.Visible && !generalEditor.ClientRectangle.Contains(c.Bounds)).Select(c=>c.Name+" "+c.Bounds)));
                 dialog.Height = 820;
                 selectPage.Invoke(dialog, new object[] { "updates" });
                 Application.DoEvents();

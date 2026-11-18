@@ -130,6 +130,20 @@
     "other_tasks": "其他任务",
     "task_count": "任务数",
     "collapse_sidebar": "收起侧边栏",
-    "expand_sidebar": "展开侧边栏"
+    "expand_sidebar": "展开侧边栏",
+    "calendar": "日历",
+    "system_calendar": "自动",
+    "gregorian": "公历",
+    "persian": "波斯历",
+    "hijri": "伊斯兰民用历",
+    "appearance": "外观",
+    "system_theme": "跟随系统",
+    "light_theme": "浅色",
+    "dark_theme": "深色",
+    "today": "今天",
+    "previous_month": "上个月",
+    "next_month": "下个月",
+    "month": "月",
+    "year": "年"
   }
 }

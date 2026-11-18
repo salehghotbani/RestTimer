@@ -130,6 +130,20 @@
     "other_tasks": "Andere Aufgaben",
     "task_count": "Aufgaben",
     "collapse_sidebar": "Seitenleiste einklappen",
-    "expand_sidebar": "Seitenleiste ausklappen"
+    "expand_sidebar": "Seitenleiste ausklappen",
+    "calendar": "Kalender",
+    "system_calendar": "Automatisch",
+    "gregorian": "Gregorianisch",
+    "persian": "Persisch",
+    "hijri": "Islamisch (bürgerlich)",
+    "appearance": "Darstellung",
+    "system_theme": "System",
+    "light_theme": "Hell",
+    "dark_theme": "Dunkel",
+    "today": "Heute",
+    "previous_month": "Vorheriger Monat",
+    "next_month": "Nächster Monat",
+    "month": "Monat",
+    "year": "Jahr"
   }
 }

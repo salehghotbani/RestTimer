@@ -1,5 +1,12 @@
 # RestTimer changelog
 
+## 1.14.0
+- Rebuild General settings to fit without horizontal or vertical scrolling, with balanced padding and centered sidebar branding.
+- Add animated sidebar expansion/collapse and a minimal icon rail with consistent reading direction and tooltips.
+- Add persisted System, Light and Dark appearance options with instant preview and discard restoration.
+- Add Automatic, Gregorian, Persian and Islamic civil calendar options. Use a themed date-picker with month/year navigation and Today; keep report storage dates unchanged.
+- Simplify the tray menu spacing and separators while preserving stable live countdowns.
+
 ## 1.13.1
 - Fix tray menu jitter caused by repeatedly replacing the status row with intermediate text every timer tick. Compose and publish each complete status once.
 - Keep the open menu frame and row geometry stable while the live countdown changes, including hour/minute boundaries and long task names. Remeasure when reopening.

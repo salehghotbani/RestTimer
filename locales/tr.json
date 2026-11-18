@@ -130,6 +130,20 @@
     "other_tasks": "Diğer görevler",
     "task_count": "Görevler",
     "collapse_sidebar": "Kenar çubuğunu daralt",
-    "expand_sidebar": "Kenar çubuğunu genişlet"
+    "expand_sidebar": "Kenar çubuğunu genişlet",
+    "calendar": "Takvim",
+    "system_calendar": "Otomatik",
+    "gregorian": "Miladi",
+    "persian": "İran güneş takvimi",
+    "hijri": "Hicri (sivil)",
+    "appearance": "Görünüm",
+    "system_theme": "Sistem",
+    "light_theme": "Açık",
+    "dark_theme": "Koyu",
+    "today": "Bugün",
+    "previous_month": "Önceki ay",
+    "next_month": "Sonraki ay",
+    "month": "Ay",
+    "year": "Yıl"
   }
 }

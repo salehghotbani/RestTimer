@@ -7,6 +7,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'linux'))
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QFont
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QStyleOptionViewItem
 import resttimer as module
 import i18n
@@ -31,13 +32,14 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build') as folder:
     for code in ('en','fa','ar'):
         controller.preview_language(code)
         settings=controller.settings
-        settings.resize(900,520)
+        settings.resize(900,700)
         controller.show_settings()
         app.processEvents()
         settings.work.parts[2].setValue(17)
         page=settings.current_page
         worker=settings.update_panel
         settings.sidebar_toggle.click()
+        QTest.qWait(260)
         assert settings.sidebar_collapsed and settings.sidebar.width()==56
         assert settings.current_page==page and settings.work.parts[2].value()==17
         assert settings.update_panel is worker
@@ -54,6 +56,7 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build') as folder:
         settings=controller.settings
         assert settings.sidebar_collapsed
         settings.sidebar_toggle.click()
+        QTest.qWait(260)
         assert not settings.sidebar_collapsed and settings.sidebar.width()==180
         assert settings.work.parts[2].value()==17
         option=QStyleOptionViewItem()
@@ -61,7 +64,9 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build') as folder:
         assert option.direction==(Qt.RightToLeft if code in ('fa','ar') else Qt.LeftToRight)
         assert option.displayAlignment & (Qt.AlignRight if code in ('fa','ar') else Qt.AlignLeft)
         settings.select_page('general')
-        right_bar(settings.pages.widget(0))
+        area=settings.pages.widget(0)
+        assert not area.verticalScrollBar().isVisible() and not area.horizontalScrollBar().isVisible()
+        assert area.widget().height()<=area.viewport().height()
         settings.select_page('updates')
         settings.update_panel.latest_notes.setPlainText('\n'.join(['English line — خط فارسی']*500))
         right_bar(settings.update_panel.latest_notes)

@@ -130,6 +130,20 @@
     "other_tasks": "अन्य कार्य",
     "task_count": "कार्य",
     "collapse_sidebar": "साइडबार समेटें",
-    "expand_sidebar": "साइडबार फैलाएँ"
+    "expand_sidebar": "साइडबार फैलाएँ",
+    "calendar": "कैलेंडर",
+    "system_calendar": "स्वचालित",
+    "gregorian": "ग्रेगोरियन",
+    "persian": "फ़ारसी सौर",
+    "hijri": "इस्लामी नागरिक",
+    "appearance": "दिखावट",
+    "system_theme": "सिस्टम",
+    "light_theme": "हल्का",
+    "dark_theme": "गहरा",
+    "today": "आज",
+    "previous_month": "पिछला महीना",
+    "next_month": "अगला महीना",
+    "month": "महीना",
+    "year": "वर्ष"
   }
 }

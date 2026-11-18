@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.13.1-linux-amd64.deb
+sudo apt install ./RestTimer-v1.14.0-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.13.1-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.13.1-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.14.0-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -65,8 +65,12 @@ Launch RestTimer from the application menu or with `resttimer`. The Linux packag
 - Start, Stop and Reset are adjacent in General settings and the break box. Main buttons and sidebar tabs use theme-aware vector icons, with compact padding. Narrow break boxes use accessible icon-only timer controls with tooltips.
 - Start and Stop are available in the tray menu, settings, and break reminder. Stop pauses the current period; Start resumes from its remaining time. During a paused break, reminders stay open and can be resumed from any monitor. Skipping a break or changing durations preserves the paused state.
 - **Reset timer** is available in the tray menu, General settings and break box. During work, it opens **Start from beginning**: enter a task name and a duration for this session. During a break, it resets the break countdown and preserves its paused/running state.
-- On Windows, the update window and menu follow the Windows **application** color mode and support high contrast. Theme changes apply while the window is open. Linux follows the desktop color scheme reported by Qt.
+- Choose **System**, **Light**, or **Dark** in General → Appearance. Preview changes immediately, then save to keep them. System mode follows the desktop application color scheme. Windows high contrast remains supported.
 - Release notes have headings, spacing, and paragraph direction appropriate for Persian and English. The Windows update window is resizable and has a separate version list for browsing release history.
+
+Choose **Automatic**, **Gregorian**, **Solar Hijri (Persian)** or **Islamic (civil)** in General → Calendar. Automatic uses Persian for Persian, Islamic civil for Arabic, and Gregorian for other interface languages. The dashboard date picker includes month/year navigation and Today. Calendar changes preserve the selected report day and local journal records. Islamic civil is a calculated calendar and can differ from local moon-sighting dates.
+
+The sidebar opens and closes with a short animation. Its collapsed icon rail keeps page labels as tooltips; switching it preserves edits and downloads.
 
 ### Windows floating timer
 
@@ -86,11 +90,11 @@ Only this small box floats above application windows, hiding automatically while
 
 Settings opens one window with vertical tabs ordered **Dashboard**, **General**, **Updates**, **Version history**, and **About**. Browse releases and application details without opening extra windows. Version history is available here instead of in the tray menu.
 
-In **General**, change durations, language, launch at sign-in, the floating timer, or daily update checks, then select **Save settings**. The daily-check switch on Updates stays synchronized with General. Changes remain pending until saved. If you close the window with unsaved changes, choose **Save changes** or **Discard changes**; close that dialog to continue editing. Unchanged settings close without a prompt.
+In **General**, change durations, language, calendar, appearance, launch at sign-in, the floating timer, or daily update checks, then select **Save settings**. The daily-check switch on Updates stays synchronized with General. Changes remain pending until saved. If you close the window with unsaved changes, choose **Save changes** or **Discard changes**; close that dialog to continue editing. Unchanged settings close without a prompt.
 
 Switching tabs preserves pending settings and running update downloads. A confirmed close cancels the download. The window stays open while an installer is running. Navigation uses the sidebar; General has no duplicate update or cancel buttons, and sections have no Close / cancel buttons.
 
-Minute and second fields accept **0–59**, including Persian and Arabic digits on Windows. Settings, release notes and version lists use slim, rounded scrollbars that follow the system color mode.
+Minute and second fields accept **0–59**, including Persian and Arabic digits on Windows. General settings fits without scrolling. Release notes and version lists use slim, rounded scrollbars that follow the selected theme.
 
 The interface follows your system UI language by default. Unsupported languages fall back to English. Choosing a language in **Settings → Language** updates the interface immediately, including its reading direction. Edited fields, timer state and active update downloads are preserved. **Save settings** keeps the choice across restarts; **Discard changes** restores the previous language. **System language** returns to automatic detection. Persian and Arabic use right-to-left layouts; other languages use left-to-right layouts. Language names appear in their own language. All settings checkboxes share rounded, theme-aware indicators.
 
@@ -158,9 +162,9 @@ The sidebar menu button collapses navigation to an icon rail and expands it agai
 The right-click menu keeps its size, position and item hit targets stable while the countdown updates. Reopening measures the current labels again.
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.1/RestTimer-v1.13.1-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.1/RestTimer-v1.13.1-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.1/RestTimer-v1.13.1-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.0/RestTimer-v1.14.0-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.0/RestTimer-v1.14.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.0/RestTimer-v1.14.0-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

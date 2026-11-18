@@ -93,7 +93,7 @@ namespace RestTimer
             {
                 g.Clear(Color.White);
                 DrawText(g,"RestTimer · "+I18n.T("dashboard"),title,Color.FromArgb(26,40,56),new RectangleF(48,18,1304,64),I18n.IsRtl);
-                DrawText(g,day.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture)+"   ·   "+I18n.T("total_time")+" "+WorkJournal.Format(totals.Sum(e=>e.Seconds)),font,Color.FromArgb(83,103,120),new RectangleF(48,85,1304,44),I18n.IsRtl);
+                DrawText(g,DateDisplay.Format(day)+"   ·   "+I18n.T("total_time")+" "+WorkJournal.Format(totals.Sum(e=>e.Seconds)),font,Color.FromArgb(83,103,120),new RectangleF(48,85,1304,44),I18n.IsRtl);
                 Draw(g,new Rectangle(48,145,1304,400),entries,mode,true);
                 DrawText(g,I18n.T("task_name"),font,Color.Black,new RectangleF(I18n.IsRtl?380:60,555,950,44),I18n.IsRtl);
                 DrawText(g,I18n.T("time_spent"),font,Color.Black,new RectangleF(I18n.IsRtl?60:1050,555,300,44));
@@ -148,7 +148,7 @@ namespace RestTimer
 
     internal sealed class WorkReportPanel : Panel
     {
-        private readonly DateTimePicker day;
+        private readonly CalendarDatePicker day;
         private readonly ListView rows;
         private readonly Label total;
         private readonly DashboardChart chart;
@@ -162,7 +162,7 @@ namespace RestTimer
             foreach(int height in new[]{48,42,42,40}) layout.RowStyles.Add(new RowStyle(SizeType.Absolute,height));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent,62));layout.RowStyles.Add(new RowStyle(SizeType.Percent,38));
             layout.Controls.Add(new Label{Name="i18n:dashboard",Text=I18n.T("dashboard"),Font=Theme.HeadingFont,Dock=DockStyle.Fill},0,0);
-            day=new DateTimePicker{Format=DateTimePickerFormat.Short,Dock=DockStyle.Fill,AccessibleName=I18n.T("report_date")};layout.Controls.Add(day,0,1);
+            day=new CalendarDatePicker{Dock=DockStyle.Fill,AccessibleName=I18n.T("report_date")};layout.Controls.Add(day,0,1);
             var actions=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=3};
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,25));actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,25));
             chartType=new ComboBox{Dock=DockStyle.Fill,DropDownStyle=ComboBoxStyle.DropDownList,AccessibleName=I18n.T("chart_type")};
@@ -179,6 +179,7 @@ namespace RestTimer
         }
         public void RefreshReport()
         {
+            day.RefreshCaption();
             int selected=chartType.SelectedIndex;
             string[] keys={"pie_chart","bar_chart","line_chart"}; for(int i=0;i<3;i++) chartType.Items[i]=I18n.T(keys[i]); chartType.SelectedIndex=selected;
             rows.Columns[0].TextAlign=I18n.IsRtl?HorizontalAlignment.Right:HorizontalAlignment.Left;rows.Columns[0].Text=I18n.T("task_name");rows.Columns[1].Text=I18n.T("time_spent");rows.BackColor=Theme.Surface;rows.ForeColor=Theme.Text;rows.Items.Clear();

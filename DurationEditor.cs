@@ -1,4 +1,6 @@
+using System;
 using System.Drawing;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Windows.Forms;
 
@@ -9,11 +11,32 @@ namespace RestTimer
         private readonly TextBox hours;
         private readonly TextBox minutes;
         private readonly TextBox seconds;
+        private readonly Label titleLabel, hintLabel;
+        private readonly List<Label> captions=new List<Label>(), colons=new List<Label>();
+        private bool compact;
         private readonly Font digitsFont = new Font("Segoe UI", 20);
+        private readonly Font compactDigitsFont = new Font("Segoe UI", 17);
+        public void CompactLayout()
+        {
+            compact=true;float z=DeviceDpi/96f;
+            var title=titleLabel;var hint=hintLabel;
+            title.Bounds=new Rectangle((int)(12*z),(int)(4*z),Width-(int)(24*z),(int)(25*z));
+            hint.Visible=false;
+            int fieldWidth=Math.Min((int)(96*z),(Width-(int)(72*z))/3), gap=(int)(20*z);
+            int left=(Width-3*fieldWidth-2*gap)/2;
+            var inputs=new[]{hours,minutes,seconds};
+            for(int i=0;i<3;i++)
+            {
+                if(inputs[i].Font!=compactDigitsFont) inputs[i].Font=compactDigitsFont;
+                var field=inputs[i].Parent;field.SetBounds(left+i*(fieldWidth+gap),(int)(30*z),fieldWidth,Math.Max((int)(30*z),Height-(int)(55*z)));
+                inputs[i].SetBounds((int)(4*z),Math.Max(0,(field.Height-inputs[i].PreferredHeight)/2),fieldWidth-(int)(8*z),inputs[i].PreferredHeight);
+                var caption=captions[i];
+                if(caption!=null) caption.SetBounds(field.Left,field.Bottom,field.Width,(int)(20*z));
+            }
+            int colon=0;foreach(var label in colons) { label.SetBounds(left+(++colon)*fieldWidth+(colon-1)*gap,(int)(30*z),gap,hours.Parent.Height); }
+        }
         public void Relocalize(string title, string hint)
         {
-            var titleLabel = (Label)Controls[0];
-            var hintLabel = (Label)Controls[1];
             float scale = DeviceDpi / 96f;
             titleLabel.Text = title; hintLabel.Text = hint;
             titleLabel.RightToLeft = hintLabel.RightToLeft = I18n.Flow;
@@ -26,23 +49,22 @@ namespace RestTimer
             for (int i = 0; i < inputs.Length; i++)
             {
                 inputs[i].AccessibleName = title + " – " + I18n.T(keys[i]);
-                foreach (Control control in Controls)
-                    if (control is Label caption && caption.Top > titleLabel.Bottom && caption.Left == inputs[i].Parent.Left)
-                    { caption.Text = I18n.T(keys[i]); caption.RightToLeft = I18n.Flow; }
+                captions[i].Text=I18n.T(keys[i]);captions[i].RightToLeft=I18n.Flow;
             }
+            if(compact) CompactLayout();
         }
 
         public DurationEditor(string title, string hint, int duration)
         {
             Size = new Size(480, 128);
             RightToLeft = RightToLeft.No;
-            Controls.Add(new Label
+            Controls.Add(titleLabel=new Label
             {
                 Text = title, Font = Theme.TitleFont, ForeColor = Theme.Text,
                 BackColor = Color.Transparent, RightToLeft = I18n.Flow,
                 TextAlign = ContentAlignment.MiddleLeft, Bounds = I18n.IsRtl ? new Rectangle(300, 10, 160, 27) : new Rectangle(20, 10, 230, 27)
             });
-            Controls.Add(new Label
+            Controls.Add(hintLabel=new Label
             {
                 Text = hint, Tag = "muted", Font = Theme.SmallFont, ForeColor = Theme.Muted,
                 BackColor = Color.Transparent, RightToLeft = I18n.Flow,
@@ -53,11 +75,13 @@ namespace RestTimer
             minutes = CreatePart(I18n.T("minutes"), title + " – " + I18n.T("minutes"), duration / 60 % 60, 194, 59);
             seconds = CreatePart(I18n.T("seconds"), title + " – " + I18n.T("seconds"), duration % 60, 314, 59);
             foreach (int left in new[] { 166, 286 })
-                Controls.Add(new Label
+            {
+                var colon = new Label
                 {
                     Text = ":", Tag = "muted", Font = digitsFont, ForeColor = Theme.Muted, BackColor = Color.Transparent,
                     TextAlign = ContentAlignment.MiddleCenter, Bounds = new Rectangle(left, 42, 28, 48)
-                });
+                };colons.Add(colon);Controls.Add(colon);
+            }
         }
 
         private TextBox CreatePart(string label, string accessibleName, int value, int left, int maximum)
@@ -104,12 +128,12 @@ namespace RestTimer
             };
             field.Controls.Add(input);
             Controls.Add(field);
-            Controls.Add(new Label
+            var caption=new Label
             {
                 Text = label, Tag = "muted", Font = Theme.SmallFont, ForeColor = Theme.Muted, BackColor = Color.Transparent,
                 RightToLeft = I18n.Flow, TextAlign = ContentAlignment.MiddleCenter,
                 Bounds = new Rectangle(left, 96, 92, 22)
-            });
+            };captions.Add(caption);Controls.Add(caption);
             return input;
         }
 
@@ -141,8 +165,7 @@ namespace RestTimer
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if (disposing)
-                digitsFont.Dispose();
+            if (disposing) { digitsFont.Dispose(); compactDigitsFont.Dispose(); }
         }
     }
 }

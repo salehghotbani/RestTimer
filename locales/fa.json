@@ -130,6 +130,20 @@
     "other_tasks": "سایر کارها",
     "task_count": "تعداد کارها",
     "collapse_sidebar": "جمع‌کردن نوار کناری",
-    "expand_sidebar": "بازکردن نوار کناری"
+    "expand_sidebar": "بازکردن نوار کناری",
+    "calendar": "تقویم",
+    "system_calendar": "خودکار",
+    "gregorian": "میلادی",
+    "persian": "هجری شمسی",
+    "hijri": "هجری قمری (مدنی)",
+    "appearance": "ظاهر برنامه",
+    "system_theme": "مطابق سیستم",
+    "light_theme": "روشن",
+    "dark_theme": "تیره",
+    "today": "امروز",
+    "previous_month": "ماه قبل",
+    "next_month": "ماه بعد",
+    "month": "ماه",
+    "year": "سال"
   }
 }

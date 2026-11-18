@@ -130,6 +130,20 @@
     "other_tasks": "مهام أخرى",
     "task_count": "المهام",
     "collapse_sidebar": "طي الشريط الجانبي",
-    "expand_sidebar": "توسيع الشريط الجانبي"
+    "expand_sidebar": "توسيع الشريط الجانبي",
+    "calendar": "التقويم",
+    "system_calendar": "تلقائي",
+    "gregorian": "ميلادي",
+    "persian": "هجري شمسي",
+    "hijri": "هجري قمري (مدني)",
+    "appearance": "المظهر",
+    "system_theme": "حسب النظام",
+    "light_theme": "فاتح",
+    "dark_theme": "داكن",
+    "today": "اليوم",
+    "previous_month": "الشهر السابق",
+    "next_month": "الشهر التالي",
+    "month": "الشهر",
+    "year": "السنة"
   }
 }

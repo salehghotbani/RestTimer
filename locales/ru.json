@@ -130,6 +130,20 @@
     "other_tasks": "Другие задачи",
     "task_count": "Задачи",
     "collapse_sidebar": "Свернуть боковую панель",
-    "expand_sidebar": "Развернуть боковую панель"
+    "expand_sidebar": "Развернуть боковую панель",
+    "calendar": "Календарь",
+    "system_calendar": "Автоматически",
+    "gregorian": "Григорианский",
+    "persian": "Персидский",
+    "hijri": "Исламский гражданский",
+    "appearance": "Оформление",
+    "system_theme": "Системное",
+    "light_theme": "Светлое",
+    "dark_theme": "Тёмное",
+    "today": "Сегодня",
+    "previous_month": "Предыдущий месяц",
+    "next_month": "Следующий месяц",
+    "month": "Месяц",
+    "year": "Год"
   }
 }
