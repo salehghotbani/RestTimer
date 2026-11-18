@@ -1,5 +1,11 @@
 # RestTimer changelog
 
+## 1.11.0
+- Launch paused on Windows and Linux, including sign-in and update restarts; counting begins only after a user action.
+- Add a date-filtered dashboard with pie, bar and hourly line charts, total work and task counts.
+- Export the selected chart with all task rows to PNG or paginated A4 PDF, with Persian and other localized text preserved.
+- Store start timestamps for new work records; keep legacy totals and explain missing hourly data. Preserve the selected date and chart during language previews.
+
 ## 1.10.0
 - Add Reset timer inside the settings and break boxes. Start a named work session with its own duration.
 - Offer save or discard on Stop, preserve pending decisions, and record resumed work as separate segments without duplication.

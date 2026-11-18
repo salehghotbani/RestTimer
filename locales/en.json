@@ -113,6 +113,21 @@
     "no_work": "No saved work for this day.",
     "save_work": "Save work time",
     "save_work_message": "Save the elapsed work time? Closing keeps it pending.",
-    "log_error": "Could not access the work log. Please try again."
+    "log_error": "Could not access the work log. Please try again.",
+    "dashboard": "Dashboard",
+    "chart_type": "Chart type",
+    "pie_chart": "Pie chart",
+    "bar_chart": "Bar chart",
+    "line_chart": "Line chart",
+    "export_png": "Export PNG",
+    "export_pdf": "Export PDF",
+    "export_saved": "Report exported.",
+    "export_error": "Could not export the report. Please try another location.",
+    "hourly_work": "Work by hour",
+    "task_distribution": "Time per task",
+    "chart_minutes": "Minutes",
+    "legacy_hours": "Older records without start times are excluded from this hourly chart.",
+    "other_tasks": "Other tasks",
+    "task_count": "Tasks"
   }
 }

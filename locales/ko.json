@@ -113,6 +113,21 @@
     "no_work": "이 날짜에 저장된 작업이 없습니다.",
     "save_work": "작업 시간 저장",
     "save_work_message": "작업 시간을 저장할까요? 닫으면 보류됩니다.",
-    "log_error": "작업 기록에 접근할 수 없습니다. 다시 시도하세요."
+    "log_error": "작업 기록에 접근할 수 없습니다. 다시 시도하세요.",
+    "dashboard": "대시보드",
+    "chart_type": "차트 유형",
+    "pie_chart": "원형 차트",
+    "bar_chart": "막대 차트",
+    "line_chart": "꺾은선 차트",
+    "export_png": "PNG 내보내기",
+    "export_pdf": "PDF 내보내기",
+    "export_saved": "보고서를 내보냈습니다.",
+    "export_error": "내보낼 수 없습니다. 다른 위치를 선택하세요.",
+    "hourly_work": "시간대별 작업",
+    "task_distribution": "작업별 시간",
+    "chart_minutes": "분",
+    "legacy_hours": "시작 시간이 없는 이전 기록은 시간대별 차트에서 제외됩니다.",
+    "other_tasks": "기타 작업",
+    "task_count": "작업 수"
   }
 }

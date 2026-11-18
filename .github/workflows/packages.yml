@@ -38,6 +38,9 @@ jobs:
       - name: Test all interface languages and directions
         shell: pwsh
         run: ./tests/windows_localization.ps1 -TestPersistence
+      - name: Verify dashboard charts and PNG PDF exports
+        shell: pwsh
+        run: ./tests/windows_dashboard.ps1
       - name: Test installation, automatic close/restart, upgrade and removal in both languages
         shell: pwsh
         run: |
@@ -56,6 +59,8 @@ jobs:
             obj/smoke/*.png
             obj/smoke/*.log
             obj/localization/*.png
+            obj/dashboard/*.png
+            obj/dashboard/*.pdf
 
   linux:
     runs-on: ubuntu-22.04
@@ -67,7 +72,7 @@ jobs:
       - name: Install packaging and desktop dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm desktop-file-utils xvfb xauth weston fonts-noto-core fonts-noto-cjk \
+          sudo apt-get install -y rpm desktop-file-utils xvfb xauth weston fonts-noto-core fonts-noto-cjk poppler-utils \
             libegl1 libgl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-cursor0 \
             libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
           python -m pip install -r requirements-build-linux.txt
@@ -77,13 +82,18 @@ jobs:
           python tests/test_update_core.py
           QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
           QT_QPA_PLATFORM=offscreen python tests/work_tracking.py
+          QT_QPA_PLATFORM=offscreen python tests/dashboard.py
+          test "$(pdfinfo build/dashboard-linux/many.pdf | awk '/Pages:/ {print $2}')" = 4
+          pdftoppm -scale-to 1300 -f 1 -singlefile -png build/dashboard-linux/fa-2.pdf build/dashboard-linux/fa-pdf-preview
           QT_QPA_PLATFORM=offscreen python tests/linux_localization.py
       - name: Upload frontend previews before packaging
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: linux-ui-previews
-          path: build/*.png
+          path: |
+            build/*.png
+            build/dashboard-linux/**
       - name: Build Debian and RPM installers
         run: bash tools/build_linux.sh
       - name: Test frozen desktop on X11

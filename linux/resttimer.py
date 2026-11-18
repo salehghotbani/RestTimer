@@ -298,41 +298,7 @@ class WorkStartDialog(QDialog):
             self.accept()
 
 
-class WorkReport(QWidget):
-    def __init__(self, controller):
-        super().__init__()
-        self.controller = controller
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
-        layout.addWidget(label(tr("daily_report"), "title"))
-        self.day = QDateEdit(QDate.currentDate())
-        self.day.setCalendarPopup(True)
-        self.day.setAccessibleName(tr("report_date"))
-        layout.addWidget(self.day)
-        self.rows = QTableWidget(0, 2)
-        self.rows.setHorizontalHeaderLabels([tr("task_name"), tr("time_spent")])
-        self.rows.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.rows.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.rows.verticalHeader().hide()
-        self.rows.setEditTriggers(QTableWidget.NoEditTriggers)
-        layout.addWidget(self.rows, 1)
-        self.total = label("", "muted")
-        layout.addWidget(self.total)
-        self.day.dateChanged.connect(self.refresh)
-
-    def refresh(self):
-        self.rows.setRowCount(0)
-        try:
-            entries = self.controller.journal.report(self.day.date().toString("yyyy-MM-dd"))
-            for task, seconds in entries:
-                row = self.rows.rowCount()
-                self.rows.insertRow(row)
-                self.rows.setItem(row, 0, QTableWidgetItem(task))
-                self.rows.setItem(row, 1, QTableWidgetItem(work_tracking.format_time(seconds)))
-            self.total.setText(tr("total_time") + "  " + work_tracking.format_time(sum(seconds for _, seconds in entries)) if entries else tr("no_work"))
-        except (OSError, ValueError, KeyError):
-            self.total.setText(tr("log_error"))
+from dashboard import WorkReport
 
 
 class SettingsDialog(QDialog):
@@ -360,7 +326,7 @@ class SettingsDialog(QDialog):
         self.navigation.setWordWrap(True)
         self.navigation.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.navigation.setAccessibleName(tr("settings_navigation"))
-        for key in ("general", "updates_tab", "version_history", "daily_report", "about"):
+        for key in ("general", "updates_tab", "version_history", "dashboard", "about"):
             self.navigation.addItem(tr(key))
         side.addWidget(self.navigation, 1)
         side.addWidget(label("v" + controller.version, "muted", center=True))
@@ -462,7 +428,7 @@ class SettingsDialog(QDialog):
                 "language": self.language.currentData(), "daily": self.daily.isChecked(), "startup": self.startup.isChecked(),
                 "saved_preferences": self.saved_preferences.copy(), "saved_daily": self.saved_daily, "saved_startup": self.saved_startup,
                 "note": self.note.text(), "source_language": previous, "page": self.current_page,
-                "geometry": self.geometry(), "report_date": self.report.day.date(), "scroll": self.pages.widget(0).verticalScrollBar().value()}
+                "geometry": self.geometry(), "report_date": self.report.day.date(), "chart_type": self.report.chart_type.currentIndex(), "scroll": self.pages.widget(0).verticalScrollBar().value()}
 
     def restore_draft(self, draft):
         self.saved_preferences = draft["saved_preferences"]
@@ -477,6 +443,7 @@ class SettingsDialog(QDialog):
         self.note.setText(i18n.translate_text(draft["note"], draft["source_language"]))
         self.setGeometry(draft["geometry"])
         self.report.day.setDate(draft["report_date"])
+        self.report.chart_type.setCurrentIndex(draft["chart_type"])
         self.select_page(draft["page"])
 
     def about_page(self):
@@ -745,7 +712,7 @@ class Controller:
         self.journal = work_tracking.Journal(config_root() / "resttimer/work-log")
         self.prompting = False
         self.breaking = False
-        self.paused_at = None
+        self.paused_at = time.monotonic()
         self.quitting = False
         self.overlays = []
         self.display_signature = None
@@ -755,7 +722,7 @@ class Controller:
         self.update_dialog = None
         self.checking_updates = False
         self.instance = None
-        self.deadline = time.monotonic() + self.preferences["work_seconds"]
+        self.deadline = self.paused_at + self.preferences["work_seconds"]
         self.menu = QMenu()
         self.start_timer_action = self.menu.addAction(tr("start"), self.start_timer)
         self.stop_timer_action = self.menu.addAction(tr("stop"), self.stop_timer)
@@ -1170,6 +1137,16 @@ def main():
         verify_ui_assets()
         if update_core.tls_context().cert_store_stats()["x509_ca"] == 0:
             raise RuntimeError("No system certificate authorities available for updates.")
+        if controller.running:
+            raise RuntimeError("The timer must launch paused.")
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            report = controller.settings.report
+            report.refresh()
+            for mode in range(3):
+                report.chart_type.setCurrentIndex(mode)
+                report.export(Path(folder) / (str(mode)+".png"), False)
+                report.export(Path(folder) / (str(mode)+".pdf"), True)
         controller.begin_break()
         QTimer.singleShot(300, controller.begin_work)
         QTimer.singleShot(600, controller.quit)

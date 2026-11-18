@@ -113,6 +113,21 @@
     "no_work": "Nenhum trabalho salvo neste dia.",
     "save_work": "Salvar tempo de trabalho",
     "save_work_message": "Salvar o tempo trabalhado? Fechar mantém a decisão pendente.",
-    "log_error": "Não foi possível acessar o registro. Tente novamente."
+    "log_error": "Não foi possível acessar o registro. Tente novamente.",
+    "dashboard": "Painel",
+    "chart_type": "Tipo de gráfico",
+    "pie_chart": "Gráfico de pizza",
+    "bar_chart": "Gráfico de barras",
+    "line_chart": "Gráfico de linhas",
+    "export_png": "Exportar PNG",
+    "export_pdf": "Exportar PDF",
+    "export_saved": "Relatório exportado.",
+    "export_error": "Falha na exportação. Escolha outro local.",
+    "hourly_work": "Trabalho por hora",
+    "task_distribution": "Tempo por tarefa",
+    "chart_minutes": "Minutos",
+    "legacy_hours": "Registros antigos sem início não aparecem no gráfico horário.",
+    "other_tasks": "Outras tarefas",
+    "task_count": "Tarefas"
   }
 }

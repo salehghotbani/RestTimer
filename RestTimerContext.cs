@@ -26,7 +26,7 @@ namespace RestTimer
         private readonly Icon icon;
         private readonly Timer timer;
         private readonly TaskbarCountdown taskbarCountdown;
-        private readonly Stopwatch clock = Stopwatch.StartNew();
+        private readonly Stopwatch clock = new Stopwatch();
         private readonly UpdateService updater = new UpdateService();
         private readonly bool enableAutomaticUpdates;
         private readonly System.Threading.CancellationTokenSource updateCancellation = new System.Threading.CancellationTokenSource();

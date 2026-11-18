@@ -57,7 +57,7 @@ namespace RestTimer
             else if (control is UpdateProgress) control.BackColor = Input;
             else if (control is ToolStrip || control is ListBox || control is RichTextBox) control.BackColor = Surface;
             else if (control is TextBoxBase || control is ComboBox) control.BackColor = Input;
-            else if (control is DateTimePicker || control is ListView) control.BackColor = Surface;
+            else if (control is DashboardChart || control is DateTimePicker || control is ListView) control.BackColor = Surface;
             else if (control.Tag as string == "border") control.BackColor = Border;
             else control.BackColor = Color.Transparent;
             control.ForeColor = control.Tag as string == "muted" ? Muted : control.Tag as string == "accent" ? AccentText : control.Tag as string == "error" ? Error : Text;

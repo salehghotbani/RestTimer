@@ -113,6 +113,21 @@
     "no_work": "Bu gün için kayıt yok.",
     "save_work": "Çalışma süresini kaydet",
     "save_work_message": "Çalışma süresi kaydedilsin mi? Kapatmak kararı bekletir.",
-    "log_error": "Çalışma kaydına erişilemedi. Tekrar deneyin."
+    "log_error": "Çalışma kaydına erişilemedi. Tekrar deneyin.",
+    "dashboard": "Gösterge paneli",
+    "chart_type": "Grafik türü",
+    "pie_chart": "Pasta grafik",
+    "bar_chart": "Çubuk grafik",
+    "line_chart": "Çizgi grafik",
+    "export_png": "PNG dışa aktar",
+    "export_pdf": "PDF dışa aktar",
+    "export_saved": "Rapor dışa aktarıldı.",
+    "export_error": "Dışa aktarılamadı. Başka bir konum seçin.",
+    "hourly_work": "Saatlere göre çalışma",
+    "task_distribution": "Görev başına süre",
+    "chart_minutes": "Dakika",
+    "legacy_hours": "Başlangıç saati olmayan eski kayıtlar saatlik grafikte yer almaz.",
+    "other_tasks": "Diğer görevler",
+    "task_count": "Görevler"
   }
 }

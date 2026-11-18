@@ -113,6 +113,21 @@
     "no_work": "Keine Arbeit für diesen Tag gespeichert.",
     "save_work": "Arbeitszeit speichern",
     "save_work_message": "Arbeitszeit speichern? Schließen lässt die Entscheidung offen.",
-    "log_error": "Arbeitsprotokoll nicht verfügbar. Bitte erneut versuchen."
+    "log_error": "Arbeitsprotokoll nicht verfügbar. Bitte erneut versuchen.",
+    "dashboard": "Dashboard",
+    "chart_type": "Diagrammtyp",
+    "pie_chart": "Kreisdiagramm",
+    "bar_chart": "Balkendiagramm",
+    "line_chart": "Liniendiagramm",
+    "export_png": "PNG exportieren",
+    "export_pdf": "PDF exportieren",
+    "export_saved": "Bericht exportiert.",
+    "export_error": "Export fehlgeschlagen. Anderen Speicherort wählen.",
+    "hourly_work": "Arbeit nach Stunde",
+    "task_distribution": "Zeit pro Aufgabe",
+    "chart_minutes": "Minuten",
+    "legacy_hours": "Alte Einträge ohne Startzeit fehlen im Stundendiagramm.",
+    "other_tasks": "Andere Aufgaben",
+    "task_count": "Aufgaben"
   }
 }

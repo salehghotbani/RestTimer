@@ -17,6 +17,7 @@ namespace RestTimer
         [DataMember] public string Day;
         [DataMember] public string Task;
         [DataMember] public double Seconds;
+        [DataMember(EmitDefaultValue = false)] public string StartedAt;
     }
 
     internal sealed class WorkJournal
@@ -31,7 +32,7 @@ namespace RestTimer
                 var local = TimeZoneInfo.ConvertTime(start, TimeZoneInfo.Local);
                 var midnight = TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local.Date.AddDays(1), DateTimeKind.Unspecified));
                 double part = Math.Min(seconds, (midnight - start.UtcDateTime).TotalSeconds);
-                entries.Add(new WorkEntry { Day = local.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), Task = task, Seconds = part });
+                entries.Add(new WorkEntry { Day = local.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), Task = task, Seconds = part, StartedAt = start.ToString("o", CultureInfo.InvariantCulture) });
                 start = start.AddSeconds(part); seconds -= part;
             }
             return entries.ToArray();
@@ -45,7 +46,7 @@ namespace RestTimer
             { new DataContractJsonSerializer(typeof(WorkEntry[])).WriteObject(stream, Split(task, start, seconds)); stream.Flush(true); }
             File.Move(temp, target);
         }
-        public WorkEntry[] Read(DateTime day)
+        public WorkEntry[] ReadRaw(DateTime day)
         {
             if (!Directory.Exists(folder)) return new WorkEntry[0];
             string key = day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -53,7 +54,25 @@ namespace RestTimer
             foreach (string file in Directory.GetFiles(folder, "*.json"))
                 using (var stream = File.OpenRead(file))
                     all.AddRange(((WorkEntry[])new DataContractJsonSerializer(typeof(WorkEntry[])).ReadObject(stream)).Where(e => e.Day == key));
-            return all.GroupBy(e => e.Task).Select(g => new WorkEntry { Day = key, Task = g.Key, Seconds = g.Sum(e => e.Seconds) }).OrderByDescending(e => e.Seconds).ToArray();
+            return all.ToArray();
+        }
+        public WorkEntry[] Read(DateTime day) => Totals(ReadRaw(day));
+        public static WorkEntry[] Totals(WorkEntry[] entries) => entries.GroupBy(e => e.Task).Select(g => new WorkEntry { Task = g.Key, Seconds = g.Sum(e => e.Seconds) }).OrderByDescending(e => e.Seconds).ThenBy(e => e.Task).ToArray();
+        public static double[] Hourly(WorkEntry[] entries)
+        {
+            var hours = new double[24];
+            foreach (var entry in entries)
+            {
+                if (!DateTimeOffset.TryParse(entry.StartedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var start)) continue;
+                double remaining = entry.Seconds;
+                while (remaining > 0.000001)
+                {
+                    var local = TimeZoneInfo.ConvertTime(start, TimeZoneInfo.Local);
+                    double part = Math.Min(remaining, 3600 - local.Minute * 60 - local.Second - local.Millisecond / 1000.0);
+                    hours[local.Hour] += part; start = start.AddSeconds(part); remaining -= part;
+                }
+            }
+            return hours;
         }
         public static string Format(double seconds) { var time = TimeSpan.FromSeconds(Math.Floor(seconds)); return ((int)time.TotalHours).ToString("00") + time.ToString(@"\:mm\:ss"); }
     }
@@ -82,34 +101,4 @@ namespace RestTimer
         }
     }
 
-    internal sealed class WorkReportPanel : Panel
-    {
-        private readonly DateTimePicker day;
-        private readonly ListView rows;
-        private readonly Label total;
-        public WorkReportPanel()
-        {
-            Dock = DockStyle.Fill; Padding = new Padding(24);
-            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
-            layout.Controls.Add(new Label { Name = "i18n:daily_report", Text = I18n.T("daily_report"), Font = Theme.HeadingFont, Dock = DockStyle.Fill }, 0, 0);
-            day = new DateTimePicker { Format = DateTimePickerFormat.Short, Dock = DockStyle.Fill, MaxDate = DateTime.Today.AddDays(1), AccessibleName = I18n.T("report_date") };
-            rows = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, BorderStyle = BorderStyle.None, HeaderStyle = ColumnHeaderStyle.Nonclickable };
-            rows.Columns.Add(I18n.T("task_name"), 300); rows.Columns.Add(I18n.T("time_spent"), 150);
-            total = new Label { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
-            layout.Controls.Add(day, 0, 1); layout.Controls.Add(rows, 0, 2); layout.Controls.Add(total, 0, 3); Controls.Add(layout);
-            day.ValueChanged += (_, __) => RefreshReport(); VisibleChanged += (_, __) => { if (Visible) RefreshReport(); };
-        }
-        public void RefreshReport()
-        {
-            rows.Columns[0].Text = I18n.T("task_name"); rows.Columns[1].Text = I18n.T("time_spent");
-            rows.BackColor = Theme.Surface; rows.ForeColor = Theme.Text; rows.Items.Clear();
-            try {
-                var entries = new WorkJournal().Read(day.Value);
-                foreach (var entry in entries) rows.Items.Add(new ListViewItem(new[] { entry.Task, WorkJournal.Format(entry.Seconds) }));
-                total.Text = entries.Length == 0 ? I18n.T("no_work") : I18n.T("total_time") + "  " + WorkJournal.Format(entries.Sum(e => e.Seconds));
-            } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is SerializationException) { total.Text = I18n.T("log_error"); }
-        }
-    }
 }

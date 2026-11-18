@@ -113,6 +113,21 @@
     "no_work": "当天没有保存的工作。",
     "save_work": "保存工作时间",
     "save_work_message": "保存已用工作时间？关闭后将保留待处理记录。",
-    "log_error": "无法访问工作记录，请重试。"
+    "log_error": "无法访问工作记录，请重试。",
+    "dashboard": "仪表盘",
+    "chart_type": "图表类型",
+    "pie_chart": "饼图",
+    "bar_chart": "柱状图",
+    "line_chart": "折线图",
+    "export_png": "导出 PNG",
+    "export_pdf": "导出 PDF",
+    "export_saved": "报告已导出。",
+    "export_error": "无法导出，请选择其他位置。",
+    "hourly_work": "每小时工作时间",
+    "task_distribution": "各任务用时",
+    "chart_minutes": "分钟",
+    "legacy_hours": "没有开始时间的旧记录不计入每小时图表。",
+    "other_tasks": "其他任务",
+    "task_count": "任务数"
   }
 }

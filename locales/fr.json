@@ -113,6 +113,21 @@
     "no_work": "Aucun travail enregistré ce jour.",
     "save_work": "Enregistrer le temps",
     "save_work_message": "Enregistrer le temps travaillé ? Fermer laisse la décision en attente.",
-    "log_error": "Impossible de lire le journal. Réessayez."
+    "log_error": "Impossible de lire le journal. Réessayez.",
+    "dashboard": "Tableau de bord",
+    "chart_type": "Type de graphique",
+    "pie_chart": "Camembert",
+    "bar_chart": "Barres",
+    "line_chart": "Courbe",
+    "export_png": "Exporter en PNG",
+    "export_pdf": "Exporter en PDF",
+    "export_saved": "Rapport exporté.",
+    "export_error": "Export impossible. Choisissez un autre emplacement.",
+    "hourly_work": "Travail par heure",
+    "task_distribution": "Temps par tâche",
+    "chart_minutes": "Minutes",
+    "legacy_hours": "Les anciens enregistrements sans heure de début sont exclus du graphique horaire.",
+    "other_tasks": "Autres tâches",
+    "task_count": "Tâches"
   }
 }

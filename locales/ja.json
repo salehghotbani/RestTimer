@@ -113,6 +113,21 @@
     "no_work": "この日の作業記録はありません。",
     "save_work": "作業時間を保存",
     "save_work_message": "作業時間を保存しますか？閉じると保留になります。",
-    "log_error": "作業記録にアクセスできません。再試行してください。"
+    "log_error": "作業記録にアクセスできません。再試行してください。",
+    "dashboard": "ダッシュボード",
+    "chart_type": "グラフの種類",
+    "pie_chart": "円グラフ",
+    "bar_chart": "棒グラフ",
+    "line_chart": "折れ線グラフ",
+    "export_png": "PNGを出力",
+    "export_pdf": "PDFを出力",
+    "export_saved": "レポートを出力しました。",
+    "export_error": "出力できません。別の保存先を選択してください。",
+    "hourly_work": "時間帯別の作業",
+    "task_distribution": "タスク別の時間",
+    "chart_minutes": "分",
+    "legacy_hours": "開始時刻のない古い記録は時間帯別グラフに含まれません。",
+    "other_tasks": "その他のタスク",
+    "task_count": "タスク数"
   }
 }

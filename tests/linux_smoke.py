@@ -34,6 +34,11 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     module.atomic_write(settings_path, '{"work_seconds":true,"break_seconds":0}')
     assert module.read_preferences() == module.DEFAULTS
     controller = module.Controller(app)
+    assert not controller.running and controller.start_timer_action.isEnabled() and not controller.stop_timer_action.isEnabled()
+    initial_remaining = controller.deadline - controller.paused_at
+    time.sleep(.05)
+    controller.tick()
+    assert controller.deadline - controller.paused_at == initial_remaining
     controller.settings.update_panel.check_on_show = False
     assert not hasattr(controller, "history_action")
     assert controller.settings.navigation.count() == 5
@@ -132,6 +137,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     assert controller.preferences["work_seconds"] == 3723
     assert module.read_preferences()["work_seconds"] == 3723
     controller.preferences = {"work_seconds": 1, "break_seconds": 2}
+    controller.start_timer()
     controller.deadline = time.monotonic() + 0.5
     controller.stop_timer_action.trigger()
     paused_at = controller.paused_at

@@ -90,7 +90,7 @@ namespace RestTimer
                 Bounds = new Rectangle(0, 40, 148, 30) });
             tabs.Controls.Add(brand, 0, 0);
             string[] pages = { "general", "updates", "history", "report", "about" };
-            string[] keys = { "general", "updates_tab", "version_history", "daily_report", "about" };
+            string[] keys = { "general", "updates_tab", "version_history", "dashboard", "about" };
             for (int i = 0; i < pages.Length; i++)
             {
                 string page = pages[i];
@@ -283,7 +283,7 @@ namespace RestTimer
                 workDuration.Relocalize(I18n.T("work_duration"), I18n.T("work_hint"));
                 breakDuration.Relocalize(I18n.T("break_duration"), I18n.T("break_hint"));
                 string[] pages = { "general", "updates", "history", "report", "about" };
-                string[] keys = { "general", "updates_tab", "version_history", "daily_report", "about" };
+                string[] keys = { "general", "updates_tab", "version_history", "dashboard", "about" };
                 for (int i = 0; i < pages.Length; i++) navigation[pages[i]].Text = I18n.T(keys[i]);
                 int selected = language.SelectedIndex;
                 language.Items[0] = new LanguageItem("auto", I18n.T("system_language"));

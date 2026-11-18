@@ -168,7 +168,11 @@ internal static class Smoke
                 var update = type.GetMethod("UpdateTimer", flags);
                 var startTimer = (ToolStripMenuItem)type.GetField("startTimer", flags).GetValue(context);
                 var stopTimer = (ToolStripMenuItem)type.GetField("stopTimer", flags).GetValue(context);
-                clock.Restart();
+                if(clock.IsRunning || clock.Elapsed != TimeSpan.Zero || !startTimer.Enabled || stopTimer.Enabled)
+                    throw new Exception("Launching RestTimer must leave the countdown paused until the user presses Start.");
+                Thread.Sleep(100);Application.DoEvents();
+                if(clock.Elapsed != TimeSpan.Zero) throw new Exception("The idle startup timer advanced.");
+                startTimer.PerformClick();
                 Thread.Sleep(100);
                 stopTimer.PerformClick();
                 var frozen = clock.Elapsed;
