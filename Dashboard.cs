@@ -16,7 +16,7 @@ namespace RestTimer
         public WorkEntry[] Entries = new WorkEntry[0];
         public int Mode;
         private static readonly Color[] Colors = { Color.FromArgb(24,156,129), Color.FromArgb(66,133,224), Color.FromArgb(227,160,58), Color.FromArgb(160,110,222), Color.FromArgb(218,100,123), Color.FromArgb(49,158,187), Color.FromArgb(153,166,57), Color.FromArgb(131,142,159) };
-        public DashboardChart() { DoubleBuffered = true; Dock = DockStyle.Fill; MinimumSize = new Size(280,220); }
+        public DashboardChart() { DoubleBuffered = true; Dock = DockStyle.Fill; MinimumSize = new Size(280,160); }
         protected override void OnPaint(PaintEventArgs e) { base.OnPaint(e); Draw(e.Graphics, ClientRectangle, Entries, Mode, false); }
         internal static void DrawText(Graphics g, string text, Font font, Color color, RectangleF box, bool right = false, bool ltr = false)
         {
