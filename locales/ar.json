@@ -144,6 +144,9 @@
     "previous_month": "الشهر السابق",
     "next_month": "الشهر التالي",
     "month": "الشهر",
-    "year": "السنة"
+    "year": "السنة",
+    "time_settings": "المؤقت",
+    "language_region": "اللغة والتقويم",
+    "app_behavior": "سلوك التطبيق"
   }
 }

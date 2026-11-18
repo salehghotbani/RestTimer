@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.14.0-linux-amd64.deb
+sudo apt install ./RestTimer-v1.14.1-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.14.0-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.14.0-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.14.1-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -89,6 +89,8 @@ Only this small box floats above application windows, hiding automatically while
 ### Settings and startup
 
 Settings opens one window with vertical tabs ordered **Dashboard**, **General**, **Updates**, **Version history**, and **About**. Browse releases and application details without opening extra windows. Version history is available here instead of in the tray menu.
+
+General is organized into four titled cards: **Timer**, **Language and calendar**, **Appearance**, and **App behavior**. Timer actions stay with their duration fields, and launch/update preferences stay together.
 
 In **General**, change durations, language, calendar, appearance, launch at sign-in, the floating timer, or daily update checks, then select **Save settings**. The daily-check switch on Updates stays synchronized with General. Changes remain pending until saved. If you close the window with unsaved changes, choose **Save changes** or **Discard changes**; close that dialog to continue editing. Unchanged settings close without a prompt.
 
@@ -162,9 +164,9 @@ The sidebar menu button collapses navigation to an icon rail and expands it agai
 The right-click menu keeps its size, position and item hit targets stable while the countdown updates. Reopening measures the current labels again.
 
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.0/RestTimer-v1.14.0-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.0/RestTimer-v1.14.0-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.0/RestTimer-v1.14.0-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.1/RestTimer-v1.14.1-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.1/RestTimer-v1.14.1-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.14.1/RestTimer-v1.14.1-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

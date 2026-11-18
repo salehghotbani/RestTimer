@@ -144,6 +144,9 @@
     "previous_month": "上个月",
     "next_month": "下个月",
     "month": "月",
-    "year": "年"
+    "year": "年",
+    "time_settings": "计时器",
+    "language_region": "语言和日历",
+    "app_behavior": "应用行为"
   }
 }

@@ -144,6 +144,9 @@
     "previous_month": "Önceki ay",
     "next_month": "Sonraki ay",
     "month": "Ay",
-    "year": "Yıl"
+    "year": "Yıl",
+    "time_settings": "Zamanlayıcı",
+    "language_region": "Dil ve takvim",
+    "app_behavior": "Uygulama davranışı"
   }
 }

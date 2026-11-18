@@ -176,7 +176,10 @@ namespace RestTimer
         {
             var body = new Panel { Dock = DockStyle.Fill, RightToLeft = I18n.Flow, AutoScroll = false };
             generalBody = body;
-            var title = new Label { Name="i18n:settings_title", Text=I18n.T("settings_title"), Font=Theme.HeadingFont, TextAlign=ContentAlignment.MiddleLeft };
+            var timeSection=CreateSection("time_settings");
+            var localeSection=CreateSection("language_region");
+            var appearanceSection=CreateSection("appearance");
+            var behaviorSection=CreateSection("app_behavior");
             workDuration = new DurationEditor(I18n.T("work_duration"), I18n.T("work_hint"), preferences.WorkSeconds);
             breakDuration = new DurationEditor(I18n.T("break_duration"), I18n.T("break_hint"), preferences.BreakSeconds);
             startTimer = new RoundedButton(true) { Name="i18n:start", Text=I18n.T("start") };
@@ -206,7 +209,7 @@ namespace RestTimer
             themeChoice=Choice(new[]{"system","light","dark"},new[]{"system_theme","light_theme","dark_theme"},preferences.ColorMode);
             var selectors=new[]{language,calendarChoice,themeChoice};
             var labels=new Label[3]; string[] labelKeys={"language","calendar","appearance"};
-            for(int i=0;i<3;i++) { labels[i]=new Label { Name="i18n:"+labelKeys[i], Text=I18n.T(labelKeys[i]), TextAlign=ContentAlignment.MiddleLeft };body.Controls.Add(labels[i]); }
+            for(int i=0;i<3;i++) { labels[i]=new Label { Name="i18n:"+labelKeys[i], Text=I18n.T(labelKeys[i]), TextAlign=ContentAlignment.MiddleLeft }; }
             daily=new ThemedCheckBox { Name="i18n:daily_check", Text=I18n.T("daily_check"), Checked=service.State.DailyEnabled };
             daily.CheckedChanged+=(_,__)=>updatePanel?.SyncDailyPreference(daily.Checked);
             startupPreference=new ThemedCheckBox { Name="i18n:startup", Text=I18n.T("startup") };
@@ -216,35 +219,71 @@ namespace RestTimer
             showTaskbarCountdown=new ThemedCheckBox { Name="i18n:show_countdown", Text=I18n.T("show_countdown"), Checked=preferences.ShowTaskbarCountdown };
             note=new Label { Name="i18n:duration_note", Text=I18n.T("duration_note"), Font=Theme.SmallFont, Tag="muted", TextAlign=ContentAlignment.MiddleLeft };
             savePreferences=new RoundedButton(true) { Name="i18n:save", Text=I18n.T("save") };savePreferences.Click+=(_,__)=>SaveDurations();
-            body.Controls.AddRange(new Control[]{title,workDuration,breakDuration,startTimer,stopTimer,resetTimer,timerStatus,language,calendarChoice,themeChoice,daily,startupPreference,showTaskbarCountdown,note,savePreferences});
+            timeSection.Controls.AddRange(new Control[]{workDuration,breakDuration,startTimer,stopTimer,resetTimer,timerStatus});
+            localeSection.Controls.AddRange(new Control[]{labels[0],language,labels[1],calendarChoice});
+            appearanceSection.Controls.Add(themeChoice);
+            // The section title already labels the appearance selector.
+            labels[2].Dispose();themeChoice.AccessibleName=I18n.T("appearance");
+            behaviorSection.Controls.AddRange(new Control[]{daily,startupPreference,showTaskbarCountdown});
+            body.Controls.AddRange(new Control[]{timeSection,localeSection,appearanceSection,behaviorSection,note,savePreferences});
             Action arrange=()=>
             {
                 float z=AutoScaleDimensions.Width/96f;
-                int pad=(int)(12*z), w=Math.Min(body.ClientSize.Width-2*pad,(int)(680*z)), x=(body.ClientSize.Width-w)/2;
-                int gap=(int)(6*z), y=(int)(8*z), h=body.ClientSize.Height;
-                bool beside=h<610*z;
-                int card=Math.Max((int)(82*z),Math.Min((int)(112*z),(h-(int)(382*z))/(beside?1:2)));
-                title.SetBounds(x,y,w,(int)(40*z));y+=title.Height+gap;
-                if(beside)
+                int pad=(int)(12*z), w=Math.Max(1,Math.Min(body.ClientSize.Width-2*pad,(int)(720*z))), x=(body.ClientSize.Width-w)/2;
+                int h=body.ClientSize.Height, y=(int)(8*z);
+                bool compact=h<660*z;
+                int gap=(int)((compact?6:8)*z);
+                int inset=(int)((compact?6:12)*z), heading=(int)((compact?20:28)*z);
+                int row=(int)((compact?28:32)*z), checkHeight=(int)((compact?22:28)*z);
+                int middleHeight=heading+2*row+gap+2*inset;
+                int behaviorHeight=heading+3*checkHeight+2*inset;
+                int footer=(int)((compact?38:42)*z), controls=(int)((compact?28:32)*z), status=(int)((compact?18:22)*z);
+                int card=Math.Max((int)(82*z),Math.Min((int)(120*z),h-y-middleHeight-behaviorHeight-footer-4*gap-heading-controls-status-2*inset-gap));
+                int timeHeight=heading+card+gap+controls+status+2*inset;
+                timeSection.SetBounds(x,y,w,timeHeight);y+=timeHeight+gap;
+                int inner=w-2*inset, half=(inner-gap)/2;
+                workDuration.SetBounds(I18n.IsRtl?inset+inner-half:inset,inset+heading,half,card);
+                breakDuration.SetBounds(I18n.IsRtl?inset:inset+inner-half,inset+heading,half,card);
+                workDuration.CompactLayout();breakDuration.CompactLayout();
+                int cy=inset+heading+card+gap, bw=(inner-2*gap)/3;
+                startTimer.SetBounds(I18n.IsRtl?inset+inner-bw:inset,cy,bw,controls);
+                stopTimer.SetBounds(inset+bw+gap,cy,bw,controls);
+                resetTimer.SetBounds(I18n.IsRtl?inset:inset+inner-bw,cy,bw,controls);
+                timerStatus.SetBounds(inset,cy+controls,inner,status);
+                int localeWidth=(int)((w-gap)*0.62), appearanceWidth=w-gap-localeWidth;
+                localeSection.SetBounds(I18n.IsRtl?x+w-localeWidth:x,y,localeWidth,middleHeight);
+                appearanceSection.SetBounds(I18n.IsRtl?x:x+localeWidth+gap,y,appearanceWidth,middleHeight);y+=middleHeight+gap;
+                for(int i=0;i<2;i++)
                 {
-                    int half=(w-gap)/2;
-                    workDuration.SetBounds(I18n.IsRtl?x+w-half:x,y,half,card);
-                    breakDuration.SetBounds(I18n.IsRtl?x:x+w-half,y,half,card);
-                    workDuration.CompactLayout();breakDuration.CompactLayout();y+=card+gap;
+                    int available=localeWidth-2*inset;
+                    int lw=Math.Min(available/3,Math.Max((int)(70*z),TextRenderer.MeasureText(labels[i].Text,labels[i].Font).Width+(int)(4*z)));
+                    labels[i].AutoEllipsis=true;
+                    int ly=inset+heading+i*(row+gap);
+                    labels[i].SetBounds(I18n.IsRtl?inset+available-lw:inset,ly,lw,row);
+                    selectors[i].SetBounds(I18n.IsRtl?inset:inset+lw,ly,Math.Max(1,available-lw-gap),row);
                 }
-                else foreach(var editor in new[]{workDuration,breakDuration}) { editor.SetBounds(x,y,w,card);editor.CompactLayout();y+=card+gap; }
-                int bw=(w-2*gap)/3, bh=(int)(32*z);
-                startTimer.SetBounds(I18n.IsRtl?x+w-bw:x,y,bw,bh);stopTimer.SetBounds(x+bw+gap,y,bw,bh);resetTimer.SetBounds(I18n.IsRtl?x:x+w-bw,y,bw,bh);y+=bh;
-                timerStatus.SetBounds(x,y,w,(int)(22*z));y+=timerStatus.Height+gap;
-                for(int i=0;i<3;i++) { int lw=(int)(110*z), rh=(int)(32*z);labels[i].SetBounds(I18n.IsRtl?x+w-lw:x,y,lw,rh);selectors[i].SetBounds(I18n.IsRtl?x:x+lw,y,w-lw-gap,rh);y+=rh+gap; }
-                foreach(var check in new[]{daily,startupPreference,showTaskbarCountdown}) { check.SetBounds(x,y,w,(int)(26*z));y+=check.Height; }
-                note.SetBounds(x,y,w,(int)(28*z));
-                savePreferences.SetBounds(I18n.IsRtl?x+w-(int)(154*z):x,Math.Max(y+note.Height,h-(int)(42*z)),(int)(154*z),(int)(34*z));
+                themeChoice.SetBounds(inset,inset+heading,appearanceWidth-2*inset,row);
+                behaviorSection.SetBounds(x,y,w,behaviorHeight);y+=behaviorHeight+gap;
+                int iy=inset+heading;
+                foreach(var check in new[]{daily,startupPreference,showTaskbarCountdown}) { check.SetBounds(inset,iy,w-2*inset,checkHeight);iy+=checkHeight; }
+                foreach(var section in new[]{timeSection,localeSection,appearanceSection,behaviorSection})
+                    section.Controls["section_heading"].SetBounds(inset,inset,section.Width-2*inset,heading);
+                int saveWidth=(int)(154*z), footerY=Math.Max(y,h-footer);
+                savePreferences.SetBounds(I18n.IsRtl?x+w-saveWidth:x,footerY,saveWidth,(int)(34*z));
+                note.SetBounds(I18n.IsRtl?x:x+saveWidth+gap,footerY,w-saveWidth-gap,(int)(38*z));
             };
             body.Resize+=(_,__)=>arrange(); body.Layout+=(_,__)=>{ if(!body.IsDisposed) arrange(); };
             calendarChoice.SelectedIndexChanged+=(_,__)=> { if(calendarChoice.SelectedItem==null) return;DateDisplay.Preference=((LanguageItem)calendarChoice.SelectedItem).Code;reportPage?.RefreshReport(); };
             themeChoice.SelectedIndexChanged+=(_,__)=> { if(themeChoice.SelectedItem==null) return;Theme.Use(((LanguageItem)themeChoice.SelectedItem).Code);ApplyTheme(); };
             return body;
+        }
+        private RoundedPanel CreateSection(string key)
+        {
+            var section=new RoundedPanel { Name="section:"+key, AccessibleName=I18n.T(key), AccessibleRole=AccessibleRole.Grouping,
+                RightToLeft=I18n.Flow, CornerRadius=14 };
+            section.Controls.Add(new Label { Name="section_heading", Tag="accent", Text=I18n.T(key), Font=Theme.TitleFont,
+                RightToLeft=I18n.Flow, TextAlign=ContentAlignment.MiddleLeft });
+            return section;
         }
         private ComboBox Choice(string[] values,string[] keys,string selection)
         {
@@ -344,6 +383,7 @@ namespace RestTimer
                 updatePanel.Relocalize(previous, CurrentPage == "history");
                 RefreshChoices(calendarChoice,new[]{"system_calendar","gregorian","persian","hijri"});
                 RefreshChoices(themeChoice,new[]{"system_theme","light_theme","dark_theme"});
+                foreach(Control section in generalBody.Controls) if(section.Name.StartsWith("section:")) { section.RightToLeft=I18n.Flow;section.Controls["section_heading"].RightToLeft=I18n.Flow; }
                 generalBody.PerformLayout();
                 reportPage.RefreshReport();
                 ApplyTheme();

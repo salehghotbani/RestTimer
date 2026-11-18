@@ -27,6 +27,18 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build') as folder:
         controller.show_settings()
         settings.resize(900,700)
         settings.select_page('general')
+        groups=settings.general_sections
+        assert set(groups)=={'time_settings','language_region','appearance','app_behavior'}
+        for key,controls in (
+            ('time_settings',(settings.work,settings.rest,settings.start_timer,settings.stop_timer,settings.reset_timer)),
+            ('language_region',(settings.language,settings.calendar_choice)),
+            ('appearance',(settings.theme_choice,)),
+            ('app_behavior',(settings.startup,settings.daily))):
+            for control in controls:
+                assert groups[key].isAncestorOf(control), f'{key} does not contain its settings'
+        app.processEvents()
+        for group in groups.values():
+            assert group.parentWidget().rect().contains(group.geometry()), 'Settings section is clipped'
         settings.report.day.setDate(QDate(2024,3,20))
         for kind in ('gregorian','persian','hijri'):
             settings.calendar_choice.setCurrentIndex(settings.calendar_choice.findData(kind))

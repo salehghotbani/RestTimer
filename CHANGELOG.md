@@ -1,5 +1,9 @@
 # RestTimer changelog
 
+## 1.14.1
+- Organize General into four titled cards: Timer, Language and calendar, Appearance, and App behavior. Keep timer actions beside their duration settings and startup/update switches together.
+- Preserve the compact, scroll-free layout, reading direction, live language/theme previews, pending edits and timer state.
+
 ## 1.14.0
 - Rebuild General settings to fit without horizontal or vertical scrolling, with balanced padding and centered sidebar branding.
 - Add animated sidebar expansion/collapse and a minimal icon rail with consistent reading direction and tooltips.

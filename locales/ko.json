@@ -144,6 +144,9 @@
     "previous_month": "이전 달",
     "next_month": "다음 달",
     "month": "월",
-    "year": "년"
+    "year": "년",
+    "time_settings": "타이머",
+    "language_region": "언어 및 달력",
+    "app_behavior": "앱 동작"
   }
 }

@@ -144,6 +144,9 @@
     "previous_month": "ماه قبل",
     "next_month": "ماه بعد",
     "month": "ماه",
-    "year": "سال"
+    "year": "سال",
+    "time_settings": "زمان‌بندی",
+    "language_region": "زبان و تقویم",
+    "app_behavior": "رفتار برنامه"
   }
 }

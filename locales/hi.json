@@ -144,6 +144,9 @@
     "previous_month": "पिछला महीना",
     "next_month": "अगला महीना",
     "month": "महीना",
-    "year": "वर्ष"
+    "year": "वर्ष",
+    "time_settings": "टाइमर",
+    "language_region": "भाषा और कैलेंडर",
+    "app_behavior": "ऐप व्यवहार"
   }
 }

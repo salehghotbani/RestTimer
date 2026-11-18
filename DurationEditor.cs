@@ -22,7 +22,8 @@ namespace RestTimer
             var title=titleLabel;var hint=hintLabel;
             title.Bounds=new Rectangle((int)(12*z),(int)(4*z),Width-(int)(24*z),(int)(25*z));
             hint.Visible=false;
-            int fieldWidth=Math.Min((int)(96*z),(Width-(int)(72*z))/3), gap=(int)(20*z);
+            int gap=(int)((Width<360*z?8:20)*z);
+            int fieldWidth=Math.Min((int)(96*z),(Width-(int)(24*z)-2*gap)/3);
             int left=(Width-3*fieldWidth-2*gap)/2;
             var inputs=new[]{hours,minutes,seconds};
             for(int i=0;i<3;i++)

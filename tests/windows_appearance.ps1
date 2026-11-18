@@ -23,8 +23,16 @@ class AppearanceTest {
     using(var dialog=(Form)Activator.CreateInstance(settings,prefs,SystemIcons.Application,(Action)(()=>{}),(Action)(()=>{}),updater,"general",false)) {
      dialog.Size=new Size(900,680);dialog.Show();Application.DoEvents();
      var body=(Panel)settings.GetField("generalBody",flags).GetValue(dialog);
+     foreach(string group in new[]{"time_settings","language_region","appearance","app_behavior"}) {
+      var section=body.Controls["section:"+group];
+      if(section==null || section.Controls.Cast<Control>().Any(c=>c.Visible && !section.ClientRectangle.Contains(c.Bounds))) throw new Exception("Settings section is clipped: "+group);
+     }
+     foreach(var pair in new[]{new[]{"workDuration","time_settings"},new[]{"startTimer","time_settings"},new[]{"resetTimer","time_settings"},new[]{"language","language_region"},new[]{"calendarChoice","language_region"},new[]{"themeChoice","appearance"},new[]{"daily","app_behavior"},new[]{"startupPreference","app_behavior"}}) {
+      var control=(Control)settings.GetField(pair[0],flags).GetValue(dialog);
+      if(control.Parent.Name!="section:"+pair[1]) throw new Exception("Setting is in the wrong section: "+pair[0]);
+     }
      if(body.AutoScroll || body.Controls.Cast<Control>().Any(c=>c.Visible && !body.ClientRectangle.Contains(c.Bounds))) throw new Exception("Small settings must fit: "+language+" "+body.ClientSize);
-     using(var image=new Bitmap(dialog.Width,dialog.Height)) {dialog.DrawToBitmap(image,dialog.ClientRectangle);image.Save("obj/appearance/general-"+language+"-"+mode+".png");}
+     using(var image=new Bitmap(dialog.Width,dialog.Height)) {dialog.DrawToBitmap(image,new Rectangle(Point.Empty,dialog.Size));image.Save("obj/appearance/general-"+language+"-"+mode+".png");}
      var report=settings.GetField("reportPage",flags).GetValue(dialog);var picker=report.GetType().GetField("day",flags).GetValue(report);var pickerType=picker.GetType();
      pickerType.GetProperty("Value").SetValue(picker,new DateTime(2024,3,20));
      foreach(string kind in new[]{"gregorian","persian","hijri"}) {

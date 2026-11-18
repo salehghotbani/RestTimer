@@ -144,6 +144,9 @@
     "previous_month": "Предыдущий месяц",
     "next_month": "Следующий месяц",
     "month": "Месяц",
-    "year": "Год"
+    "year": "Год",
+    "time_settings": "Таймер",
+    "language_region": "Язык и календарь",
+    "app_behavior": "Поведение приложения"
   }
 }

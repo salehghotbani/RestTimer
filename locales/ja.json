@@ -144,6 +144,9 @@
     "previous_month": "前の月",
     "next_month": "次の月",
     "month": "月",
-    "year": "年"
+    "year": "年",
+    "time_settings": "タイマー",
+    "language_region": "言語と暦",
+    "app_behavior": "アプリの動作"
   }
 }

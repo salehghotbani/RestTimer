@@ -144,6 +144,9 @@
     "previous_month": "Mois précédent",
     "next_month": "Mois suivant",
     "month": "Mois",
-    "year": "Année"
+    "year": "Année",
+    "time_settings": "Minuteur",
+    "language_region": "Langue et calendrier",
+    "app_behavior": "Comportement"
   }
 }

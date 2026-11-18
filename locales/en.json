@@ -144,6 +144,9 @@
     "previous_month": "Previous month",
     "next_month": "Next month",
     "month": "Month",
-    "year": "Year"
+    "year": "Year",
+    "time_settings": "Timer",
+    "language_region": "Language and calendar",
+    "app_behavior": "App behavior"
   }
 }
