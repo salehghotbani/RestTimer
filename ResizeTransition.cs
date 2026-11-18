@@ -14,9 +14,14 @@ namespace RestTimer
         {
             this.before=before;this.after=after;DoubleBuffered=true;SetStyle(ControlStyles.ResizeRedraw|ControlStyles.SupportsTransparentBackColor,true);TabStop=false;
         }
+        private static Bitmap Canvas(Control control)
+        {
+            var bitmap=new Bitmap(Math.Max(1,control.ClientSize.Width),Math.Max(1,control.ClientSize.Height));
+            bitmap.SetResolution(control.DeviceDpi,control.DeviceDpi);return bitmap;
+        }
         public static Bitmap Snapshot(Control control)
         {
-            var image=new Bitmap(Math.Max(1,control.Width),Math.Max(1,control.Height));
+            var image=Canvas(control);
             control.DrawToBitmap(image,new Rectangle(Point.Empty,image.Size));
             PaintNotes(control,control,image);return image;
         }
@@ -35,7 +40,7 @@ namespace RestTimer
                 var clip=new Rectangle(origin,notes.ClientSize);
                 for(Control ancestor=notes.Parent;ancestor!=root && ancestor!=null;ancestor=ancestor.Parent)
                     clip.Intersect(new Rectangle(root.PointToClient(ancestor.PointToScreen(Point.Empty)),ancestor.ClientSize));
-                using(var bitmap=new Bitmap(Math.Max(1,notes.ClientSize.Width),Math.Max(1,notes.ClientSize.Height)))
+                using(var bitmap=Canvas(notes))
                 using(var g=Graphics.FromImage(bitmap))
                 {
                     g.Clear(notes.BackColor);
