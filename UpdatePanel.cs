@@ -137,6 +137,7 @@ namespace RestTimer
             ApplyTheme();
             Resize+=(_,__)=>FitText();
             foreach(var label in new[]{heading,description,consent,historyTitle,progressText}) label.TextChanged+=(_,__)=>FitText();
+            install.TextChanged+=(_,__)=>FitText();check.TextChanged+=(_,__)=>FitText();
             progress.VisibleChanged+=(_,__)=>FitText();
             FitText();
         }

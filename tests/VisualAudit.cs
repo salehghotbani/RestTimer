@@ -64,7 +64,12 @@ internal static class VisualAudit
             {
                 overlay.GetType().GetMethod("SetCountdown").Invoke(overlay,new object[]{"14:52"});overlay.GetType().GetMethod("SetRunning").Invoke(overlay,new object[]{false});
                 overlay.Show();Pump(5);var card=(Control)overlay.GetType().GetField("card",Fields).GetValue(overlay);
-                sample=code+" "+mode+" break";Inspect(card,"break");
+                foreach(string digits in new[]{"14:52","1:14:52"}) foreach(bool running in new[]{true,false})
+                {
+                    overlay.GetType().GetMethod("SetCountdown").Invoke(overlay,new object[]{digits});
+                    overlay.GetType().GetMethod("SetRunning").Invoke(overlay,new object[]{running});Pump(5);
+                    sample=code+" "+mode+" break "+digits+" "+running;Inspect(card,"break");
+                }
                 using(var frame=new Bitmap(card.Width,card.Height)) {card.DrawToBitmap(frame,card.ClientRectangle);canvas.DrawImage(frame,new Rectangle(1080,0,520,130));}
                 overlay.Dispose();
             }

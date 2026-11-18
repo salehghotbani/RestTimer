@@ -81,16 +81,22 @@ namespace RestTimer
         public void SetCountdown(string value)
         {
             if (countdown.Text != value)
+            {
+                bool resize=countdown.Text.Length!=value.Length;
                 countdown.Text = value;
+                if(resize) LayoutCard();
+            }
         }
 
         public void SetRunning(bool running)
         {
             Start.Enabled = !running;
             Stop.Enabled = running;
-            heading.Text = running ? I18n.T("break_heading") : I18n.T("break_paused");
-            countdownCaption.Text = running ? I18n.T("remaining") : I18n.T("timer_paused");
-            LayoutCard();
+            string title=running?I18n.T("break_heading"):I18n.T("break_paused");
+            string detail=running?I18n.T("remaining"):I18n.T("timer_paused");
+            bool resize=heading.Text!=title || countdownCaption.Text!=detail;
+            heading.Text=title;countdownCaption.Text=detail;
+            if(resize) LayoutCard();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -127,11 +133,12 @@ namespace RestTimer
             var buttons = new[] { Start, Stop, Reset };
             var sizes = buttons.Select(button => compact ? Scale(32) : Math.Max(Scale(76), ((RoundedButton)button).LabeledWidth)).ToArray();
             int buttonWidth = sizes.Sum() + 2 * gap;
-            int timerWidth = Math.Min(Math.Max(Scale(148),TextRenderer.MeasureText("00:00",countdown.Font).Width+Scale(8)), width / 3);
+            string digits=string.IsNullOrEmpty(countdown.Text)?"00:00":countdown.Text;
+            int timerWidth = Math.Min(Math.Max(Scale(148),TextRenderer.MeasureText(digits,countdown.Font).Width+Scale(8)), width / 3);
             int timerLeft = padding + buttonWidth + Scale(24);
             int textLeft = timerLeft + timerWidth + Scale(16);
             int textWidth = Math.Max(1, width - textLeft - padding);
-            int countHeight=Math.Max(Scale(54),TextRenderer.MeasureText("00:00",countdown.Font).Height+Scale(2));
+            int countHeight=Math.Max(Scale(54),TextRenderer.MeasureText(digits,countdown.Font).Height+Scale(2));
             int timerCaptionHeight=Math.Max(Scale(22),TextRenderer.MeasureText(countdownCaption.Text,countdownCaption.Font,new Size(timerWidth,32767),TextFormatFlags.WordBreak).Height+Scale(2));
             int headingHeight=Math.Max(Scale(32),TextRenderer.MeasureText(heading.Text,heading.Font,new Size(textWidth,32767),TextFormatFlags.WordBreak).Height+Scale(2));
             int captionHeight=Math.Max(Scale(28),TextRenderer.MeasureText(caption.Text,caption.Font,new Size(textWidth,32767),TextFormatFlags.WordBreak).Height+Scale(2));
