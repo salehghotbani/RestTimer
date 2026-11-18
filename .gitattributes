@@ -6,3 +6,5 @@
 *.ico binary
 licenses/** -whitespace
 packaging/languages/*.isl -whitespace
+
+.githooks/* text eol=lf

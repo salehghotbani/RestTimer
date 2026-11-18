@@ -12,6 +12,7 @@ import work_tracking
 import ui_icons
 import rtl_ui
 from date_picker import DatePicker
+from ui_controls import DropDown as QComboBox
 
 COLORS = ['#189c81', '#4285e0', '#e3a03a', '#a06ede', '#da647b', '#319ebb', '#99a639', '#838e9f']
 

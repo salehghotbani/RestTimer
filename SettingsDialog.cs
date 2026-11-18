@@ -14,6 +14,7 @@ namespace RestTimer
         private CheckBox showTaskbarCountdown, startupPreference, daily;
         private ComboBox language, calendarChoice, themeChoice;
         private Timer sidebarAnimation;
+        private ResizeTransition contentTransition;
         private float sidebarFrom, sidebarTarget;
         private readonly Stopwatch sidebarClock = new Stopwatch();
         private readonly UpdateService service;
@@ -178,7 +179,7 @@ namespace RestTimer
         }
         public void SetSidebarCollapsed(bool collapsed)
         {
-            sidebarAnimation?.Stop();SidebarCollapsed=collapsed;
+            sidebarAnimation?.Stop();contentTransition?.Dispose();contentTransition=null;SidebarCollapsed=collapsed;
             rootLayout.SuspendLayout();
             RenderSidebar(collapsed);rootLayout.ColumnStyles[0].Width=SidebarWidth(collapsed);
             rootLayout.ResumeLayout(true);
@@ -199,7 +200,7 @@ namespace RestTimer
             resetTimer = new RoundedButton { Name="i18n:reset_timer", Text=I18n.T("reset_timer") };
             startTimer.Click+=(_,__)=>start(); stopTimer.Click+=(_,__)=>stop(); resetTimer.Click+=(_,__)=>RestartRequested?.Invoke();
             timerStatus = new Label { Font=Theme.SmallFont, Tag="muted", TextAlign=ContentAlignment.MiddleLeft };
-            language = new ComboBox { DropDownStyle=ComboBoxStyle.DropDownList, RightToLeft=RightToLeft.No, FlatStyle=FlatStyle.Flat,
+            language = new StyledComboBox { DropDownStyle=ComboBoxStyle.DropDownList, RightToLeft=RightToLeft.No, FlatStyle=FlatStyle.Flat,
                 DrawMode=DrawMode.OwnerDrawFixed, ItemHeight=Font.Height+6, DropDownHeight=320, AccessibleName=I18n.T("language") };
             language.Items.Add(new LanguageItem("auto", I18n.T("system_language")));
             foreach (string code in I18n.SupportedCodes) language.Items.Add(new LanguageItem(code, I18n.NativeName(code)));
@@ -310,7 +311,7 @@ namespace RestTimer
         }
         private ComboBox Choice(string[] values,string[] keys,string selection)
         {
-            var box=new ComboBox { DropDownStyle=ComboBoxStyle.DropDownList, FlatStyle=FlatStyle.Flat };
+            var box=new StyledComboBox { DropDownStyle=ComboBoxStyle.DropDownList, FlatStyle=FlatStyle.Flat };
             for(int i=0;i<values.Length;i++) { box.Items.Add(new LanguageItem(values[i],I18n.T(keys[i])));if(values[i]==selection) box.SelectedIndex=i; }
             box.DrawMode=DrawMode.OwnerDrawFixed;box.ItemHeight=Font.Height+6;
             box.DrawItem+=(_,e)=> { if(e.Index<0) return;bool selected=(e.State&DrawItemState.Selected)!=0;
@@ -424,7 +425,13 @@ namespace RestTimer
         private void AnimateSidebar(bool collapsed)
         {
             sidebarAnimation?.Stop();
+            var before=ResizeTransition.Snapshot(contentTransition!=null?(Control)contentTransition:content);
+            contentTransition?.Dispose();contentTransition=null;
             sidebarFrom=rootLayout.ColumnStyles[0].Width;SidebarCollapsed=collapsed;sidebarTarget=SidebarWidth(collapsed);
+            rootLayout.ColumnStyles[0].Width=sidebarTarget;rootLayout.PerformLayout();content.PerformLayout();
+            var after=ResizeTransition.Snapshot(content);
+            rootLayout.ColumnStyles[0].Width=sidebarFrom;rootLayout.PerformLayout();
+            contentTransition=new ResizeTransition(before,after);content.Controls.Add(contentTransition);contentTransition.Dock=DockStyle.Fill;contentTransition.BringToFront();
             // Draw only icons while resizing; labels are revealed at their final width.
             RenderSidebar(true);
             if(sidebarAnimation==null)
@@ -434,7 +441,8 @@ namespace RestTimer
                 {
                     double t=Math.Min(1,sidebarClock.Elapsed.TotalMilliseconds/190), ease=1-Math.Pow(1-t,3);
                     rootLayout.ColumnStyles[0].Width=sidebarFrom+(sidebarTarget-sidebarFrom)*(float)ease;
-                    if(t>=1) { sidebarAnimation.Stop();RenderSidebar(SidebarCollapsed); }
+                    if(contentTransition!=null){contentTransition.Progress=(float)ease;contentTransition.Invalidate();}
+                    if(t>=1) { sidebarAnimation.Stop();contentTransition?.Dispose();contentTransition=null;RenderSidebar(SidebarCollapsed); }
                 };
             }
             sidebarClock.Restart();sidebarAnimation.Start();
@@ -486,7 +494,7 @@ namespace RestTimer
         }
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { themeTimer?.Dispose(); sidebarAnimation?.Dispose(); sidebarHints.Dispose(); }
+            if (disposing) { themeTimer?.Dispose(); sidebarAnimation?.Dispose(); contentTransition?.Dispose(); sidebarHints.Dispose(); }
             base.Dispose(disposing);
             if (disposing) { logo?.Dispose(); gitLogo?.Dispose(); }
         }

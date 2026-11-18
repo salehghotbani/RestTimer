@@ -1,5 +1,11 @@
 # RestTimer changelog
 
+## 1.14.3 (Unreleased)
+- Animate page resizing together with the sidebar, blending complete layouts to avoid intermediate text/icon jumps and retaining rich-text notes.
+- Restyle dropdown fields and lists, fit popup widths to labels, and provide full-value tooltips.
+- Correct calendar popup DPI scaling, screen bounds, RTL navigation and compact weekday headings.
+- Pause application GitHub Actions. Run the former workflow checks locally before push, including native installers, all-language UI audits, X11/Wayland, Ubuntu and Fedora package installation.
+
 ## 1.14.2
 - Fix sidebar animation: reserve brand/navigation positions, anchor icons, reveal labels at the final width, and handle interrupted/reversed transitions without losing state.
 - Adapt sidebar width to translated labels; keep tooltips and keyboard navigation in the collapsed rail.

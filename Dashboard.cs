@@ -165,7 +165,7 @@ namespace RestTimer
             day=new CalendarDatePicker{Dock=DockStyle.Fill,AccessibleName=I18n.T("report_date")};layout.Controls.Add(day,0,1);
             var actions=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=3};
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,25));actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,25));
-            chartType=new ComboBox{Dock=DockStyle.Fill,DropDownStyle=ComboBoxStyle.DropDownList,AccessibleName=I18n.T("chart_type")};
+            chartType=new StyledComboBox{Dock=DockStyle.Fill,DropDownStyle=ComboBoxStyle.DropDownList,AccessibleName=I18n.T("chart_type")};
             chartType.Items.AddRange(new object[]{I18n.T("pie_chart"),I18n.T("bar_chart"),I18n.T("line_chart")});chartType.SelectedIndex=0;
             png=new RoundedButton{Text="PNG",Dock=DockStyle.Fill,AccessibleName=I18n.T("export_png")};pdf=new RoundedButton{Text="PDF",Dock=DockStyle.Fill,AccessibleName=I18n.T("export_pdf")};
             actions.Controls.Add(chartType,0,0);actions.Controls.Add(png,1,0);actions.Controls.Add(pdf,2,0);layout.Controls.Add(actions,0,2);
@@ -173,7 +173,15 @@ namespace RestTimer
             chart=new DashboardChart();layout.Controls.Add(chart,0,4);
             rows=new ListView{RightToLeft=RightToLeft.No,Dock=DockStyle.Fill,View=View.Details,FullRowSelect=true,BorderStyle=BorderStyle.None,HeaderStyle=ColumnHeaderStyle.Nonclickable,ShowItemToolTips=true};
             rows.Columns.Add(I18n.T("task_name"),300);rows.Columns.Add(I18n.T("time_spent"),150);layout.Controls.Add(rows,0,5);Controls.Add(layout);
-            rows.Resize+=(_,__)=> { FitColumns();if(rows.IsHandleCreated) rows.BeginInvoke((Action)FitColumns); };
+            Action fitRows=()=>
+            {
+                float z=Theme.ScaleFor(this);
+                layout.RowStyles[0].Height=48*z;layout.RowStyles[1].Height=42*z;
+                layout.RowStyles[2].Height=Math.Max(42*z,chartType.PreferredHeight+chartType.Margin.Vertical+actions.Margin.Vertical);
+                layout.RowStyles[3].Height=Math.Max(40*z,TextRenderer.MeasureText(total.Text,total.Font,new Size(Math.Max(1,Width-30),32767),TextFormatFlags.WordBreak).Height+6*z);
+            };
+            Resize+=(_,__)=>fitRows();VisibleChanged+=(_,__)=> {if(Visible)fitRows();};
+            rows.Resize+=(_,__)=> { FitColumns();if(rows.IsHandleCreated) rows.BeginInvoke((Action)(()=>{FitColumns();fitRows();})); };
             chartType.SelectedIndexChanged+=(_,__)=>{chart.Mode=chartType.SelectedIndex;chart.Invalidate();};
             day.ValueChanged+=(_,__)=>RefreshReport();VisibleChanged+=(_,__)=>{if(Visible) RefreshReport();};
             png.Click+=(_,__)=>ChooseExport(false);pdf.Click+=(_,__)=>ChooseExport(true);

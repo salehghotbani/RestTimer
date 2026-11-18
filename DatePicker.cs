@@ -39,7 +39,7 @@ namespace RestTimer
         public CalendarDatePicker()
         {
             Height=40;
-            button=new RoundedButton { Dock=DockStyle.Fill, Glyph="history", StartAligned=true };
+            button=new RoundedButton { Dock=DockStyle.Fill, Glyph="calendar", StartAligned=true };
             Controls.Add(button); button.Click+=(_,__)=>OpenCalendar(); RefreshCaption();
         }
         public void RefreshCaption() { value=DateDisplay.Clamp(value); button.RightToLeft=I18n.Flow; button.Text=DateDisplay.Format(value); button.AccessibleName=I18n.T("report_date")+": "+button.Text; button.Invalidate(); }
@@ -47,9 +47,13 @@ namespace RestTimer
         {
             popup?.Dispose();
             var calendar=new CalendarGrid(value, date=>{ Value=date; popup.Close(); });
+            float z=Theme.ScaleFor(this);calendar.Scale(new SizeF(z,z));
             var host=new ToolStripControlHost(calendar) { AutoSize=false, Size=calendar.Size, Margin=Padding.Empty, Padding=Padding.Empty };
             popup=new ToolStripDropDown { Padding=new Padding(1), BackColor=Theme.Border, AutoClose=true };
-            popup.Items.Add(host); popup.Show(this,new Point(I18n.IsRtl ? Width-calendar.Width : 0,Height+4));
+            popup.Items.Add(host);
+            var area=Screen.FromControl(this).WorkingArea;var origin=PointToScreen(new Point(I18n.IsRtl?Width-calendar.Width:0,Height+4));
+            origin.X=Math.Max(area.Left,Math.Min(origin.X,area.Right-popup.PreferredSize.Width));origin.Y=Math.Max(area.Top,Math.Min(origin.Y,area.Bottom-popup.PreferredSize.Height));
+            popup.Show(origin);
         }
         protected override void Dispose(bool disposing) { if(disposing) popup?.Dispose(); base.Dispose(disposing); }
     }
@@ -70,11 +74,11 @@ namespace RestTimer
             var layout=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=1, RowCount=4, RightToLeft=RightToLeft.No };
             foreach(int h in new[]{38,26}) layout.RowStyles.Add(new RowStyle(SizeType.Absolute,h));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent,100)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute,34));
-            var header=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=4 };
+            var header=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=4, RightToLeft=I18n.Flow };
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,30));header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,76));header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,30));
-            previous=new RoundedButton { Text="‹", Dock=DockStyle.Fill, AccessibleName=I18n.T("previous_month") };
-            next=new RoundedButton { Text="›", Dock=DockStyle.Fill, AccessibleName=I18n.T("next_month") };
-            months=new ComboBox { Dock=DockStyle.Fill, DropDownStyle=ComboBoxStyle.DropDownList, FlatStyle=FlatStyle.Flat, AccessibleName=I18n.T("month") };
+            previous=new RoundedButton { Text=I18n.IsRtl?"›":"‹", Dock=DockStyle.Fill, AccessibleName=I18n.T("previous_month") };
+            next=new RoundedButton { Text=I18n.IsRtl?"‹":"›", Dock=DockStyle.Fill, AccessibleName=I18n.T("next_month") };
+            months=new StyledComboBox { Dock=DockStyle.Fill, DropDownStyle=ComboBoxStyle.DropDownList, FlatStyle=FlatStyle.Flat, AccessibleName=I18n.T("month") };
             months.RightToLeft=I18n.Flow;months.DrawMode=DrawMode.OwnerDrawFixed;months.ItemHeight=Font.Height+4;
             months.DrawItem+=(_,e)=> { if(e.Index<0) return;bool active=(e.State&DrawItemState.Selected)!=0;
                 using(var brush=new SolidBrush(active?Theme.Selection:Theme.Input)) e.Graphics.FillRectangle(brush,e.Bounds);
@@ -82,7 +86,7 @@ namespace RestTimer
                     TextFormatFlags.VerticalCenter|TextFormatFlags.SingleLine|(I18n.IsRtl?TextFormatFlags.Right|TextFormatFlags.RightToLeft:TextFormatFlags.Left)); };
             months.Items.AddRange(DateDisplay.Months.Length==13 ? new ArraySegment<string>(DateDisplay.Months,0,12).ToArray() : DateDisplay.Months);
             var cal=DateDisplay.Calendar;
-            year=new NumericUpDown { Dock=DockStyle.Fill, Minimum=cal.GetYear(DateDisplay.Minimum),Maximum=cal.GetYear(cal.MaxSupportedDateTime), BorderStyle=BorderStyle.None, AccessibleName=I18n.T("year") };
+            year=new NumericUpDown { Dock=DockStyle.Fill, RightToLeft=RightToLeft.No, Minimum=cal.GetYear(DateDisplay.Minimum),Maximum=cal.GetYear(cal.MaxSupportedDateTime), BorderStyle=BorderStyle.None, AccessibleName=I18n.T("year") };
             header.Controls.Add(previous,0,0);header.Controls.Add(months,1,0);header.Controls.Add(year,2,0);header.Controls.Add(next,3,0);layout.Controls.Add(header,0,0);
             var weekdays=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=7, RightToLeft=I18n.Flow };
             int first=I18n.IsRtl ? 6 : (int)DateDisplay.Culture.DateTimeFormat.FirstDayOfWeek;

@@ -70,3 +70,11 @@ Update both language versions when changing documented behavior or instructions.
 See the [README](README.md) for installation and usage. By submitting changes, you agree to contribute them under the repository's [MIT license](LICENSE).
 
 Run `./tests/windows_visual.ps1` for the Windows visual audit. It and `tests/visual_audit.py` cover every page and dialog in all 13 languages, both themes, normal/minimum sizes and both sidebar states. Reports and contact sheets are written to `obj/visual-audit` and `build/visual-audit`. The audits also exercise interrupted/reversed sidebar animations.
+
+## Local checks before pushing
+
+Application Actions are paused until explicitly re-enabled. Do not dispatch or re-enable them for app changes. Website deployment should be triggered only by actual changes in its own website repository/paths; this repository currently has no website workflow.
+
+On a Windows host with Docker Desktop (Linux containers), .NET SDK, GitHub CLI and Inno Setup installed, enable the tracked hook with `git config core.hooksPath .githooks`. Commit first, then run `./tools/check-before-push.ps1`, or push to invoke it. Windows and Ubuntu 22.04/Python 3.11.9 checks run locally in parallel; Ubuntu 24.04/Fedora 43 installation checks also run locally. First-time image setup downloads dependencies; later builds use cached layers. Registry preferences are restored after installer checks. Logs are in `build/check-*.log`.
+
+A failed or unavailable check blocks push. An exact clean Git tree that passed within 24 hours may reuse its receipt. No installer upload, release publication or website deployment occurs in these scripts.

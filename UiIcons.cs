@@ -38,6 +38,7 @@ namespace RestTimer
                     case "download": line(12,3,12,15);line(7,10,12,15);line(17,10,12,15);line(4,16,4,21);line(4,21,20,21);line(20,21,20,16);break;
                     case "dashboard": rect(3,3,7,7);rect(14,3,7,7);rect(3,14,7,7);rect(14,14,7,7);break;
                     case "settings": graphics.DrawEllipse(pen,5,5,14,14);graphics.DrawEllipse(pen,9,9,6,6);for(int i=0;i<8;i++){double a=i*Math.PI/4;line(12+(float)Math.Cos(a)*7,12+(float)Math.Sin(a)*7,12+(float)Math.Cos(a)*10,12+(float)Math.Sin(a)*10);}break;
+                    case "calendar": rect(3,5,18,16);line(3,10,21,10);line(7,2,7,7);line(17,2,17,7);break;
                     case "history": graphics.DrawEllipse(pen,3,3,18,18);line(12,7,12,12);line(12,12,16,15);break;
                     case "info": graphics.DrawEllipse(pen,3,3,18,18);graphics.FillEllipse(brush,11,6,2,2);line(12,11,12,17);break;
                     case "quit": line(10,3,4,3);line(4,3,4,21);line(4,21,10,21);line(9,12,21,12);line(16,7,21,12);line(16,17,21,12);break;

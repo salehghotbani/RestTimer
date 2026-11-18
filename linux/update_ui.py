@@ -12,7 +12,7 @@ import update_core as core
 import i18n
 import ui_icons
 import rtl_ui
-from ui_controls import CheckBox as QCheckBox
+from ui_controls import CheckBox as QCheckBox, DropDown as QComboBox
 from i18n import tr
 
 

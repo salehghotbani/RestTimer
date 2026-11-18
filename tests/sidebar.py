@@ -39,7 +39,15 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build') as folder:
         page=settings.current_page
         worker=settings.update_panel
         settings.sidebar_toggle.click()
-        QTest.qWait(260)
+        progress=0
+        for _ in range(16):
+            QTest.qWait(16)
+            transition=getattr(settings,'content_transition',None)
+            if transition is not None:
+                assert transition.geometry()==settings.pages.rect(), 'Content must follow page geometry'
+                assert progress<=transition.progress<=1, 'Content and sidebar must animate together'
+                progress=transition.progress
+        assert settings.content_transition is None, 'Transition must release snapshots after completion'
         assert settings.sidebar_collapsed and settings.sidebar.width()==56
         assert settings.current_page==page and settings.work.parts[2].value()==17
         assert settings.update_panel is worker

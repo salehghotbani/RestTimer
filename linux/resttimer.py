@@ -10,7 +10,7 @@ import subprocess
 import uuid
 import work_tracking
 
-from PySide6.QtCore import QDate, QPropertyAnimation, QEasingCurve, QIODevice, QSize, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
+from PySide6.QtCore import QDate, QVariantAnimation, QPropertyAnimation, QEasingCurve, QIODevice, QSize, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QTextCursor, QTextLayout, QDesktopServices
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
@@ -21,7 +21,7 @@ import update_core
 import i18n
 import ui_icons
 import rtl_ui
-from ui_controls import CheckBox as QCheckBox
+from ui_controls import CheckBox as QCheckBox, DropDown as QComboBox, ResizeTransition
 from i18n import tr
 from update_ui import UpdatePanel, Worker
 
@@ -41,6 +41,10 @@ QScrollBar::handle:horizontal { background: #9bb0c3; min-width: 28px; border-rad
 QScrollBar::handle:horizontal:hover, QScrollBar::handle:horizontal:pressed { background: #83e6c4; }
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; border: none; background: transparent; }
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: transparent; }
+QComboBox { min-height:22px; padding:5px 34px 5px 10px; selection-background-color:#223a48; }
+QComboBox::drop-down { subcontrol-origin:padding; subcontrol-position:top right; width:28px; border:none; }
+QComboBox::down-arrow { image:url("CHEVRON_ICON"); width:12px; height:12px; }
+QComboBox QAbstractItemView { background:#141f2e; color:#edf4fa; selection-background-color:#223a48; selection-color:#83e6c4; border:1px solid #2c3e52; padding:4px; outline:0; }
 QTextEdit, QComboBox, QLineEdit, QDateEdit, QTableWidget, QTabWidget::pane { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; border-radius: 6px; padding: 8px; }
 QHeaderView::section { background: #1e2e40; color: #edf4fa; border: none; padding: 10px; }
 QTableWidget { gridline-color: #2c3e52; selection-background-color: #223a48; selection-color: #83e6c4; }
@@ -96,6 +100,7 @@ QListWidget#settingsNav { background: transparent; color: #edf4fa; border: none;
 QListWidget#settingsNav::item { padding: 12px 8px; margin: 3px 0; border-radius: 8px; }
 QListWidget#settingsNav::item:selected { background: #223a48; color: #83e6c4; }
 """
+STYLE = STYLE.replace("CHEVRON_ICON", (ROOT / "assets/chevron-dark.svg").as_posix())
 STYLE = STYLE.replace("CHECK_ICON", (ROOT / "assets/check-dark.svg").as_posix())
 
 
@@ -109,7 +114,7 @@ def apply_color_scheme(app, scheme):
                   "#2c3e52": "#cdd8e2", "#1e2e40": "#e7edf3", "#223a48": "#dbeee8",
                   "#ffa49b": "#ae2a2a", "#83e6c4": "#11705b", "#a4f2d8": "#16836b", "#9bb0c3": "#536778", "#0c1623": "#eaf0f5", "#102c30": "#dbeee8"}
         style = re.sub(r"#[a-fA-F0-9]{6}", lambda match: colors.get(match.group(), match.group()), style)
-        style = style.replace("check-dark.svg", "check-light.svg")
+        style = style.replace("check-dark.svg", "check-light.svg").replace("chevron-dark.svg","chevron-light.svg")
         style += "\nQPushButton#primary { color: white; } QProgressBar { color: #11705b; } QProgressBar::chunk { background: #dbeee8; }"
     app.setStyleSheet(style)
     for widget in app.topLevelWidgets():
@@ -529,6 +534,10 @@ class SettingsDialog(QDialog):
 
     def set_sidebar_collapsed(self, collapsed, animate=False):
         current=self.sidebar.width()
+        before=self.pages.grab() if animate else None
+        if hasattr(self,"content_transition") and self.content_transition is not None:
+            before=self.content_transition.grab() if animate else None
+            self.content_transition.hide();self.content_transition.deleteLater();self.content_transition=None
         if hasattr(self,"sidebar_animation"):
             self.sidebar_animation.stop()
             self.sidebar_animation.deleteLater()
@@ -541,14 +550,31 @@ class SettingsDialog(QDialog):
             self.sidebar.setFixedWidth(target)
             self.render_sidebar(collapsed)
             return
+        self.sidebar.setFixedWidth(target);self.layout().activate()
+        page_layout=self.pages.currentWidget().layout()
+        if page_layout is not None: page_layout.activate()
+        after=self.pages.grab()
+        self.sidebar.setMinimumWidth(0)
+        self.sidebar.setMaximumWidth(current);self.layout().activate()
+        self.content_transition=ResizeTransition(self.pages,before,after)
+        self.content_transition.setGeometry(self.pages.rect());self.content_transition.show();self.content_transition.raise_()
         self.render_sidebar(True)
-        self.sidebar.setMaximumWidth(current)
         self.sidebar_animation=QPropertyAnimation(self.sidebar,b"maximumWidth",self)
-        self.sidebar_animation.setDuration(190)
+        self.sidebar_animation.setDuration(220)
         self.sidebar_animation.setStartValue(current)
         self.sidebar_animation.setEndValue(target)
         self.sidebar_animation.setEasingCurve(QEasingCurve.OutCubic)
+        def frame(value):
+            self.layout().activate()
+            if self.content_transition is not None:
+                self.content_transition.setGeometry(self.pages.rect())
+                span=target-current
+                self.content_transition.progress=1 if not span else (value-current)/span
+                self.content_transition.update()
+        self.sidebar_animation.valueChanged.connect(frame)
         def finish():
+            if self.content_transition is not None:
+                self.content_transition.hide();self.content_transition.deleteLater();self.content_transition=None
             self.sidebar.setFixedWidth(target)
             self.render_sidebar(self.sidebar_collapsed)
         self.sidebar_animation.finished.connect(finish)

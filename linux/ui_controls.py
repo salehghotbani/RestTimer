@@ -1,7 +1,19 @@
 """Native checkbox behavior with wrapped text and matching themed indicators."""
 from PySide6.QtCore import QRect, QSize, Qt
 from PySide6.QtGui import QPalette, QPainter
-from PySide6.QtWidgets import QCheckBox, QSizePolicy, QStyle, QStyleOptionButton
+from PySide6.QtWidgets import QWidget, QComboBox, QCheckBox, QSizePolicy, QStyle, QStyleOptionButton
+
+
+class DropDown(QComboBox):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self.setMinimumContentsLength(10)
+        self.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.currentTextChanged.connect(self.setToolTip)
+    def showPopup(self):
+        width=max((self.fontMetrics().horizontalAdvance(self.itemText(i)) for i in range(self.count())),default=0)+40
+        self.view().setMinimumWidth(max(self.width(),width))
+        super().showPopup()
 
 
 class CheckBox(QCheckBox):
@@ -40,4 +52,19 @@ class CheckBox(QCheckBox):
         painter.setFont(self.font())
         painter.setPen(option.palette.color(QPalette.WindowText))
         painter.drawText(text_rect,Qt.AlignAbsolute|Qt.AlignVCenter|Qt.TextWordWrap|(Qt.AlignRight if self.layoutDirection()==Qt.RightToLeft else Qt.AlignLeft),self.text())
+        painter.end()
+
+
+class ResizeTransition(QWidget):
+    def __init__(self,parent,before,after):
+        super().__init__(parent)
+        self.before,self.after=before,after
+        self.progress=0
+        self.setAttribute(Qt.WA_TransparentForMouseEvents,False)
+    def paintEvent(self,event):
+        painter=QPainter(self)
+        painter.fillRect(self.rect(),self.palette().window())
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.setOpacity(1);painter.drawPixmap(self.rect(),self.before)
+        painter.setOpacity(self.progress);painter.drawPixmap(self.rect(),self.after)
         painter.end()

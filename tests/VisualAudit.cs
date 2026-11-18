@@ -129,13 +129,23 @@ internal static class VisualAudit
                     Func<int> anchor=()=> { var button=(Control)nav["report"];return button.PointToScreen(new Point(button.RightToLeft==RightToLeft.Yes?button.Width-(int)(21*scale):(int)(21*scale),0)).X; };
                     int iconX=anchor(),lastWidth=((Control)settings.GetField("sidebar",Fields).GetValue(dialog)).Width;
                     toggle.PerformClick();
+                    float lastProgress=0;
                     for(int step=0;step<15;step++)
                     {
                         Pump(16);var side=(Control)settings.GetField("sidebar",Fields).GetValue(dialog);
                         if(side.Width>lastWidth+1 || Math.Abs(anchor()-iconX)>2 || ((Control)nav["report"]).PointToScreen(Point.Empty).Y!=top)
                             issues.Add(code+" "+mode+" | sidebar | unstable animation frame");
+                        var transition=(Control)settings.GetField("contentTransition",Fields).GetValue(dialog);
+                        if(transition!=null)
+                        {
+                            float progress=(float)transition.GetType().GetField("Progress").GetValue(transition);
+                            if(transition.Bounds!=transition.Parent.ClientRectangle || progress<lastProgress || progress>1)
+                                issues.Add(code+" "+mode+" | content | unsynchronized resize transition");
+                            lastProgress=progress;
+                        }
                         lastWidth=side.Width;
                     }
+                    if(settings.GetField("contentTransition",Fields).GetValue(dialog)!=null) issues.Add(code+" "+mode+" | content | transition was not removed");
                     if(((Control)nav["report"]).PointToScreen(Point.Empty).Y!=top) issues.Add(code+" "+mode+" | sidebar | navigation jumps vertically during collapse");
                     toggle.PerformClick();Pump(45);toggle.PerformClick();Pump(45);toggle.PerformClick();Pump(240);
                     if((bool)settings.GetProperty("SidebarCollapsed").GetValue(dialog) || seconds.Text!="17" || (string)settings.GetProperty("CurrentPage").GetValue(dialog)!="about")
