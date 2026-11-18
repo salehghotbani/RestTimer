@@ -2,6 +2,8 @@
 set -euo pipefail
 cd /work
 tar -C /src --exclude=.git --exclude=build --exclude=dist --exclude=obj --exclude=bin -cf - . | tar xf -
+# Windows bind mounts may retain CRLF in older working copies.
+find tools -type f -name '*.sh' -exec sed -i 's/\r$//' {} +
 trap 'mkdir -p /out; cp -r build /out/ 2>/dev/null || true; cp -r dist/release /out/ 2>/dev/null || true' EXIT
 python -m pip install -r requirements-build-linux.txt
 python tests/test_localization.py

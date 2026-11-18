@@ -5,7 +5,7 @@ import sys
 import tempfile
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'linux'))
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QPoint, Qt, QAbstractAnimation
 from PySide6.QtGui import QFont
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QStyleOptionViewItem
@@ -16,6 +16,15 @@ app.setFont(QFont('Segoe UI' if sys.platform=='win32' else 'DejaVu Sans',10))
 module.apply_color_scheme(app,Qt.ColorScheme.Dark)
 output=ROOT/'build/sidebar'
 output.mkdir(parents=True,exist_ok=True)
+
+def finish_animation(settings):
+    # Wait for Qt's completion signal/state, including slower headless CI machines.
+    for _ in range(100):
+        if settings.sidebar_animation.state()==QAbstractAnimation.Stopped:
+            app.processEvents()
+            return
+        QTest.qWait(10)
+    raise AssertionError('Sidebar animation did not finish within one second')
 
 def right_bar(area):
     for _ in range(3):
@@ -47,6 +56,7 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build') as folder:
                 assert transition.geometry()==settings.pages.rect(), 'Content must follow page geometry'
                 assert progress<=transition.progress<=1, 'Content and sidebar must animate together'
                 progress=transition.progress
+        finish_animation(settings)
         assert settings.content_transition is None, 'Transition must release snapshots after completion'
         assert settings.sidebar_collapsed and settings.sidebar.width()==56
         assert settings.current_page==page and settings.work.parts[2].value()==17
@@ -64,8 +74,8 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build') as folder:
         settings=controller.settings
         assert settings.sidebar_collapsed
         settings.sidebar_toggle.click()
-        QTest.qWait(260)
-        assert not settings.sidebar_collapsed and settings.sidebar.width()>=180
+        finish_animation(settings)
+        assert not settings.sidebar_collapsed and settings.sidebar.width()>=180, f'Expansion state={settings.sidebar_collapsed} width={settings.sidebar.width()}'
         assert settings.work.parts[2].value()==17
         option=QStyleOptionViewItem()
         settings.navigation.itemDelegate().initStyleOption(option,settings.navigation.model().index(0,0))
