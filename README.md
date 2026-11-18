@@ -45,7 +45,7 @@ Run **setup.exe** and select **English** or **فارسی** before installation b
 Open the DEB in your software manager, or run this command from the download directory:
 
 ```bash
-sudo apt install ./RestTimer-v1.13.0-linux-amd64.deb
+sudo apt install ./RestTimer-v1.13.1-linux-amd64.deb
 ```
 
 ### Fedora
@@ -53,7 +53,7 @@ sudo apt install ./RestTimer-v1.13.0-linux-amd64.deb
 Open the RPM in your software manager, or run:
 
 ```bash
-sudo dnf install ./RestTimer-v1.13.0-linux-x86_64.rpm
+sudo dnf install ./RestTimer-v1.13.1-linux-x86_64.rpm
 ```
 
 Launch RestTimer from the application menu or with `resttimer`. The Linux packages bundle Python and Qt. Uninstall with `sudo apt remove resttimer` or `sudo dnf remove resttimer`.
@@ -155,10 +155,12 @@ The **About** section includes a Git-icon button to open this GitHub repository 
 
 The sidebar menu button collapses navigation to an icon rail and expands it again. Current pages, pending edits and active downloads are preserved, including during language previews. Expanded navigation labels align to the start of the interface language: right for Persian/Arabic and left for LTR languages. Scrollbars stay on the physical right of their own boxes in every language.
 
+The right-click menu keeps its size, position and item hit targets stable while the countdown updates. Reopening measures the current labels again.
+
 [releases]: https://github.com/salehghotbani/RestTimer/releases/latest
-[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.0/RestTimer-v1.13.0-windows-x64-setup.exe
-[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.0/RestTimer-v1.13.0-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.0/RestTimer-v1.13.0-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.1/RestTimer-v1.13.1-windows-x64-setup.exe
+[ubuntu]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.1/RestTimer-v1.13.1-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/RestTimer/releases/download/v1.13.1/RestTimer-v1.13.1-linux-x86_64.rpm
 [issues]: https://github.com/salehghotbani/RestTimer/issues
 [workflow]: https://github.com/salehghotbani/RestTimer/actions/workflows/packages.yml
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/RestTimer?label=Release&color=16836b

@@ -11,7 +11,7 @@ import uuid
 import work_tracking
 
 from PySide6.QtCore import QDate, QIODevice, QSize, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QTextCursor, QTextLayout, QDesktopServices
+from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QTextCursor, QTextLayout, QDesktopServices
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QAbstractSpinBox, QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLabel,
@@ -812,6 +812,10 @@ class Controller:
         self.update_action = self.menu.addAction(tr("updates_menu"), self.check_updates)
         self.menu.addSeparator()
         self.quit_action = self.menu.addAction(tr("quit"), self.quit)
+        self.menu_minimum_size = self.menu.minimumSize()
+        self.menu_maximum_size = self.menu.maximumSize()
+        self.menu.aboutToShow.connect(self.prepare_tray_menu)
+        self.menu.aboutToHide.connect(lambda: QTimer.singleShot(0,self.release_tray_menu))
         self.tray = QSystemTrayIcon(self.icon, app)
         self.tray.setContextMenu(self.menu)
         self.tray.activated.connect(self.tray_activated)
@@ -831,6 +835,28 @@ class Controller:
         if "--smoke-test" not in sys.argv:
             self.update_timer.start()
             QTimer.singleShot(5000, self.daily_updates)
+
+    def prepare_tray_menu(self):
+        self.menu.setMinimumSize(self.menu_minimum_size)
+        self.menu.setMaximumSize(self.menu_maximum_size)
+        release = self.updater.state["latest"]
+        if update_core.stable(release) and version_tuple(release["tag_name"]) > version_tuple(VERSION):
+            self.update_action.setText(tr("update_available",release["tag_name"]))
+        self.menu.setStyleSheet("")
+        self.menu.ensurePolished()
+        self.menu.sizeHint()
+        screen = self.app.screenAt(QCursor.pos()) or self.app.primaryScreen()
+        available = screen.availableGeometry().size() - QSize(4,4)
+        row_width = min(max((self.menu.actionGeometry(action).width() for action in self.menu.actions()),default=0), available.width()-8)
+        # Match the app's 12px horizontal item padding and lock hit targets too.
+        content_width = max(1,row_width-24)
+        self.menu.setStyleSheet("QMenu::item { min-width: %dpx; max-width: %dpx; }" % (content_width,content_width))
+        self.menu.setFixedSize(self.menu.sizeHint().boundedTo(available))
+
+    def release_tray_menu(self):
+        if not self.menu.isVisible():
+            self.menu.setMinimumSize(self.menu_minimum_size)
+            self.menu.setMaximumSize(self.menu_maximum_size)
 
     def tray_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
@@ -1059,11 +1085,13 @@ class Controller:
         text = f"{minutes:02}:{seconds:02}"
         if hours:
             text = f"{hours}:{text}"
-        self.status.setText(tr("end_break" if self.breaking else "next_break") + "  \u200e" + text)
+        status_text = tr("end_break" if self.breaking else "next_break") + "  \u200e" + text
         if not self.running:
-            self.status.setText(tr("paused") + " · " + self.status.text())
+            status_text = tr("paused") + " · " + status_text
         if self.task_name and not self.breaking:
-            self.status.setText(self.task_name + " · " + self.status.text())
+            status_text = self.task_name + " · " + status_text
+        if self.status.text() != status_text:
+            self.status.setText(status_text)
         self.settings.timer_status.setText(self.status.text())
         self.tray.setToolTip(("RestTimer  " if self.running else "RestTimer · " + tr("paused") + "  ") + text)
         self.notify_update()
@@ -1106,7 +1134,8 @@ class Controller:
         if self.breaking or not update_core.stable(release) or version_tuple(release["tag_name"]) <= version_tuple(VERSION):
             return
         text = tr("update_available", release["tag_name"])
-        self.update_action.setText(text)
+        if not self.menu.isVisible():
+            self.update_action.setText(text)
         self.settings.update_notice.setText(text)
         self.settings.update_notice.setVisible(True)
         if not self.updater.state["daily_enabled"]:

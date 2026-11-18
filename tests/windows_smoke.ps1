@@ -174,14 +174,47 @@ internal static class Smoke
                     type.GetMethod("TrayMouseUp",flags).Invoke(context,new object[]{null,new MouseEventArgs(MouseButtons.Left,1,0,0,0)});
                 }
                 if(!openedDashboard) throw new Exception("Dashboard did not open from the tray icon.");
+                var savedPreferences=type.GetField("preferences",flags).GetValue(context);
+                var menuPreferencesType=app.GetType("RestTimer.Preferences",true);
+                type.GetField("preferences",flags).SetValue(context,Activator.CreateInstance(menuPreferencesType,3600,900));
+                type.GetField("taskName",flags).SetValue(context,"Menu stability test");
+                var menuUpdate=type.GetMethod("UpdateTimer",flags);
+                menuUpdate.Invoke(context,null);
                 menu.Show(Cursor.Position);Application.DoEvents();
                 if(!menu.Visible || menu.Renderer.GetType().Name!="TrayMenuRenderer") throw new Exception("Styled right-click menu did not open.");
+                var menuStatus=(ToolStripMenuItem)type.GetField("status",flags).GetValue(context);
+                int statusChanges=0;
+                EventHandler countStatus=delegate {statusChanges++;};menuStatus.TextChanged+=countStatus;
+                Rectangle openBounds=menu.Bounds;
+                var openRows=menu.Items.Cast<ToolStripItem>().Select(item=>item.Bounds).ToArray();
+                for(int i=0;i<12;i++) menuUpdate.Invoke(context,null);
+                if(statusChanges!=0) throw new Exception("An unchanged paused menu status was repeatedly rewritten.");
+                var menuClock=(System.Diagnostics.Stopwatch)type.GetField("clock",flags).GetValue(context);
+                menuClock.Start();menuUpdate.Invoke(context,null);
+                for(int i=0;i<15;i++)
+                {
+                    Thread.Sleep(100);Application.DoEvents();menuUpdate.Invoke(context,null);
+                    if(menu.Bounds!=openBounds || !menu.Items.Cast<ToolStripItem>().Select(item=>item.Bounds).SequenceEqual(openRows))
+                        throw new Exception("The open tray menu moved or its rows resized as the countdown changed.");
+                }
+                if(statusChanges==0) throw new Exception("The countdown must remain live in a stable menu.");
+                menuClock.Reset();
+                menuStatus.TextChanged-=countStatus;
                 using (var bitmap = new Bitmap(menu.Width, menu.Height))
                 {
                     menu.DrawToBitmap(bitmap, new Rectangle(Point.Empty, menu.Size));
                     bitmap.Save("obj/smoke/windows-menu.png", ImageFormat.Png);
                 }
                 menu.Close();
+                type.GetField("taskName",flags).SetValue(context,new string('W',120));
+                menuUpdate.Invoke(context,null);menu.Show(Cursor.Position);Application.DoEvents();
+                var menuArea=Screen.FromPoint(Cursor.Position).WorkingArea;
+                if(menu.Width>menuArea.Width || menu.Items.Cast<ToolStripItem>().Any(item=>item.Bounds.Right>menu.ClientSize.Width))
+                    throw new Exception("Long task names must not expand menu hit targets beyond the popup.");
+                menu.Close();
+                type.GetField("taskName",flags).SetValue(context,null);
+                type.GetField("preferences",flags).SetValue(context,savedPreferences);
+                menuUpdate.Invoke(context,null);
                 var preferencesType = app.GetType("RestTimer.Preferences", true);
                 type.GetField("preferences", flags).SetValue(context, Activator.CreateInstance(preferencesType, 2, 2));
                 var clock = (System.Diagnostics.Stopwatch)type.GetField("clock", flags).GetValue(context);

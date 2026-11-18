@@ -1,5 +1,10 @@
 # RestTimer changelog
 
+## 1.13.1
+- Fix tray menu jitter caused by repeatedly replacing the status row with intermediate text every timer tick. Compose and publish each complete status once.
+- Keep the open menu frame and row geometry stable while the live countdown changes, including hour/minute boundaries and long task names. Remeasure when reopening.
+- Defer changes to the menu update label while the popup is open; keep update notifications working.
+
 ## 1.13.0
 - Keep scrollbars on the physical right of each box, including Persian and Arabic, while preserving paragraph direction.
 - Add a collapsible icon sidebar with an always-available menu button and accessible labels/tooltips. Preserve the current page, pending edits and downloads when toggling or previewing languages.

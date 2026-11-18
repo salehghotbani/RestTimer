@@ -1,9 +1,47 @@
 using System.Drawing;
+using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace RestTimer
 {
+    internal sealed class StableTrayMenu : ContextMenuStrip
+    {
+        private bool holdLayout;
+        private readonly Dictionary<ToolStripItem,bool> itemAutoSizes = new Dictionary<ToolStripItem,bool>();
+        public StableTrayMenu() { DoubleBuffered = true; }
+        protected override void OnOpening(System.ComponentModel.CancelEventArgs e)
+        {
+            holdLayout = false;
+            base.OnOpening(e);
+        }
+        protected override void OnOpened(System.EventArgs e)
+        {
+            holdLayout = true;
+            itemAutoSizes.Clear();
+            foreach(ToolStripItem item in Items)
+            {
+                itemAutoSizes[item] = item.AutoSize;
+                item.AutoSize = false;
+                item.Width = System.Math.Min(item.Width, System.Math.Max(1, ClientSize.Width-item.Bounds.Left-Padding.Right));
+            }
+            base.OnOpened(e);
+        }
+        protected override void OnClosed(ToolStripDropDownClosedEventArgs e)
+        {
+            holdLayout = false;
+            foreach(var pair in itemAutoSizes) pair.Key.AutoSize = pair.Value;
+            itemAutoSizes.Clear();
+            base.OnClosed(e);
+        }
+        protected override void OnLayout(LayoutEventArgs e)
+        {
+            // Status text stays live, but relayout would move the user's hit targets.
+            if (holdLayout && Visible) { Invalidate(); return; }
+            base.OnLayout(e);
+        }
+    }
+
     internal sealed class TrayMenuRenderer : ToolStripProfessionalRenderer
     {
         public TrayMenuRenderer() : base(new MenuColors())

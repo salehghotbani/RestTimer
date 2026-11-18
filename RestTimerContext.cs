@@ -66,7 +66,7 @@ namespace RestTimer
             startup = new ToolStripMenuItem(I18n.T("startup"), null, (_, __) => ToggleStartup());
             updates = new ToolStripMenuItem(I18n.T("updates_menu"), null, (_, __) => ShowUpdates());
             var exit = new ToolStripMenuItem(I18n.T("quit"), null, (_, __) => ExitThread());
-            menu = new ContextMenuStrip
+            menu = new StableTrayMenu
             {
                 RightToLeft = I18n.Flow,
                 Renderer = new TrayMenuRenderer(),
@@ -84,7 +84,21 @@ namespace RestTimer
             });
             foreach (var item in menu.Items.OfType<ToolStripMenuItem>())
                 item.Padding = new Padding(6, 2, 6, 2);
-            menu.Opening += (_, __) => { Theme.Refresh(); Theme.Apply(menu); UpdateStartupItem(); };
+            menu.Opening += (_, __) =>
+            {
+                menu.AutoSize = true;
+                Theme.Refresh(); Theme.Apply(menu); RefreshLanguage(); UpdateStartupItem();
+                // Measure once before showing. Countdown changes must not resize
+                // an open popup (especially when 1:00:00 becomes 59:59).
+                var area = Screen.FromPoint(Cursor.Position).WorkingArea;
+                menu.PerformLayout();
+                var menuSize = menu.GetPreferredSize(Size.Empty);
+                menuSize.Width = Math.Min(menuSize.Width, Math.Max(1, area.Width - 4));
+                menuSize.Height = Math.Min(menuSize.Height, Math.Max(1, area.Height - 4));
+                menu.AutoSize = false;
+                menu.Size = menuSize;
+            };
+            menu.Closed += (_, __) => menu.AutoSize = true;
 
             icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
             trayIcon = new NotifyIcon { Icon = icon, ContextMenuStrip = menu, Visible = true };
@@ -164,10 +178,11 @@ namespace RestTimer
             string countdown = rounded.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
             if (rounded.TotalHours >= 1)
                 countdown = ((int)rounded.TotalHours).ToString(CultureInfo.InvariantCulture) + ":" + countdown;
-            status.Text = I18n.T(breaking ? "end_break" : "next_break") + "  \u200e" + countdown;
+            string statusText = I18n.T(breaking ? "end_break" : "next_break") + "  \u200e" + countdown;
             if (!running)
-                status.Text = I18n.T("paused") + " · " + status.Text;
-            if (!breaking && !string.IsNullOrEmpty(taskName)) status.Text = taskName + " · " + status.Text;
+                statusText = I18n.T("paused") + " · " + statusText;
+            if (!breaking && !string.IsNullOrEmpty(taskName)) statusText = taskName + " · " + statusText;
+            status.Text = statusText;
             trayIcon.Text = (running ? "RestTimer  " : "RestTimer · " + I18n.T("paused") + "  ") + countdown;
             taskbarCountdown?.UpdateDisplay(countdown, breaking, running, preferences.ShowTaskbarCountdown);
 
@@ -377,7 +392,7 @@ namespace RestTimer
         {
             var release = updater.State.Latest;
             if (breaking || editingSettings || !UpdateClient.IsStable(release) || release.Version <= UpdateClient.CurrentVersion) return;
-            updates.Text = I18n.T("update_available", release.Version.ToString(3));
+            if (!menu.Visible) updates.Text = I18n.T("update_available", release.Version.ToString(3));
             if (!updater.State.DailyEnabled) return;
             if (updater.State.NotifiedTag == release.Tag) return;
             trayIcon.ShowBalloonTip(10000, I18n.T("update_title"), I18n.T("update_notification", release.Version.ToString(3)), ToolTipIcon.Info);
