@@ -101,6 +101,18 @@
     "unsaved_title": "Unsaved changes",
     "unsaved_message": "Save your changes before closing? Close this dialog to continue editing.",
     "save_changes": "Save changes",
-    "discard_changes": "Discard changes"
+    "discard_changes": "Discard changes",
+    "new_session": "Start from beginning",
+    "task_name": "Task name",
+    "session_hint": "For this session",
+    "task_required": "Enter a task name.",
+    "daily_report": "Daily work report",
+    "report_date": "Report date",
+    "time_spent": "Time spent",
+    "total_time": "Total time",
+    "no_work": "No saved work for this day.",
+    "save_work": "Save work time",
+    "save_work_message": "Save the elapsed work time? Closing keeps it pending.",
+    "log_error": "Could not access the work log. Please try again."
   }
 }

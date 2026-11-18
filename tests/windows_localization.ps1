@@ -80,7 +80,7 @@ internal static class LocalizationSmoke
                         if ((int)preferences.GetProperty("WorkSeconds").GetValue(saved) != 3723
                             || (string)preferences.GetProperty("Language").GetValue(saved) != code)
                             throw new Exception("Saving a language changed duration or lost the language.");
-                        foreach(string page in new[]{"general","updates","history","about"})
+                        foreach(string page in new[]{"general","updates","history","report","about"})
                         {
                             settings.GetMethod("SelectPage").Invoke(dialog,new object[]{page});
                             Application.DoEvents();

@@ -101,6 +101,18 @@
     "unsaved_title": "Ungespeicherte Änderungen",
     "unsaved_message": "Änderungen vor dem Schließen speichern? Schließen Sie diesen Dialog, um weiter zu bearbeiten.",
     "save_changes": "Speichern",
-    "discard_changes": "Verwerfen"
+    "discard_changes": "Verwerfen",
+    "new_session": "Von vorne beginnen",
+    "task_name": "Aufgabenname",
+    "session_hint": "Für diese Sitzung",
+    "task_required": "Aufgabenname eingeben.",
+    "daily_report": "Tagesbericht",
+    "report_date": "Berichtsdatum",
+    "time_spent": "Aufgewendete Zeit",
+    "total_time": "Gesamtzeit",
+    "no_work": "Keine Arbeit für diesen Tag gespeichert.",
+    "save_work": "Arbeitszeit speichern",
+    "save_work_message": "Arbeitszeit speichern? Schließen lässt die Entscheidung offen.",
+    "log_error": "Arbeitsprotokoll nicht verfügbar. Bitte erneut versuchen."
   }
 }

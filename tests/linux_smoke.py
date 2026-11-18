@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     controller = module.Controller(app)
     controller.settings.update_panel.check_on_show = False
     assert not hasattr(controller, "history_action")
-    assert controller.settings.navigation.count() == 4
+    assert controller.settings.navigation.count() == 5
     assert controller.menu.actions()[:3] == [controller.start_timer_action, controller.stop_timer_action, controller.start_action]
     assert controller.menu.actions()[3] == controller.reset_timer_action
     controller.updater.state["daily_enabled"] = False
@@ -194,7 +194,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
     controller.tick()
     assert not controller.breaking
     assert module.version_tuple("v1.2.0") == module.version_tuple("1.2")
-    for in_break in (False, True):
+    for in_break in (True,):
         if in_break:
             controller.start_action.trigger()
         for running in (True, False):

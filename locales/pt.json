@@ -101,6 +101,18 @@
     "unsaved_title": "Alterações não salvas",
     "unsaved_message": "Salvar as alterações antes de fechar? Feche esta janela para continuar editando.",
     "save_changes": "Salvar alterações",
-    "discard_changes": "Descartar alterações"
+    "discard_changes": "Descartar alterações",
+    "new_session": "Começar de novo",
+    "task_name": "Nome da tarefa",
+    "session_hint": "Para esta sessão",
+    "task_required": "Insira uma tarefa.",
+    "daily_report": "Relatório diário",
+    "report_date": "Data do relatório",
+    "time_spent": "Tempo gasto",
+    "total_time": "Tempo total",
+    "no_work": "Nenhum trabalho salvo neste dia.",
+    "save_work": "Salvar tempo de trabalho",
+    "save_work_message": "Salvar o tempo trabalhado? Fechar mantém a decisão pendente.",
+    "log_error": "Não foi possível acessar o registro. Tente novamente."
   }
 }

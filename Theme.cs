@@ -57,6 +57,7 @@ namespace RestTimer
             else if (control is UpdateProgress) control.BackColor = Input;
             else if (control is ToolStrip || control is ListBox || control is RichTextBox) control.BackColor = Surface;
             else if (control is TextBoxBase || control is ComboBox) control.BackColor = Input;
+            else if (control is DateTimePicker || control is ListView) control.BackColor = Surface;
             else if (control.Tag as string == "border") control.BackColor = Border;
             else control.BackColor = Color.Transparent;
             control.ForeColor = control.Tag as string == "muted" ? Muted : control.Tag as string == "accent" ? AccentText : control.Tag as string == "error" ? Error : Text;
@@ -65,7 +66,7 @@ namespace RestTimer
             if (control.IsHandleCreated)
             {
                 if (control is Form) ApplyWindowFrame(control.Handle);
-                else if (control is RichTextBox || control is ListBox || control is ComboBox) SetWindowTheme(control.Handle, IsLight || highContrast ? null : "DarkMode_Explorer", null);
+                else if (control is RichTextBox || control is ListBox || control is ComboBox || control is ListView || control is DateTimePicker) SetWindowTheme(control.Handle, IsLight || highContrast ? null : "DarkMode_Explorer", null);
             }
             foreach (Control child in control.Controls) Apply(child);
             control.Invalidate();

@@ -1,5 +1,11 @@
 # RestTimer changelog
 
+## 1.10.0
+- Add Reset timer inside the settings and break boxes. Start a named work session with its own duration.
+- Offer save or discard on Stop, preserve pending decisions, and record resumed work as separate segments without duplication.
+- Add a daily work report with a date picker, per-task totals, automatic local-midnight splitting, local atomic storage, and no break or paused time.
+- Save completed work automatically and localize the new controls in all 13 languages.
+
 ## 1.9.3
 - Add Reset timer to the tray menu on Windows and Linux in all 13 languages. Reset the current work or break countdown to its configured duration while preserving running or paused state; refresh all displays immediately.
 

@@ -76,6 +76,7 @@ jobs:
           python tests/test_localization.py
           python tests/test_update_core.py
           QT_QPA_PLATFORM=offscreen python tests/linux_smoke.py
+          QT_QPA_PLATFORM=offscreen python tests/work_tracking.py
           QT_QPA_PLATFORM=offscreen python tests/linux_localization.py
       - name: Upload frontend previews before packaging
         uses: actions/upload-artifact@v4

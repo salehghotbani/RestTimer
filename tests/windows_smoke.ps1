@@ -222,7 +222,7 @@ internal static class Smoke
                 var resetTimer = (ToolStripMenuItem)type.GetField("resetTimer", flags).GetValue(context);
                 var status = (ToolStripMenuItem)type.GetField("status", flags).GetValue(context);
                 type.GetField("preferences", flags).SetValue(context, Activator.CreateInstance(preferencesType, 60, 90));
-                foreach (bool inBreak in new[] { false, true })
+                foreach (bool inBreak in new[] { true })
                 {
                     if (inBreak)
                     {
@@ -251,6 +251,54 @@ internal static class Smoke
                     }
                 }
                 type.GetMethod("BeginWork", flags).Invoke(context, null);
+                var journalType = app.GetType("RestTimer.WorkJournal", true);
+                string journalFolder = System.IO.Path.GetFullPath("obj/smoke/work-journal-" + Guid.NewGuid().ToString("N"));
+                type.GetField("journal", flags).SetValue(context, Activator.CreateInstance(journalType, new object[] { journalFolder }));
+                using (var choose = new System.Windows.Forms.Timer { Interval=20 })
+                {
+                    choose.Tick += delegate {
+                        var prompt = Application.OpenForms.Cast<Form>().FirstOrDefault(f => f.GetType().Name == "WorkStartDialog");
+                        if(prompt == null) return;
+                        choose.Stop();
+                        prompt.Controls.OfType<TextBox>().Single().Text = "Write report";
+                        prompt.Controls.OfType<Button>().Single().PerformClick();
+                    };
+                    choose.Start();resetTimer.PerformClick();
+                }
+                if (!clock.IsRunning || (string)type.GetField("taskName", flags).GetValue(context) != "Write report")
+                    throw new Exception("Start from beginning did not configure and start a named work session.");
+                Thread.Sleep(80);
+                using (var choose = new System.Windows.Forms.Timer { Interval=20 })
+                {
+                    choose.Tick += delegate {
+                        var prompt = Application.OpenForms.Cast<Form>().FirstOrDefault(f => f.Name == "UnsavedChangesDialog");
+                        if(prompt == null) return;
+                        choose.Stop();Descendants(prompt).OfType<Button>().Single(b => b.DialogResult == DialogResult.Yes).PerformClick();
+                    };
+                    choose.Start();stopTimer.PerformClick();
+                }
+                if(clock.IsRunning || System.IO.Directory.GetFiles(journalFolder,"*.json").Length != 1)
+                    throw new Exception("Stopping a task did not save the work session.");
+                startTimer.PerformClick();Thread.Sleep(80);
+                using (var choose = new System.Windows.Forms.Timer { Interval=20 })
+                {
+                    choose.Tick += delegate {
+                        var prompt = Application.OpenForms.Cast<Form>().FirstOrDefault(f => f.Name == "UnsavedChangesDialog");
+                        if(prompt == null) return;
+                        choose.Stop();Descendants(prompt).OfType<Button>().Single(b => b.DialogResult == DialogResult.No).PerformClick();
+                    };
+                    choose.Start();stopTimer.PerformClick();
+                }
+                if(System.IO.Directory.GetFiles(journalFolder,"*.json").Length != 1)
+                    throw new Exception("Discarded work was saved or previous work was duplicated.");
+                var saved = (Array)journalType.GetMethod("Read").Invoke(type.GetField("journal", flags).GetValue(context), new object[]{DateTime.Today});
+                if(saved.Length != 1 || (double)saved.GetValue(0).GetType().GetField("Seconds").GetValue(saved.GetValue(0)) <= 0)
+                    throw new Exception("Daily task aggregation failed.");
+                var midnight = new DateTimeOffset(DateTime.Today.AddDays(-1).AddHours(23).AddMinutes(59).AddSeconds(58));
+                var split = (Array)journalType.GetMethod("Split").Invoke(null,new object[]{"Midnight",midnight,4.0});
+                if(split.Length != 2) throw new Exception("A work segment crossing midnight was not split by day.");
+                type.GetField("taskName",flags).SetValue(context,null);
+                type.GetField("sessionSeconds",flags).SetValue(context,null);
                 type.GetField("preferences", flags).SetValue(context, Activator.CreateInstance(preferencesType, 2, 2));
                 var start = (Action)Delegate.CreateDelegate(typeof(Action), context, type.GetMethod("StartTimer", flags));
                 var stop = (Action)Delegate.CreateDelegate(typeof(Action), context, type.GetMethod("StopTimer", flags));

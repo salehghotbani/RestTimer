@@ -101,6 +101,18 @@
     "unsaved_title": "Kaydedilmemiş değişiklikler",
     "unsaved_message": "Kapatmadan önce değişiklikler kaydedilsin mi? Düzenlemeye devam etmek için bu iletişim kutusunu kapatın.",
     "save_changes": "Değişiklikleri kaydet",
-    "discard_changes": "Değişiklikleri at"
+    "discard_changes": "Değişiklikleri at",
+    "new_session": "Baştan başlat",
+    "task_name": "Görev adı",
+    "session_hint": "Bu oturum için",
+    "task_required": "Görev adı girin.",
+    "daily_report": "Günlük çalışma raporu",
+    "report_date": "Rapor tarihi",
+    "time_spent": "Harcanan süre",
+    "total_time": "Toplam süre",
+    "no_work": "Bu gün için kayıt yok.",
+    "save_work": "Çalışma süresini kaydet",
+    "save_work_message": "Çalışma süresi kaydedilsin mi? Kapatmak kararı bekletir.",
+    "log_error": "Çalışma kaydına erişilemedi. Tekrar deneyin."
   }
 }

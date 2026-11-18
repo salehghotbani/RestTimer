@@ -35,6 +35,11 @@ namespace RestTimer
         private Preferences preferences;
         private BreakOverlay[] overlays = Array.Empty<BreakOverlay>();
         private bool breaking;
+        private string taskName, segmentId;
+        private int? sessionSeconds;
+        private DateTimeOffset segmentStart;
+        private readonly Stopwatch workClock = new Stopwatch();
+        private readonly WorkJournal journal = new WorkJournal();
         private bool editingSettings;
         private bool breakRequested;
         private bool disposed;
@@ -90,7 +95,10 @@ namespace RestTimer
             timer.Tick += (_, __) =>
             {
                 if (shutdownRequest.WaitOne(0))
-                    ExitThread();
+                {
+                    clock.Stop();
+                    if (FinishSegment(false)) ExitThread();
+                }
                 else
                 {
                     UpdateTimer();
@@ -134,7 +142,7 @@ namespace RestTimer
             stopTimer.Enabled = running;
             settingsDialog?.SetRunning(running);
 
-            TimeSpan remaining = TimeSpan.FromSeconds(breaking ? preferences.BreakSeconds : preferences.WorkSeconds)
+            TimeSpan remaining = TimeSpan.FromSeconds(breaking ? preferences.BreakSeconds : (sessionSeconds ?? preferences.WorkSeconds))
                 - clock.Elapsed;
             if (!editingSettings && running && breaking && remaining <= TimeSpan.Zero)
             {
@@ -144,6 +152,7 @@ namespace RestTimer
 
             if (!editingSettings && !breaking && (breakRequested || (running && remaining <= TimeSpan.Zero)))
             {
+                if (!FinishSegment(false)) { clock.Stop(); return; }
                 breakRequested = false;
                 menu.Close();
                 breaking = true;
@@ -162,6 +171,7 @@ namespace RestTimer
             status.Text = I18n.T(breaking ? "end_break" : "next_break") + "  \u200e" + countdown;
             if (!running)
                 status.Text = I18n.T("paused") + " · " + status.Text;
+            if (!breaking && !string.IsNullOrEmpty(taskName)) status.Text = taskName + " · " + status.Text;
             trayIcon.Text = (running ? "RestTimer  " : "RestTimer · " + I18n.T("paused") + "  ") + countdown;
             taskbarCountdown?.UpdateDisplay(countdown, breaking, running, preferences.ShowTaskbarCountdown);
 
@@ -180,6 +190,7 @@ namespace RestTimer
                     overlay.Skip.Click += (_, __) => BeginWork();
                     overlay.Start.Click += (_, __) => StartTimer();
                     overlay.Stop.Click += (_, __) => StopTimer();
+                    overlay.Reset.Click += (_, __) => ResetTimer();
                     overlay.FormClosed += OverlayClosed;
                     overlay.SetCountdown(countdown);
                     overlay.SetRunning(running);
@@ -198,7 +209,9 @@ namespace RestTimer
 
         private void StartTimer()
         {
+            if (segmentId != null && !workClock.IsRunning && !FinishSegment(true)) return;
             clock.Start();
+            StartSegment();
             UpdateTimer();
         }
 
@@ -206,6 +219,7 @@ namespace RestTimer
         {
             breakRequested = false;
             clock.Stop();
+            FinishSegment(true);
             UpdateTimer();
         }
 
@@ -217,11 +231,46 @@ namespace RestTimer
                 clock.Start();
         }
 
+        private void StartSegment()
+        {
+            if (breaking || string.IsNullOrEmpty(taskName) || workClock.IsRunning) return;
+            if (segmentId == null) { segmentId = Guid.NewGuid().ToString("N"); segmentStart = DateTimeOffset.UtcNow; }
+            workClock.Start();
+        }
+        private bool FinishSegment(bool ask)
+        {
+            if (segmentId == null) return true;
+            workClock.Stop();
+            bool save = true;
+            if (ask)
+                using (var prompt = new UnsavedChangesDialog(icon, "save_work", "save_work_message"))
+                {
+                    prompt.Describe(taskName + "  ·  " + WorkJournal.Format(workClock.Elapsed.TotalSeconds));
+                    var choice = prompt.ShowDialog(settingsDialog);
+                    if (choice != DialogResult.Yes && choice != DialogResult.No) return false;
+                    save = choice == DialogResult.Yes;
+                }
+            try { if (save) journal.Save(segmentId, taskName, segmentStart, workClock.Elapsed.TotalSeconds); }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            { MessageBox.Show(I18n.T("log_error"), "RestTimer"); return false; }
+            segmentId = null; workClock.Reset(); return true;
+        }
         private void ResetTimer()
         {
-            breakRequested = false;
-            ResetClock();
-            UpdateTimer();
+            if (breaking) { breakRequested = false; ResetClock(); UpdateTimer(); return; }
+            bool previousEditing = editingSettings;
+            editingSettings = true;
+            try {
+                using (var dialog = new WorkStartDialog(sessionSeconds ?? preferences.WorkSeconds, taskName))
+                {
+                    if (dialog.ShowDialog(settingsDialog) != DialogResult.OK)
+                    { return; }
+                    clock.Stop();
+                    if (!FinishSegment(true)) return;
+                    taskName = dialog.TaskName; sessionSeconds = dialog.Seconds;
+                    breakRequested = false; clock.Restart(); StartSegment();
+                }
+            } finally { editingSettings = previousEditing; UpdateTimer(); }
         }
 
         private void OverlayClosed(object sender, FormClosedEventArgs e)
@@ -236,6 +285,7 @@ namespace RestTimer
             startBreak.Enabled = settings.Enabled = updates.Enabled = true;
             CloseOverlays();
             ResetClock();
+            if (clock.IsRunning) StartSegment();
             UpdateTimer();
         }
 
@@ -267,6 +317,7 @@ namespace RestTimer
                 {
                     settingsDialog = dialog;
                     dialog.LanguagePreviewChanged += RefreshLanguage;
+                    dialog.RestartRequested += ResetTimer;
                     dialog.SetRunning(clock.IsRunning);
                     if (dialog.ShowDialog() != DialogResult.OK)
                         return;
@@ -364,11 +415,19 @@ namespace RestTimer
                 MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, I18n.MessageOptions);
         }
 
+        protected override void ExitThreadCore()
+        {
+            clock.Stop();
+            if (!FinishSegment(true)) { UpdateTimer(); return; }
+            base.ExitThreadCore();
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing && !disposed)
             {
                 disposed = true;
+                FinishSegment(false);
                 timer.Dispose();
                 updateCancellation.Cancel();
                 updateCancellation.Dispose();

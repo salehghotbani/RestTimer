@@ -77,12 +77,12 @@ with tempfile.TemporaryDirectory(dir=ROOT / "build") as directory:
         assert dialog.heading.text() == i18n.tr("version_history" if dialog.current_history else "updates_title")
         assert not dialog.install.isEnabled(), "Changing languages enabled installation during a download"
         assert controller.start_timer_action.text() == i18n.tr("start")
-        assert controller.settings.navigation.count() == 4
+        assert controller.settings.navigation.count() == 5
         assert controller.settings.update_panel is dialog
         assert not pending.cancelled.is_set()
         for mode, name in ((Qt.ColorScheme.Light, "light"), (Qt.ColorScheme.Dark, "dark")):
             module.apply_color_scheme(app, mode)
-            for page in ("general", "updates", "history", "about"):
+            for page in ("general", "updates", "history", "report", "about"):
                 controller.settings.select_page(page)
                 app.processEvents()
                 assert controller.settings.update_panel is dialog and not pending.cancelled.is_set()

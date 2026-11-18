@@ -101,6 +101,18 @@
     "unsaved_title": "Modifications non enregistrées",
     "unsaved_message": "Enregistrer les modifications avant de fermer ? Fermez cette boîte de dialogue pour continuer à modifier.",
     "save_changes": "Enregistrer",
-    "discard_changes": "Ignorer les modifications"
+    "discard_changes": "Ignorer les modifications",
+    "new_session": "Recommencer",
+    "task_name": "Nom de la tâche",
+    "session_hint": "Pour cette session",
+    "task_required": "Saisissez une tâche.",
+    "daily_report": "Rapport quotidien",
+    "report_date": "Date du rapport",
+    "time_spent": "Temps consacré",
+    "total_time": "Temps total",
+    "no_work": "Aucun travail enregistré ce jour.",
+    "save_work": "Enregistrer le temps",
+    "save_work_message": "Enregistrer le temps travaillé ? Fermer laisse la décision en attente.",
+    "log_error": "Impossible de lire le journal. Réessayez."
   }
 }

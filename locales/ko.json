@@ -101,6 +101,18 @@
     "unsaved_title": "저장하지 않은 변경 사항",
     "unsaved_message": "닫기 전에 변경 사항을 저장할까요? 편집을 계속하려면 이 대화 상자를 닫으세요.",
     "save_changes": "변경 사항 저장",
-    "discard_changes": "변경 사항 버리기"
+    "discard_changes": "변경 사항 버리기",
+    "new_session": "처음부터 시작",
+    "task_name": "작업 이름",
+    "session_hint": "이번 세션",
+    "task_required": "작업 이름을 입력하세요.",
+    "daily_report": "일일 작업 보고서",
+    "report_date": "보고서 날짜",
+    "time_spent": "소요 시간",
+    "total_time": "총 시간",
+    "no_work": "이 날짜에 저장된 작업이 없습니다.",
+    "save_work": "작업 시간 저장",
+    "save_work_message": "작업 시간을 저장할까요? 닫으면 보류됩니다.",
+    "log_error": "작업 기록에 접근할 수 없습니다. 다시 시도하세요."
   }
 }

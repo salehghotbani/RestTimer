@@ -24,6 +24,7 @@ namespace RestTimer
         public Button Skip { get; }
         public Button Start { get; }
         public Button Stop { get; }
+        public Button Reset { get; }
 
         public BreakOverlay(Screen screen)
         {
@@ -58,7 +59,8 @@ namespace RestTimer
             };
             Start = new RoundedButton(primary: true) { Text = I18n.T("start"), Font = Theme.SmallFont, RightToLeft = I18n.Flow };
             Stop = new RoundedButton { Text = I18n.T("stop"), Font = Theme.SmallFont, RightToLeft = I18n.Flow };
-            card.Controls.AddRange(new Control[] { separator, heading, countdown, countdownCaption, caption, Skip, Start, Stop });
+            Reset = new RoundedButton { Text = I18n.T("reset_timer"), Font = Theme.SmallFont, RightToLeft = I18n.Flow };
+            card.Controls.AddRange(new Control[] { separator, heading, countdown, countdownCaption, caption, Skip, Start, Stop, Reset });
             Controls.Add(card);
             SizeChanged += (_, __) => LayoutCard();
             DpiChanged += (_, __) => LayoutCard();
@@ -124,11 +126,12 @@ namespace RestTimer
             int textWidth = Math.Max(1, width - textLeft - padding);
             bool compact = width < Scale(600);
 
-            card.SetBounds((ClientSize.Width - width) / 2, top, width, Scale(108));
+            card.SetBounds((ClientSize.Width - width) / 2, top, width, Scale(144));
             int halfButton = Math.Max(1, (buttonWidth - Scale(8)) / 2);
             Start.SetBounds(padding, Scale(18), halfButton, Scale(30));
             Stop.SetBounds(padding + halfButton + Scale(8), Scale(18), halfButton, Scale(30));
             Skip.SetBounds(padding, Scale(58), buttonWidth, Scale(32));
+            Reset.SetBounds(padding, Scale(98), buttonWidth, Scale(30));
             separator.SetBounds(padding + buttonWidth + Scale(16), Scale(32), Scale(1), Scale(44));
             countdown.SetBounds(timerLeft, Scale(compact ? 24 : 15), timerWidth, Scale(54));
             countdownCaption.SetBounds(timerLeft, Scale(69), timerWidth, Scale(22));

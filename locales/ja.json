@@ -101,6 +101,18 @@
     "unsaved_title": "未保存の変更",
     "unsaved_message": "閉じる前に変更を保存しますか？編集を続けるには、このダイアログを閉じてください。",
     "save_changes": "変更を保存",
-    "discard_changes": "変更を破棄"
+    "discard_changes": "変更を破棄",
+    "new_session": "最初から開始",
+    "task_name": "タスク名",
+    "session_hint": "今回のセッション",
+    "task_required": "タスク名を入力してください。",
+    "daily_report": "日別作業レポート",
+    "report_date": "レポートの日付",
+    "time_spent": "作業時間",
+    "total_time": "合計時間",
+    "no_work": "この日の作業記録はありません。",
+    "save_work": "作業時間を保存",
+    "save_work_message": "作業時間を保存しますか？閉じると保留になります。",
+    "log_error": "作業記録にアクセスできません。再試行してください。"
   }
 }

@@ -7,13 +7,15 @@ import re
 import sys
 import time
 import subprocess
+import uuid
+import work_tracking
 
-from PySide6.QtCore import QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
+from PySide6.QtCore import QDate, QIODevice, QLocale, QSaveFile, QStandardPaths, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QTextLayout, QDesktopServices
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QAbstractSpinBox, QApplication, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLabel,
-    QMenu, QMessageBox, QPushButton, QListWidget, QStackedWidget, QScrollArea, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
+    QDateEdit, QLineEdit, QTableWidget, QTableWidgetItem, QHeaderView, QMenu, QMessageBox, QPushButton, QListWidget, QStackedWidget, QScrollArea, QSpinBox, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 import update_core
 import i18n
@@ -36,7 +38,10 @@ QScrollBar::handle:horizontal { background: #9bb0c3; min-width: 28px; border-rad
 QScrollBar::handle:horizontal:hover, QScrollBar::handle:horizontal:pressed { background: #83e6c4; }
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; border: none; background: transparent; }
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: transparent; }
-QTextEdit, QComboBox, QTabWidget::pane { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; border-radius: 6px; padding: 8px; }
+QTextEdit, QComboBox, QLineEdit, QDateEdit, QTableWidget, QTabWidget::pane { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; border-radius: 6px; padding: 8px; }
+QHeaderView::section { background: #1e2e40; color: #edf4fa; border: none; padding: 10px; }
+QTableWidget { gridline-color: #2c3e52; selection-background-color: #223a48; selection-color: #83e6c4; }
+QTableWidget::item { padding: 8px; }
 QTabBar::tab { background: #1e2e40; color: #edf4fa; padding: 10px 20px; }
 QTabBar::tab:selected { background: #223a48; color: #83e6c4; }
 QProgressBar { background: #141f2e; color: #edf4fa; border: 1px solid #2c3e52; border-radius: 5px; text-align: center; }
@@ -261,6 +266,75 @@ class UnsavedChangesDialog(QDialog):
         layout.addLayout(actions)
 
 
+class WorkStartDialog(QDialog):
+    def __init__(self, controller):
+        super().__init__(controller.settings)
+        self.setWindowTitle(tr("new_session"))
+        self.setMinimumWidth(540)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        layout.addWidget(label(tr("new_session"), "title"))
+        layout.addWidget(label(tr("task_name")))
+        self.task = QLineEdit(controller.task_name or "")
+        self.task.setMaxLength(120)
+        self.task.setAccessibleName(tr("task_name"))
+        layout.addWidget(self.task)
+        self.duration = DurationEditor(tr("work_duration"), controller.session_seconds or controller.preferences["work_seconds"], 24)
+        layout.addWidget(self.duration)
+        self.error = label("", "muted")
+        layout.addWidget(self.error)
+        begin = QPushButton(tr("new_session"))
+        begin.setObjectName("primary")
+        begin.clicked.connect(self.begin)
+        layout.addWidget(begin)
+
+    def begin(self):
+        if not self.task.text().strip():
+            self.error.setText(tr("task_required"))
+        elif not 1 <= self.duration.seconds() <= 86400:
+            self.error.setText(tr("work_validation"))
+        else:
+            self.accept()
+
+
+class WorkReport(QWidget):
+    def __init__(self, controller):
+        super().__init__()
+        self.controller = controller
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        layout.addWidget(label(tr("daily_report"), "title"))
+        self.day = QDateEdit(QDate.currentDate())
+        self.day.setCalendarPopup(True)
+        self.day.setAccessibleName(tr("report_date"))
+        layout.addWidget(self.day)
+        self.rows = QTableWidget(0, 2)
+        self.rows.setHorizontalHeaderLabels([tr("task_name"), tr("time_spent")])
+        self.rows.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.rows.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.rows.verticalHeader().hide()
+        self.rows.setEditTriggers(QTableWidget.NoEditTriggers)
+        layout.addWidget(self.rows, 1)
+        self.total = label("", "muted")
+        layout.addWidget(self.total)
+        self.day.dateChanged.connect(self.refresh)
+
+    def refresh(self):
+        self.rows.setRowCount(0)
+        try:
+            entries = self.controller.journal.report(self.day.date().toString("yyyy-MM-dd"))
+            for task, seconds in entries:
+                row = self.rows.rowCount()
+                self.rows.insertRow(row)
+                self.rows.setItem(row, 0, QTableWidgetItem(task))
+                self.rows.setItem(row, 1, QTableWidgetItem(work_tracking.format_time(seconds)))
+            self.total.setText(tr("total_time") + "  " + work_tracking.format_time(sum(seconds for _, seconds in entries)) if entries else tr("no_work"))
+        except (OSError, ValueError, KeyError):
+            self.total.setText(tr("log_error"))
+
+
 class SettingsDialog(QDialog):
     def __init__(self, controller, update_panel=None, draft=None):
         super().__init__()
@@ -283,8 +357,10 @@ class SettingsDialog(QDialog):
         side.addWidget(label("RestTimer", center=True))
         self.navigation = QListWidget()
         self.navigation.setObjectName("settingsNav")
+        self.navigation.setWordWrap(True)
+        self.navigation.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.navigation.setAccessibleName(tr("settings_navigation"))
-        for key in ("general", "updates_tab", "version_history", "about"):
+        for key in ("general", "updates_tab", "version_history", "daily_report", "about"):
             self.navigation.addItem(tr(key))
         side.addWidget(self.navigation, 1)
         side.addWidget(label("v" + controller.version, "muted", center=True))
@@ -323,6 +399,9 @@ class SettingsDialog(QDialog):
         self.timer_status.setWordWrap(True)
         timer_controls.addWidget(self.start_timer)
         timer_controls.addWidget(self.stop_timer)
+        self.reset_timer = QPushButton(tr("reset_timer"))
+        self.reset_timer.clicked.connect(controller.reset_timer)
+        timer_controls.addWidget(self.reset_timer)
         timer_controls.addWidget(self.timer_status, 1)
         layout.addLayout(timer_controls)
         languages = QHBoxLayout()
@@ -362,6 +441,8 @@ class SettingsDialog(QDialog):
         controller.update_dialog = self.update_panel
         self.pages.addWidget(self.update_panel)
         self.update_panel.daily_changed.connect(self.daily.setChecked)
+        self.report = WorkReport(controller)
+        self.pages.addWidget(self.report)
         self.pages.addWidget(self.about_page())
         self.navigation.currentRowChanged.connect(self.select_index)
         self.navigation.setCurrentRow(0)
@@ -381,7 +462,7 @@ class SettingsDialog(QDialog):
                 "language": self.language.currentData(), "daily": self.daily.isChecked(), "startup": self.startup.isChecked(),
                 "saved_preferences": self.saved_preferences.copy(), "saved_daily": self.saved_daily, "saved_startup": self.saved_startup,
                 "note": self.note.text(), "source_language": previous, "page": self.current_page,
-                "geometry": self.geometry(), "scroll": self.pages.widget(0).verticalScrollBar().value()}
+                "geometry": self.geometry(), "report_date": self.report.day.date(), "scroll": self.pages.widget(0).verticalScrollBar().value()}
 
     def restore_draft(self, draft):
         self.saved_preferences = draft["saved_preferences"]
@@ -395,6 +476,7 @@ class SettingsDialog(QDialog):
         self.startup.setChecked(draft["startup"])
         self.note.setText(i18n.translate_text(draft["note"], draft["source_language"]))
         self.setGeometry(draft["geometry"])
+        self.report.day.setDate(draft["report_date"])
         self.select_page(draft["page"])
 
     def about_page(self):
@@ -441,8 +523,10 @@ class SettingsDialog(QDialog):
         self.pages.insertWidget(1, self.update_panel)
 
     def select_index(self, index):
-        self.current_page = ("general", "updates", "history", "about")[index]
-        self.pages.setCurrentIndex(0 if index == 0 else 2 if index == 3 else 1)
+        self.current_page = ("general", "updates", "history", "report", "about")[index]
+        self.pages.setCurrentIndex(0 if index == 0 else 2 if index == 3 else 3 if index == 4 else 1)
+        if index == 3:
+            self.report.refresh()
         if index in (1, 2):
             self.update_panel.set_page(index == 2)
             if self.isVisible():
@@ -450,7 +534,7 @@ class SettingsDialog(QDialog):
 
     def select_page(self, page):
         self.ensure_update_panel()
-        self.navigation.setCurrentRow(("general", "updates", "history", "about").index(page))
+        self.navigation.setCurrentRow(("general", "updates", "history", "report", "about").index(page))
         self.select_index(self.navigation.currentRow())
 
     def showEvent(self, event):
@@ -592,6 +676,9 @@ class BreakOverlay(QWidget):
         self.skip.setStyleSheet("font-size: 12px;")
         self.skip.clicked.connect(finish)
         controls_column.addWidget(self.skip)
+        self.reset = QPushButton(tr("reset_timer"))
+        self.reset.setStyleSheet("font-size: 12px;")
+        controls_column.addWidget(self.reset)
         row.addWidget(controls)
         timer_column = QVBoxLayout()
         timer_column.setSpacing(0)
@@ -614,7 +701,7 @@ class BreakOverlay(QWidget):
 
     def resizeEvent(self, event):
         width = min(820, self.width() - 32)
-        self.card.setGeometry((self.width() - width) // 2, 24, width, 116)
+        self.card.setGeometry((self.width() - width) // 2, 24, width, 150)
         self.caption.setVisible(width >= 620)
         self.timer_caption.setVisible(width >= 620)
         super().resizeEvent(event)
@@ -650,6 +737,13 @@ class Controller:
         i18n.use(self.preferences.get("language", "auto"), QLocale.system().uiLanguages())
         app.setLayoutDirection(Qt.RightToLeft if i18n.is_rtl() else Qt.LeftToRight)
         self.icon = QIcon(str(ROOT / "assets/RestTimer.png"))
+        self.task_name = None
+        self.session_seconds = None
+        self.segment_id = None
+        self.segment_started = self.segment_clock = None
+        self.segment_elapsed = 0
+        self.journal = work_tracking.Journal(config_root() / "resttimer/work-log")
+        self.prompting = False
         self.breaking = False
         self.paused_at = None
         self.quitting = False
@@ -771,23 +865,89 @@ class Controller:
         return self.paused_at is None
 
     def start_timer(self):
+        if self.segment_id is not None and self.segment_clock is None and not self.finish_segment(True):
+            return
         if not self.running:
             self.deadline += time.monotonic() - self.paused_at
             self.paused_at = None
+        self.start_segment()
         self.tick()
 
     def stop_timer(self):
         if self.running:
             self.paused_at = time.monotonic()
+        self.finish_segment(True)
         self.tick()
 
+    def start_segment(self):
+        if self.breaking or not self.task_name or self.segment_clock is not None:
+            return
+        if self.segment_id is None:
+            self.segment_id = uuid.uuid4().hex
+            self.segment_started = time.time()
+        self.segment_clock = time.monotonic()
+
+    def finish_segment(self, ask):
+        if self.segment_id is None:
+            return True
+        if self.segment_clock is not None:
+            self.segment_elapsed += time.monotonic() - self.segment_clock
+            self.segment_clock = None
+        save = True
+        if ask:
+            prompt = QDialog(self.settings)
+            prompt.setWindowTitle(tr("save_work"))
+            layout = QVBoxLayout(prompt)
+            layout.addWidget(label(tr("save_work_message")))
+            layout.addWidget(label(self.task_name + "  ·  " + work_tracking.format_time(self.segment_elapsed), "title"))
+            actions = QHBoxLayout()
+            yes = QPushButton(tr("save_changes"))
+            yes.setObjectName("primary")
+            yes.clicked.connect(prompt.accept)
+            no = QPushButton(tr("discard_changes"))
+            no.clicked.connect(lambda: prompt.done(2))
+            actions.addWidget(yes)
+            actions.addWidget(no)
+            layout.addLayout(actions)
+            result = prompt.exec()
+            if result not in (1, 2):
+                return False
+            save = result == 1
+        try:
+            if save:
+                self.journal.save(self.segment_id, self.task_name, self.segment_started, self.segment_elapsed)
+        except OSError:
+            QMessageBox.warning(self.settings, "RestTimer", tr("log_error"))
+            return False
+        self.segment_id = None
+        self.segment_elapsed = 0
+        return True
+
     def reset_timer(self):
-        now = time.monotonic()
-        if not self.running:
-            self.paused_at = now
-        duration = self.preferences["break_seconds" if self.breaking else "work_seconds"]
-        self.deadline = now + duration
-        self.tick()
+        if self.breaking:
+            now = time.monotonic()
+            if not self.running:
+                self.paused_at = now
+            self.deadline = now + self.preferences["break_seconds"]
+            self.tick()
+            return
+        self.prompting = True
+        try:
+            dialog = WorkStartDialog(self)
+            if dialog.exec() != QDialog.Accepted:
+                return
+            if self.running:
+                self.paused_at = time.monotonic()
+            if not self.finish_segment(True):
+                return
+            self.task_name = dialog.task.text().strip()
+            self.session_seconds = dialog.duration.seconds()
+            self.paused_at = None
+            self.deadline = time.monotonic() + self.session_seconds
+            self.start_segment()
+        finally:
+            self.prompting = False
+            self.tick()
 
     def refresh_displays(self):
         if not self.breaking:
@@ -803,11 +963,15 @@ class Controller:
         ]
         self.display_signature = signature
         for overlay in self.overlays:
+            overlay.reset.clicked.connect(self.reset_timer)
             overlay.set_running(self.running)
             overlay.showFullScreen()
 
     def begin_break(self):
         if self.breaking:
+            return
+        if not self.finish_segment(False):
+            self.paused_at = time.monotonic()
             return
         self.menu.close()
         self.breaking = True
@@ -826,7 +990,9 @@ class Controller:
         now = time.monotonic()
         if not self.running:
             self.paused_at = now
-        self.deadline = now + self.preferences["work_seconds"]
+        self.deadline = now + (self.session_seconds or self.preferences["work_seconds"])
+        if self.running:
+            self.start_segment()
         self.tick()
 
     def tick(self):
@@ -836,7 +1002,7 @@ class Controller:
         self.settings.stop_timer.setEnabled(self.running)
         clock_time = time.monotonic() if self.running else self.paused_at
         remaining = max(0, math.ceil(self.deadline - clock_time))
-        if remaining == 0 and self.running:
+        if remaining == 0 and self.running and not self.prompting:
             if self.breaking:
                 self.begin_work()
             else:
@@ -850,6 +1016,8 @@ class Controller:
         self.status.setText(tr("end_break" if self.breaking else "next_break") + "  \u200e" + text)
         if not self.running:
             self.status.setText(tr("paused") + " · " + self.status.text())
+        if self.task_name and not self.breaking:
+            self.status.setText(self.task_name + " · " + self.status.text())
         self.settings.timer_status.setText(self.status.text())
         self.tray.setToolTip(("RestTimer  " if self.running else "RestTimer · " + tr("paused") + "  ") + text)
         self.notify_update()
@@ -916,6 +1084,10 @@ class Controller:
         self.settings.activateWindow()
 
     def restart_after_update(self):
+        if self.running:
+            self.paused_at = time.monotonic()
+        if not self.finish_segment(False):
+            return
         try:
             if self.instance:
                 lock, server = self.instance
@@ -935,6 +1107,10 @@ class Controller:
             self.settings.select_page("updates")
             self.settings.show()
             self.settings.raise_()
+            return
+        if self.running:
+            self.paused_at = time.monotonic()
+        if not self.finish_segment(True):
             return
         self.quitting = True
         self.timer.stop()

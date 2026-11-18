@@ -101,6 +101,18 @@
     "unsaved_title": "Cambios sin guardar",
     "unsaved_message": "¿Guardar los cambios antes de cerrar? Cierra este diálogo para seguir editando.",
     "save_changes": "Guardar cambios",
-    "discard_changes": "Descartar cambios"
+    "discard_changes": "Descartar cambios",
+    "new_session": "Empezar de nuevo",
+    "task_name": "Nombre de la tarea",
+    "session_hint": "Para esta sesión",
+    "task_required": "Introduce una tarea.",
+    "daily_report": "Informe diario",
+    "report_date": "Fecha del informe",
+    "time_spent": "Tiempo dedicado",
+    "total_time": "Tiempo total",
+    "no_work": "No hay trabajo guardado para este día.",
+    "save_work": "Guardar tiempo de trabajo",
+    "save_work_message": "¿Guardar el tiempo trabajado? Cerrar deja la decisión pendiente.",
+    "log_error": "No se pudo acceder al registro. Inténtalo de nuevo."
   }
 }

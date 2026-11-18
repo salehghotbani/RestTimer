@@ -8,9 +8,10 @@ namespace RestTimer
     {
         private readonly Timer themeTimer;
         private string paletteKey;
-        public UnsavedChangesDialog(Icon icon)
+        public UnsavedChangesDialog(Icon icon) : this(icon, "unsaved_title", "unsaved_message") { }
+        public UnsavedChangesDialog(Icon icon, string title, string message)
         {
-            Text = I18n.T("unsaved_title");
+            Text = I18n.T(title);
             Icon = icon;
             Name = "UnsavedChangesDialog";
             Font = Theme.BodyFont;
@@ -27,9 +28,9 @@ namespace RestTimer
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
-            layout.Controls.Add(new Label { Text = I18n.T("unsaved_title"), Font = Theme.TitleFont, Dock = DockStyle.Fill,
+            layout.Controls.Add(new Label { Text = I18n.T(title), Font = Theme.TitleFont, Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-            layout.Controls.Add(new Label { Text = I18n.T("unsaved_message"), Dock = DockStyle.Fill, Tag = "muted",
+            layout.Controls.Add(new Label { Text = I18n.T(message), Dock = DockStyle.Fill, Tag = "muted",
                 TextAlign = ContentAlignment.TopLeft }, 0, 1);
             var actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
@@ -46,6 +47,11 @@ namespace RestTimer
             themeTimer = new Timer { Interval = 750 };
             themeTimer.Tick += (_, __) => { Theme.Refresh(); if (paletteKey != Theme.PaletteKey) { Theme.Apply(this); paletteKey = Theme.PaletteKey; } };
             themeTimer.Start();
+        }
+        public void Describe(string detail)
+        {
+            var layout = (TableLayoutPanel)Controls[0];
+            layout.GetControlFromPosition(0, 1).Text += "\n" + detail;
         }
         protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); Theme.ApplyWindowFrame(Handle); }
         protected override void Dispose(bool disposing) { if (disposing) themeTimer?.Dispose(); base.Dispose(disposing); }

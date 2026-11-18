@@ -17,6 +17,8 @@ namespace RestTimer
         private readonly UpdatePanel updatePanel;
         private readonly Panel content;
         private readonly Control generalPage, aboutPage;
+        private readonly WorkReportPanel reportPage;
+        public event Action RestartRequested;
         private readonly Dictionary<string, RoundedButton> navigation = new Dictionary<string, RoundedButton>();
         private readonly Bitmap logo;
         private readonly Timer themeTimer;
@@ -76,10 +78,10 @@ namespace RestTimer
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             sidebar = new RoundedPanel { Dock = DockStyle.Fill, Padding = new Padding(10),
                 Margin = I18n.IsRtl ? new Padding(16, 0, 0, 0) : new Padding(0, 0, 16, 0) };
-            var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, AccessibleName = I18n.T("settings_navigation") };
+            var tabs = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8, AccessibleName = I18n.T("settings_navigation") };
             tabs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
-            for (int i = 0; i < 4; i++) tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            for (int i = 0; i < 5; i++) tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
             tabs.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             tabs.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
             var brand = new Panel { Dock = DockStyle.Fill };
@@ -87,8 +89,8 @@ namespace RestTimer
             brand.Controls.Add(new Label { Text = "RestTimer", Font = Theme.TitleFont, TextAlign = ContentAlignment.MiddleCenter,
                 Bounds = new Rectangle(0, 40, 148, 30) });
             tabs.Controls.Add(brand, 0, 0);
-            string[] pages = { "general", "updates", "history", "about" };
-            string[] keys = { "general", "updates_tab", "version_history", "about" };
+            string[] pages = { "general", "updates", "history", "report", "about" };
+            string[] keys = { "general", "updates_tab", "version_history", "daily_report", "about" };
             for (int i = 0; i < pages.Length; i++)
             {
                 string page = pages[i];
@@ -98,14 +100,15 @@ namespace RestTimer
                 tabs.Controls.Add(button, 0, i + 1);
             }
             tabs.Controls.Add(new Label { Text = "v" + UpdateClient.CurrentVersion.ToString(3), Font = Theme.SmallFont,
-                Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, RightToLeft = RightToLeft.No }, 0, 6);
+                Tag = "muted", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, RightToLeft = RightToLeft.No }, 0, 7);
             sidebar.Controls.Add(tabs);
             content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
             generalPage = CreateGeneralPage(preferences, start, stop);
             aboutPage = CreateAboutPage();
+            reportPage = new WorkReportPanel();
             updatePanel = new UpdatePanel(service, checkOnShow) { Dock = DockStyle.Fill };
             updatePanel.DailyPreferenceChanged += () => daily.Checked = updatePanel.DailyEnabled;
-            content.Controls.AddRange(new Control[] { generalPage, updatePanel, aboutPage });
+            content.Controls.AddRange(new Control[] { generalPage, updatePanel, aboutPage, reportPage });
             layout.Controls.Add(sidebar, 0, 0);
             layout.Controls.Add(content, 1, 0);
             Controls.Add(layout);
@@ -157,6 +160,9 @@ namespace RestTimer
             };
             startTimer = new RoundedButton(primary: true) { Name = "i18n:start", Text = I18n.T("start"), Bounds = new Rectangle(408, 388, 100, 34), TabIndex = 2 };
             stopTimer = new RoundedButton { Name = "i18n:stop", Text = I18n.T("stop"), Bounds = new Rectangle(296, 388, 100, 34), TabIndex = 3 };
+            var reset = new RoundedButton { Name = "i18n:reset_timer", Text = I18n.T("reset_timer"), Bounds = new Rectangle(28, 716, 240, 34) };
+            reset.Click += (_, __) => RestartRequested?.Invoke();
+            body.Height = 770; body.Controls.Add(reset);
             startTimer.Click += (_, __) => start();
             stopTimer.Click += (_, __) => stop();
             timerStatus = new Label
@@ -250,6 +256,8 @@ namespace RestTimer
             CurrentPage = page;
             generalPage.Visible = page == "general";
             aboutPage.Visible = page == "about";
+            reportPage.Visible = page == "report";
+            if (reportPage.Visible) reportPage.RefreshReport();
             updatePanel.Visible = page == "updates" || page == "history";
             updatePanel.SelectPage(page == "history");
             foreach (var pair in navigation) { pair.Value.Selected = pair.Key == page; pair.Value.Invalidate(); }
@@ -274,8 +282,8 @@ namespace RestTimer
                 sidebar.Margin = I18n.IsRtl ? new Padding(gap, 0, 0, 0) : new Padding(0, 0, gap, 0);
                 workDuration.Relocalize(I18n.T("work_duration"), I18n.T("work_hint"));
                 breakDuration.Relocalize(I18n.T("break_duration"), I18n.T("break_hint"));
-                string[] pages = { "general", "updates", "history", "about" };
-                string[] keys = { "general", "updates_tab", "version_history", "about" };
+                string[] pages = { "general", "updates", "history", "report", "about" };
+                string[] keys = { "general", "updates_tab", "version_history", "daily_report", "about" };
                 for (int i = 0; i < pages.Length; i++) navigation[pages[i]].Text = I18n.T(keys[i]);
                 int selected = language.SelectedIndex;
                 language.Items[0] = new LanguageItem("auto", I18n.T("system_language"));
@@ -283,6 +291,7 @@ namespace RestTimer
                 aboutPage.Controls.Find("about_author", true)[0].Text = I18n.T("author") + ": \u200eSaleh Ghotbani";
                 aboutPage.Controls.Find("about_license", true)[0].Text = I18n.T("license") + ": MIT";
                 updatePanel.Relocalize(previous, CurrentPage == "history");
+                reportPage.RefreshReport();
                 ApplyTheme();
             }
             finally { ResumeLayout(true); relocalizing = false; }

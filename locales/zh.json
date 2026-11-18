@@ -101,6 +101,18 @@
     "unsaved_title": "未保存的更改",
     "unsaved_message": "关闭前保存更改吗？关闭此对话框可继续编辑。",
     "save_changes": "保存更改",
-    "discard_changes": "放弃更改"
+    "discard_changes": "放弃更改",
+    "new_session": "重新开始",
+    "task_name": "任务名称",
+    "session_hint": "仅用于本次",
+    "task_required": "请输入任务名称。",
+    "daily_report": "每日工作报告",
+    "report_date": "报告日期",
+    "time_spent": "花费时间",
+    "total_time": "总时间",
+    "no_work": "当天没有保存的工作。",
+    "save_work": "保存工作时间",
+    "save_work_message": "保存已用工作时间？关闭后将保留待处理记录。",
+    "log_error": "无法访问工作记录，请重试。"
   }
 }
